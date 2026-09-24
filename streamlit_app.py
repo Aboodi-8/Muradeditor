@@ -17,7 +17,7 @@ st.markdown("""
 <style>
     #MainMenu, header, footer { visibility: hidden; }
     .block-container {
-        padding-top: 1rem;
+        padding-top: 0.5rem;
         padding-bottom: 0rem;
         padding-left: 1rem;
         padding-right: 1rem;
@@ -80,30 +80,30 @@ html_app = f"""
     background: var(--bg-dark);
     color: var(--text-main);
     overflow-x: hidden;
-    padding: 10px;
+    padding: 8px 12px;
   }}
   .app-container {{
     display: grid;
-    grid-template-columns: 340px 1fr;
+    grid-template-columns: 360px 1fr;
     gap: 16px;
-    max-width: 1400px;
+    max-width: 1300px;
     margin: 0 auto;
   }}
-  @media (max-width: 900px) {{
+  @media (max-width: 920px) {{
     .app-container {{ grid-template-columns: 1fr; }}
   }}
   .card {{
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 12px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
   }}
   .card-title {{
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 700;
     margin-bottom: 4px;
   }}
@@ -128,7 +128,7 @@ html_app = f"""
     background: var(--blurple);
     color: #fff;
     border-radius: 6px;
-    padding: 10px;
+    padding: 9px;
     font-weight: 700;
     font-size: 12px;
     cursor: pointer;
@@ -151,7 +151,9 @@ html_app = f"""
     border-radius: 4px;
     font-size: 11px;
     cursor: pointer;
+    transition: all 0.15s ease;
   }}
+  .preset-btn:hover {{ border-color: var(--blurple); }}
   .preset-btn.active {{
     background: var(--blurple);
     color: #fff;
@@ -174,15 +176,17 @@ html_app = f"""
   .face-btn:hover {{ border-color: rgba(88,101,242,0.5); }}
   .face-btn.active {{
     border-color: var(--blurple);
-    background: rgba(88,101,242,0.2);
+    background: rgba(88,101,242,0.25);
+    box-shadow: 0 0 10px rgba(88,101,242,0.4);
   }}
   .face-btn img {{
-    width: 54px;
-    height: 54px;
+    width: 52px;
+    height: 52px;
     border-radius: 50%;
     object-fit: cover;
     display: block;
-    margin: 0 auto 4px;
+    margin: 0 auto 3px;
+    border: 2px solid rgba(255,255,255,0.15);
   }}
   .face-btn span {{
     font-size: 10px;
@@ -232,6 +236,29 @@ html_app = f"""
     accent-color: var(--blurple);
     cursor: pointer;
   }}
+  .accessories-row {{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }}
+  .acc-btn {{
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }}
+  .acc-btn.active {{
+    background: rgba(88,101,242,0.25);
+    border-color: var(--blurple);
+    color: #fff;
+  }}
   .anim-grid {{
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -262,7 +289,7 @@ html_app = f"""
   }}
   .canvas-header {{
     width: 100%;
-    max-width: 480px;
+    max-width: 440px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -275,17 +302,18 @@ html_app = f"""
     font-weight: 700;
     padding: 4px 10px;
     border-radius: 9999px;
+    border: 1px solid rgba(35,165,90,0.3);
   }}
   .canvas-box {{
     width: 100%;
-    max-width: 480px;
+    max-width: 440px;
     aspect-ratio: 1;
     background: #111214;
-    border: 2px solid rgba(88,101,242,0.4);
+    border: 2px solid rgba(88,101,242,0.5);
     border-radius: 12px;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+    box-shadow: 0 10px 36px rgba(0,0,0,0.6);
     touch-action: none;
   }}
   #mainCanvas {{
@@ -297,12 +325,31 @@ html_app = f"""
   #mainCanvas:active {{
     cursor: grabbing;
   }}
+  .quick-tools {{
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    width: 100%;
+    max-width: 440px;
+    justify-content: center;
+  }}
+  .quick-btn {{
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 11px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+  }}
+  .quick-btn:hover {{ color: #fff; border-color: var(--blurple); }}
   .action-row {{
     width: 100%;
-    max-width: 480px;
+    max-width: 440px;
     display: flex;
     gap: 8px;
-    margin-top: 12px;
+    margin-top: 10px;
   }}
   .btn-action-primary {{
     flex: 2;
@@ -314,6 +361,11 @@ html_app = f"""
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    box-shadow: 0 4px 16px rgba(88,101,242,0.4);
   }}
   .btn-action-primary:hover {{ background: var(--blurple-hover); }}
   .btn-action-secondary {{
@@ -342,7 +394,7 @@ html_app = f"""
   .caption-input:focus {{ border-color: var(--blurple); }}
   .progress-wrap {{
     width: 100%;
-    max-width: 480px;
+    max-width: 440px;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 8px;
@@ -370,12 +422,12 @@ html_app = f"""
   }}
   .discord-mockup {{
     width: 100%;
-    max-width: 480px;
+    max-width: 440px;
     background: #313338;
     border: 1px solid #232428;
     border-radius: 8px;
-    padding: 12px;
-    margin-top: 14px;
+    padding: 10px 12px;
+    margin-top: 12px;
     display: flex;
     gap: 10px;
   }}
@@ -402,17 +454,18 @@ html_app = f"""
         <span class="step-badge">1</span>
         <span>Background Image / Meme</span>
       </div>
-      <div class="hint">Upload any image or choose a preset body:</div>
+      <div class="hint">Upload any meme from your PC or choose a preset body:</div>
       <label class="btn-upload">
         <span>📁 Upload Any Picture / Meme</span>
         <input type="file" id="bgFileInput" accept="image/*">
       </label>
       <div class="presets-row" id="bgPresetsRow">
-        <button class="preset-btn active" data-bg="suit">🤵 Suit</button>
-        <button class="preset-btn" data-bg="gigachad">🗿 Chad</button>
+        <button class="preset-btn active" data-bg="suit">🤵 Fancy Tux</button>
+        <button class="preset-btn" data-bg="gigachad">🗿 Gigachad</button>
+        <button class="preset-btn" data-bg="throne">👑 King Throne</button>
         <button class="preset-btn" data-bg="astronaut">🚀 Space</button>
         <button class="preset-btn" data-bg="doge">🐕 Doge</button>
-        <button class="preset-btn" data-bg="buff">💪 Buff</button>
+        <button class="preset-btn" data-bg="buff">💪 Gym Buff</button>
       </div>
     </div>
 
@@ -422,23 +475,38 @@ html_app = f"""
         <span class="step-badge">2</span>
         <span>Choose Murad's Face</span>
       </div>
-      <div class="hint">Click a face to place it on the image:</div>
+      <div class="hint">Pick a face to slap on the meme:</div>
       <div class="faces-grid" id="facesGrid"></div>
       
       <div class="row-flex">
-        <span style="font-size: 11px; color: var(--text-muted);">Cutout Mask:</span>
+        <span style="font-size: 11px; color: var(--text-muted);">Cutout Shape:</span>
         <div class="btn-group" id="maskGroup">
-          <button class="btn-toggle active" data-mask="circle">Circle</button>
+          <button class="btn-toggle active" data-mask="circle">Sticker Circle</button>
           <button class="btn-toggle" data-mask="oval">Oval Face</button>
-          <button class="btn-toggle" data-mask="square">Square</button>
+          <button class="btn-toggle" data-mask="square">Full Frame</button>
         </div>
       </div>
     </div>
 
-    <!-- 3. Face Sliders -->
+    <!-- 3. Meme Accessories -->
     <div class="card">
       <div class="card-title">
         <span class="step-badge">3</span>
+        <span>Meme Accessories & Stickers</span>
+      </div>
+      <div class="hint">Toggle funny accessories on Murad's head:</div>
+      <div class="accessories-row" id="accRow">
+        <button class="acc-btn" data-acc="shades">🕶️ Thug Shades</button>
+        <button class="acc-btn" data-acc="laser">🔴 Laser Eyes</button>
+        <button class="acc-btn" data-acc="crown">👑 Gold Crown</button>
+        <button class="acc-btn" data-acc="bubble">💬 Speech Bubble</button>
+      </div>
+    </div>
+
+    <!-- 4. Face Sizing & Rotation -->
+    <div class="card">
+      <div class="card-title">
+        <span class="step-badge">4</span>
         <span>Face Sizing & Rotation</span>
       </div>
       <div class="slider-control">
@@ -449,13 +517,12 @@ html_app = f"""
         <label>Rotation: <span id="rotVal">0°</span></label>
         <input type="range" id="faceRot" min="-180" max="180" step="5" value="0">
       </div>
-      <button class="preset-btn" id="recenterBtn" style="width: 100%; padding: 6px; font-weight: 600;">↺ Re-center Face</button>
     </div>
 
-    <!-- 4. Discord Animation -->
+    <!-- 5. Discord Animation -->
     <div class="card">
       <div class="card-title">
-        <span class="step-badge">4</span>
+        <span class="step-badge">5</span>
         <span>Discord GIF Animation</span>
       </div>
       <div class="anim-grid" id="animGrid">
@@ -466,7 +533,7 @@ html_app = f"""
         <button class="anim-btn" data-anim="petpet"><span>👋</span><span>Petpet</span></button>
         <button class="anim-btn" data-anim="zoom"><span>💥</span><span>Zoom</span></button>
       </div>
-      <input type="text" id="memeCaption" class="caption-input" placeholder="Top caption (e.g. WHEN MURAD...)" maxlength="45">
+      <input type="text" id="memeCaption" class="caption-input" placeholder="Meme caption (e.g. WHEN MURAD...)" maxlength="45">
     </div>
 
   </div>
@@ -475,11 +542,19 @@ html_app = f"""
   <div class="canvas-stage">
     <div class="canvas-header">
       <div class="drag-badge">🖱️ CLICK & DRAG MURAD'S FACE WITH MOUSE!</div>
-      <span style="font-size: 11px; color: var(--text-muted);">Live 60 FPS</span>
+      <span style="font-size: 11px; color: var(--text-muted);">Scroll wheel = Zoom</span>
     </div>
 
     <div class="canvas-box" id="canvasBox">
       <canvas id="mainCanvas" width="440" height="440"></canvas>
+    </div>
+
+    <div class="quick-tools">
+      <button class="quick-btn" id="zoomInBtn">🔍 Zoom In (+)</button>
+      <button class="quick-btn" id="zoomOutBtn">🔍 Zoom Out (-)</button>
+      <button class="quick-btn" id="rotLeftBtn">↺ Rotate Left</button>
+      <button class="quick-btn" id="rotRightBtn">↻ Rotate Right</button>
+      <button class="quick-btn" id="recenterBtn">🎯 Center Face</button>
     </div>
 
     <div class="action-row">
@@ -517,7 +592,7 @@ const state = {{
   presetBg: 'suit',
   customBgImg: null,
   faceX: 0,
-  faceY: -20,
+  faceY: -35,
   faceScale: 1.0,
   faceRot: 0,
   mask: 'circle',
@@ -530,7 +605,12 @@ const state = {{
   dragStartX: 0,
   dragStartY: 0,
   initialFaceX: 0,
-  initialFaceY: 0
+  initialFaceY: 0,
+  // Accessories toggles
+  accShades: false,
+  accLaser: false,
+  accCrown: false,
+  accBubble: false
 }};
 
 // Preload face images
@@ -610,6 +690,19 @@ function setupEvents() {{
     }};
   }});
 
+  // Accessories toggles
+  document.querySelectorAll('#accRow .acc-btn').forEach(btn => {{
+    btn.onclick = () => {{
+      const acc = btn.dataset.acc;
+      if (acc === 'shades') state.accShades = !state.accShades;
+      else if (acc === 'laser') state.accLaser = !state.accLaser;
+      else if (acc === 'crown') state.accCrown = !state.accCrown;
+      else if (acc === 'bubble') state.accBubble = !state.accBubble;
+      btn.classList.toggle('active');
+      draw();
+    }};
+  }});
+
   // Sliders
   document.getElementById('faceScale').oninput = (e) => {{
     state.faceScale = parseFloat(e.target.value);
@@ -623,9 +716,38 @@ function setupEvents() {{
     draw();
   }};
 
+  // Quick Tools
+  document.getElementById('zoomInBtn').onclick = () => {{
+    state.faceScale = Math.min(2.5, state.faceScale + 0.15);
+    document.getElementById('faceScale').value = state.faceScale;
+    document.getElementById('sizeVal').innerText = Math.round(state.faceScale * 100) + '%';
+    draw();
+  }};
+
+  document.getElementById('zoomOutBtn').onclick = () => {{
+    state.faceScale = Math.max(0.3, state.faceScale - 0.15);
+    document.getElementById('faceScale').value = state.faceScale;
+    document.getElementById('sizeVal').innerText = Math.round(state.faceScale * 100) + '%';
+    draw();
+  }};
+
+  document.getElementById('rotLeftBtn').onclick = () => {{
+    state.faceRot = (state.faceRot - 15) % 360;
+    document.getElementById('faceRot').value = state.faceRot;
+    document.getElementById('rotVal').innerText = state.faceRot + '°';
+    draw();
+  }};
+
+  document.getElementById('rotRightBtn').onclick = () => {{
+    state.faceRot = (state.faceRot + 15) % 360;
+    document.getElementById('faceRot').value = state.faceRot;
+    document.getElementById('rotVal').innerText = state.faceRot + '°';
+    draw();
+  }};
+
   document.getElementById('recenterBtn').onclick = () => {{
     state.faceX = 0;
-    state.faceY = -20;
+    state.faceY = -35;
     state.faceRot = 0;
     state.faceScale = 1.0;
     document.getElementById('faceScale').value = 1.0;
@@ -634,6 +756,16 @@ function setupEvents() {{
     document.getElementById('rotVal').innerText = '0°';
     draw();
   }};
+
+  // Mouse wheel zoom over canvas
+  canvas.addEventListener('wheel', (e) => {{
+    e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.05 : -0.05;
+    state.faceScale = Math.max(0.3, Math.min(2.5, state.faceScale + delta));
+    document.getElementById('faceScale').value = state.faceScale;
+    document.getElementById('sizeVal').innerText = Math.round(state.faceScale * 100) + '%';
+    draw();
+  }}, {{ passive: false }});
 
   // Animations
   document.querySelectorAll('#animGrid .anim-btn').forEach(btn => {{
@@ -681,6 +813,7 @@ function setupDragging() {{
     state.dragStartY = pos.y;
     state.initialFaceX = state.faceX;
     state.initialFaceY = state.faceY;
+    draw();
   }}
 
   function onPointerMove(e) {{
@@ -695,7 +828,10 @@ function setupDragging() {{
   }}
 
   function onPointerUp() {{
-    state.isDragging = false;
+    if (state.isDragging) {{
+      state.isDragging = false;
+      draw();
+    }}
   }}
 
   canvas.addEventListener('mousedown', onPointerDown);
@@ -718,42 +854,64 @@ function drawBackground(tCtx, w, h) {{
   }}
 
   const id = state.presetBg;
-  tCtx.fillStyle = '#1e293b';
-  tCtx.fillRect(0, 0, w, h);
 
   if (id === 'suit') {{
+    // Fancy Tuxedo / Bodyguard Body
+    tCtx.fillStyle = '#181e29';
+    tCtx.fillRect(0, 0, w, h);
+    // Neck collar
+    tCtx.fillStyle = '#f1c27d';
+    tCtx.fillRect(w*0.42, h*0.35, w*0.16, h*0.15);
+    // Dark suit jacket
     tCtx.fillStyle = '#0f172a';
     tCtx.beginPath();
-    tCtx.moveTo(w*0.1, h); tCtx.lineTo(w*0.2, h*0.55); tCtx.lineTo(w*0.35, h*0.52);
-    tCtx.lineTo(w*0.5, h*0.75); tCtx.lineTo(w*0.65, h*0.52); tCtx.lineTo(w*0.8, h*0.55);
-    tCtx.lineTo(w*0.9, h); tCtx.closePath(); tCtx.fill();
+    tCtx.moveTo(w*0.05, h); tCtx.lineTo(w*0.18, h*0.46); tCtx.lineTo(w*0.34, h*0.44);
+    tCtx.lineTo(w*0.5, h*0.72); tCtx.lineTo(w*0.66, h*0.44); tCtx.lineTo(w*0.82, h*0.46);
+    tCtx.lineTo(w*0.95, h); tCtx.closePath(); tCtx.fill();
+    // Crisp white shirt
     tCtx.fillStyle = '#ffffff';
-    tCtx.beginPath(); tCtx.moveTo(w*0.35, h*0.52); tCtx.lineTo(w*0.5, h*0.82); tCtx.lineTo(w*0.65, h*0.52); tCtx.fill();
+    tCtx.beginPath(); tCtx.moveTo(w*0.34, h*0.44); tCtx.lineTo(w*0.5, h*0.76); tCtx.lineTo(w*0.66, h*0.44); tCtx.fill();
+    // Red power tie
     tCtx.fillStyle = '#dc2626';
-    tCtx.beginPath(); tCtx.moveTo(w*0.46, h*0.54); tCtx.lineTo(w*0.54, h*0.54); tCtx.lineTo(w*0.56, h*0.62);
-    tCtx.lineTo(w*0.58, h*0.92); tCtx.lineTo(w*0.5, h*0.98); tCtx.lineTo(w*0.42, h*0.92); tCtx.lineTo(w*0.44, h*0.62); tCtx.fill();
+    tCtx.beginPath(); tCtx.moveTo(w*0.46, h*0.46); tCtx.lineTo(w*0.54, h*0.46); tCtx.lineTo(w*0.56, h*0.54);
+    tCtx.lineTo(w*0.57, h*0.88); tCtx.lineTo(w*0.5, h*0.95); tCtx.lineTo(w*0.43, h*0.88); tCtx.lineTo(w*0.44, h*0.54); tCtx.fill();
   }} else if (id === 'gigachad') {{
-    tCtx.fillStyle = '#374151'; tCtx.fillRect(0, 0, w, h);
+    // Muscular Gigachad Chest
+    tCtx.fillStyle = '#2d3748'; tCtx.fillRect(0, 0, w, h);
     tCtx.fillStyle = '#b45309';
-    tCtx.beginPath(); tCtx.moveTo(w*0.3, h*0.45); tCtx.lineTo(w*0.15, h); tCtx.lineTo(w*0.85, h); tCtx.lineTo(w*0.7, h*0.45); tCtx.fill();
-    tCtx.strokeStyle = '#78350f'; tCtx.lineWidth = 6;
-    tCtx.beginPath(); tCtx.arc(w*0.38, h*0.72, w*0.14, 0.2, Math.PI*0.9); tCtx.stroke();
-    tCtx.beginPath(); tCtx.arc(w*0.62, h*0.72, w*0.14, 0.1, Math.PI*0.8); tCtx.stroke();
+    tCtx.beginPath(); tCtx.moveTo(w*0.34, h*0.36); tCtx.lineTo(w*0.12, h); tCtx.lineTo(w*0.88, h); tCtx.lineTo(w*0.66, h*0.36); tCtx.fill();
+    tCtx.strokeStyle = '#78350f'; tCtx.lineWidth = 5;
+    tCtx.beginPath(); tCtx.arc(w*0.38, h*0.68, w*0.15, 0.2, Math.PI*0.9); tCtx.stroke();
+    tCtx.beginPath(); tCtx.arc(w*0.62, h*0.68, w*0.15, 0.1, Math.PI*0.8); tCtx.stroke();
+  }} else if (id === 'throne') {{
+    // Royal King Throne
+    tCtx.fillStyle = '#31102f'; tCtx.fillRect(0, 0, w, h);
+    tCtx.fillStyle = '#991b1b';
+    tCtx.fillRect(w*0.2, h*0.2, w*0.6, h*0.8);
+    tCtx.fillStyle = '#eab308';
+    tCtx.fillRect(w*0.18, h*0.16, w*0.64, 16);
+    // Robe
+    tCtx.fillStyle = '#b91c1c';
+    tCtx.beginPath(); tCtx.moveTo(w*0.05, h); tCtx.lineTo(w*0.22, h*0.44); tCtx.lineTo(w*0.78, h*0.44); tCtx.lineTo(w*0.95, h); tCtx.fill();
+    // Fur trim
+    tCtx.fillStyle = '#f8fafc';
+    tCtx.beginPath(); tCtx.ellipse(w*0.5, h*0.5, w*0.25, h*0.08, 0, 0, Math.PI*2); tCtx.fill();
   }} else if (id === 'astronaut') {{
+    // Space Suit
     tCtx.fillStyle = '#090d16'; tCtx.fillRect(0, 0, w, h);
     tCtx.fillStyle = '#fff';
     for (let i=0; i<30; i++) tCtx.fillRect((i*47)%w, (i*73)%h, 2, 2);
-    tCtx.fillStyle = '#cbd5e1'; tCtx.beginPath(); tCtx.ellipse(w*0.5, h*0.42, w*0.35, h*0.35, 0, 0, Math.PI*2); tCtx.fill();
-    tCtx.fillStyle = '#0f172a'; tCtx.beginPath(); tCtx.ellipse(w*0.5, h*0.42, w*0.3, h*0.3, 0, 0, Math.PI*2); tCtx.fill();
-    tCtx.fillStyle = '#f8fafc'; tCtx.beginPath(); tCtx.moveTo(0, h); tCtx.lineTo(w*0.15, h*0.68); tCtx.lineTo(w*0.85, h*0.68); tCtx.lineTo(w, h); tCtx.fill();
+    tCtx.fillStyle = '#cbd5e1'; tCtx.beginPath(); tCtx.ellipse(w*0.5, h*0.38, w*0.34, h*0.34, 0, 0, Math.PI*2); tCtx.fill();
+    tCtx.fillStyle = '#0f172a'; tCtx.beginPath(); tCtx.ellipse(w*0.5, h*0.38, w*0.29, h*0.29, 0, 0, Math.PI*2); tCtx.fill();
+    tCtx.fillStyle = '#f8fafc'; tCtx.beginPath(); tCtx.moveTo(0, h); tCtx.lineTo(w*0.15, h*0.62); tCtx.lineTo(w*0.85, h*0.62); tCtx.lineTo(w, h); tCtx.fill();
   }} else if (id === 'doge') {{
     tCtx.fillStyle = '#fef3c7'; tCtx.fillRect(0, 0, w, h);
     tCtx.fillStyle = '#d97706'; tCtx.beginPath(); tCtx.arc(w*0.5, h*0.85, w*0.35, 0, Math.PI*2); tCtx.fill();
     tCtx.fillStyle = '#fffbeb'; tCtx.beginPath(); tCtx.ellipse(w*0.5, h*0.8, w*0.18, h*0.25, 0, 0, Math.PI*2); tCtx.fill();
   }} else if (id === 'buff') {{
     tCtx.fillStyle = '#18181b'; tCtx.fillRect(0, 0, w, h);
-    tCtx.fillStyle = '#f59e0b'; tCtx.beginPath(); tCtx.moveTo(w*0.25, h*0.5); tCtx.lineTo(w*0.05, h*0.65); tCtx.lineTo(w*0.1, h); tCtx.lineTo(w*0.9, h); tCtx.lineTo(w*0.95, h*0.65); tCtx.lineTo(w*0.75, h*0.5); tCtx.fill();
-    tCtx.fillStyle = '#dc2626'; tCtx.beginPath(); tCtx.moveTo(w*0.35, h*0.65); tCtx.lineTo(w*0.3, h); tCtx.lineTo(w*0.7, h); tCtx.lineTo(w*0.65, h*0.65); tCtx.fill();
+    tCtx.fillStyle = '#f59e0b'; tCtx.beginPath(); tCtx.moveTo(w*0.25, h*0.42); tCtx.lineTo(w*0.05, h*0.6); tCtx.lineTo(w*0.1, h); tCtx.lineTo(w*0.9, h); tCtx.lineTo(w*0.95, h*0.6); tCtx.lineTo(w*0.75, h*0.42); tCtx.fill();
+    tCtx.fillStyle = '#dc2626'; tCtx.beginPath(); tCtx.moveTo(w*0.35, h*0.6); tCtx.lineTo(w*0.3, h); tCtx.lineTo(w*0.7, h); tCtx.lineTo(w*0.65, h*0.6); tCtx.fill();
   }}
 }}
 
@@ -761,7 +919,7 @@ function render(tCtx, w, h, frameIdx) {{
   tCtx.clearRect(0, 0, w, h);
   drawBackground(tCtx, w, h);
 
-  // Animation values
+  // Animation deltas
   let ax = 0, ay = 0, as = 1.0, ar = 0;
   const progress = (frameIdx / state.totalFrames) * Math.PI * 2;
   if (state.anim === 'bob') {{
@@ -780,7 +938,7 @@ function render(tCtx, w, h, frameIdx) {{
     ay = squish * 12;
   }}
 
-  // Draw Face
+  // Draw Murad's Face
   const faceImg = loadedFaces[state.activeFaceIndex];
   if (faceImg && faceImg.complete) {{
     tCtx.save();
@@ -790,7 +948,16 @@ function render(tCtx, w, h, frameIdx) {{
     tCtx.rotate((state.faceRot * Math.PI / 180) + ar);
     tCtx.scale(state.faceScale * as, state.faceScale * as);
 
-    const fSize = w * 0.45;
+    const fSize = w * 0.44;
+
+    // Drop Shadow for Sticker Cutout
+    if (state.mask !== 'square') {{
+      tCtx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+      tCtx.shadowBlur = 16;
+      tCtx.shadowOffsetX = 0;
+      tCtx.shadowOffsetY = 6;
+    }}
+
     tCtx.beginPath();
     if (state.mask === 'circle') {{
       tCtx.arc(0, 0, fSize/2, 0, Math.PI*2);
@@ -799,6 +966,7 @@ function render(tCtx, w, h, frameIdx) {{
     }} else {{
       tCtx.rect(-fSize/2, -fSize/2, fSize, fSize);
     }}
+    tCtx.save();
     tCtx.clip();
 
     const aspect = faceImg.width / faceImg.height;
@@ -808,25 +976,87 @@ function render(tCtx, w, h, frameIdx) {{
     tCtx.drawImage(faceImg, -fw/2, -fh/2, fw, fh);
     tCtx.restore();
 
-    // Subtle drag indicator ring
-    tCtx.save();
-    tCtx.translate(cx, cy);
-    tCtx.rotate((state.faceRot * Math.PI / 180) + ar);
-    tCtx.scale(state.faceScale * as, state.faceScale * as);
-    tCtx.strokeStyle = state.isDragging ? '#5865F2' : 'rgba(255, 255, 255, 0.4)';
-    tCtx.lineWidth = state.isDragging ? 4 : 2;
-    tCtx.beginPath();
-    if (state.mask === 'circle') tCtx.arc(0, 0, fSize/2, 0, Math.PI*2);
-    else if (state.mask === 'oval') tCtx.ellipse(0, 0, fSize*0.42, fSize*0.55, 0, 0, Math.PI*2);
-    else tCtx.rect(-fSize/2, -fSize/2, fSize, fSize);
-    tCtx.stroke();
+    // Clean white sticker border
+    if (state.mask !== 'square') {{
+      tCtx.strokeStyle = '#ffffff';
+      tCtx.lineWidth = 4;
+      tCtx.stroke();
+    }}
+
+    // Selection ring indicator while dragging
+    if (state.isDragging) {{
+      tCtx.strokeStyle = '#5865F2';
+      tCtx.lineWidth = 3;
+      tCtx.stroke();
+    }}
+
+    // ACCESSORIES DRAWN ON HEAD
+    // 1. Thug Shades
+    if (state.accShades) {{
+      tCtx.fillStyle = '#000000';
+      tCtx.fillRect(-fSize*0.35, -fSize*0.12, fSize*0.32, fSize*0.14);
+      tCtx.fillRect(fSize*0.03, -fSize*0.12, fSize*0.32, fSize*0.14);
+      tCtx.fillRect(-fSize*0.05, -fSize*0.08, fSize*0.1, 4);
+      tCtx.fillStyle = 'rgba(255,255,255,0.4)';
+      tCtx.fillRect(-fSize*0.3, -fSize*0.1, 4, 6);
+      tCtx.fillRect(fSize*0.08, -fSize*0.1, 4, 6);
+    }}
+
+    // 2. Laser Eyes
+    if (state.accLaser) {{
+      const eye1X = -fSize*0.15, eye2X = fSize*0.15, eyeY = -fSize*0.06;
+      [eye1X, eye2X].forEach(ex => {{
+        const rad = tCtx.createRadialGradient(ex, eyeY, 2, ex, eyeY, 25);
+        rad.addColorStop(0, '#ffffff'); rad.addColorStop(0.3, '#ff003b'); rad.addColorStop(1, 'transparent');
+        tCtx.fillStyle = rad;
+        tCtx.beginPath(); tCtx.arc(ex, eyeY, 25, 0, Math.PI*2); tCtx.fill();
+        tCtx.strokeStyle = '#ff003b'; tCtx.lineWidth = 4;
+        tCtx.beginPath(); tCtx.moveTo(ex, eyeY); tCtx.lineTo(ex > 0 ? ex + 120 : ex - 120, h*0.5); tCtx.stroke();
+      }});
+    }}
+
+    // 3. Gold Crown
+    if (state.accCrown) {{
+      tCtx.fillStyle = '#eab308';
+      tCtx.strokeStyle = '#a16207';
+      tCtx.lineWidth = 2;
+      tCtx.beginPath();
+      tCtx.moveTo(-fSize*0.35, -fSize*0.36);
+      tCtx.lineTo(-fSize*0.38, -fSize*0.55);
+      tCtx.lineTo(-fSize*0.18, -fSize*0.44);
+      tCtx.lineTo(0, -fSize*0.62);
+      tCtx.lineTo(fSize*0.18, -fSize*0.44);
+      tCtx.lineTo(fSize*0.38, -fSize*0.55);
+      tCtx.lineTo(fSize*0.35, -fSize*0.36);
+      tCtx.closePath();
+      tCtx.fill(); tCtx.stroke();
+      tCtx.fillStyle = '#ef4444';
+      tCtx.beginPath(); tCtx.arc(0, -fSize*0.46, 5, 0, Math.PI*2); tCtx.fill();
+    }}
+
+    // 4. Speech Bubble
+    if (state.accBubble) {{
+      tCtx.save();
+      tCtx.fillStyle = '#ffffff';
+      tCtx.strokeStyle = '#000000';
+      tCtx.lineWidth = 2;
+      tCtx.beginPath();
+      tCtx.roundRect(fSize*0.25, -fSize*0.6, 90, 36, 8);
+      tCtx.fill(); tCtx.stroke();
+      tCtx.fillStyle = '#000000';
+      tCtx.font = 'bold 12px sans-serif';
+      tCtx.textAlign = 'center';
+      tCtx.fillText('W MURAD', fSize*0.25 + 45, -fSize*0.6 + 22);
+      tCtx.restore();
+    }}
+
     tCtx.restore();
   }}
 
   // Petpet Hand
   if (state.anim === 'petpet') {{
     const squish = Math.sin((frameIdx % 5) / 5 * Math.PI);
-    const handY = h * 0.2 + squish * (h * 0.12);
+    const handY = h * 0.16 + squish * (h * 0.12);
     const handX = w * 0.5;
     tCtx.save();
     tCtx.translate(handX, handY);
@@ -946,4 +1176,4 @@ window.onload = init;
 </html>
 """
 
-components.html(html_app, height=880, scrolling=True)
+components.html(html_app, height=940, scrolling=True)
