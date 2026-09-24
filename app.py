@@ -167,9 +167,15 @@ def push_file_to_github(repo_owner: str, repo_name: str, file_path: str, content
     except Exception as e:
         return False, f"Network error: {str(e)}"
 
-# Read local gifshot library
+# Read local libraries
 with open(ASSETS_DIR / "gifshot.min.js", "r", encoding="utf-8") as f:
     gifshot_script = f.read()
+
+gifuct_script = ""
+gifuct_path = ASSETS_DIR / "gifuct-js.js"
+if gifuct_path.exists():
+    with open(gifuct_path, "r", encoding="utf-8") as f:
+        gifuct_script = f.read()
 
 faces_data = load_faces_catalog()
 faces_json = json.dumps(faces_data)
@@ -431,8 +437,7 @@ html_app = f"""
   }}
   .canvas-box {{
     width: 100%;
-    max-width: 440px;
-    aspect-ratio: 1;
+    max-width: 480px;
     background: #111214;
     border: 2px solid rgba(88,101,242,0.5);
     border-radius: 12px;
@@ -440,10 +445,14 @@ html_app = f"""
     position: relative;
     box-shadow: 0 10px 36px rgba(0,0,0,0.6);
     touch-action: none;
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }}
   #mainCanvas {{
-    width: 100%;
-    height: 100%;
+    max-width: 100%;
+    max-height: 520px;
+    height: auto;
     display: block;
     cursor: grab;
   }}
@@ -566,6 +575,9 @@ html_app = f"""
 <script>
 {gifshot_script}
 </script>
+<script>
+{gifuct_script}
+</script>
 </head>
 <body>
 
@@ -577,15 +589,60 @@ html_app = f"""
     <div class="card">
       <div class="card-title">
         <span class="step-badge">1</span>
-        <span>Background Image / Meme</span>
+        <span>Background Image / Meme / GIF</span>
       </div>
-      <div class="hint">Upload any meme from your PC or choose a preset body:</div>
+      <div class="hint">Upload any image/meme/GIF or pick a preset body:</div>
       <label class="btn-upload">
-        <span>📁 Upload Any Picture / Meme</span>
-        <input type="file" id="bgFileInput" accept="image/*">
+        <span>📁 Upload Picture / Meme / Animated GIF</span>
+        <input type="file" id="bgFileInput" accept="image/*,.gif">
       </label>
       <div class="presets-row" id="bgPresetsRow">
         <!-- Dynamically populated from real meme template images -->
+      </div>
+
+      <!-- Framing & True Size Mode -->
+      <div style="margin-top: 10px; margin-bottom: 6px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Canvas Size & Ratio:</span>
+          <span id="canvasDimsBadge" style="font-size: 10px; background: rgba(88,101,242,0.2); color: #5865F2; padding: 1px 6px; border-radius: 8px;">500x500</span>
+        </div>
+        <div class="btn-group" id="canvasSizeGroup" style="display:flex; gap:3px;">
+          <button class="btn-toggle active" data-size="true_size" title="Keep natural true size and aspect ratio of upload">📐 True Size</button>
+          <button class="btn-toggle" data-size="square" title="1:1 Square Discord sticker">⏹️ Square</button>
+          <button class="btn-toggle" data-size="landscape" title="16:9 Landscape">🖼️ 16:9</button>
+          <button class="btn-toggle" data-size="portrait" title="9:16 Portrait">📱 9:16</button>
+        </div>
+      </div>
+
+      <!-- Crop & Framing Controls -->
+      <div style="margin-top: 8px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Crop & Fit:</span>
+          <button id="resetBgCropBtn" style="font-size: 10px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 2px 6px; border-radius: 4px; cursor: pointer;">🔄 Reset Crop</button>
+        </div>
+        <div class="btn-group" id="bgFitGroup" style="display:flex; gap:3px; margin-bottom: 6px;">
+          <button class="btn-toggle active" data-fit="cover" title="Fill canvas (auto-crop edges)">✂️ Fill & Crop</button>
+          <button class="btn-toggle" data-fit="fit" title="Fit entire image without cropping">🔍 Full Image</button>
+        </div>
+
+        <div style="background: rgba(0,0,0,0.25); border-radius: 6px; padding: 8px; border: 1px solid rgba(255,255,255,0.05);">
+          <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+            <span style="color:var(--text-muted);">Background Zoom:</span>
+            <span id="bgZoomVal" style="color:#fff; font-weight:600;">100%</span>
+          </div>
+          <input type="range" id="bgZoomSlider" min="0.4" max="2.5" step="0.05" value="1.0" style="width:100%; margin-bottom:6px;">
+
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+            <div>
+              <span style="font-size:10px; color:var(--text-muted);">Pan Left / Right:</span>
+              <input type="range" id="bgPanXSlider" min="-300" max="300" step="2" value="0" style="width:100%;">
+            </div>
+            <div>
+              <span style="font-size:10px; color:var(--text-muted);">Pan Up / Down:</span>
+              <input type="range" id="bgPanYSlider" min="-300" max="300" step="2" value="0" style="width:100%;">
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -712,6 +769,16 @@ const state = {{
   bgType: 'preset',
   presetBg: templates.length > 0 ? templates[0].id : 'suit',
   customBgImg: null,
+  canvasSizeRatio: 'true_size',
+  bgFitMode: 'cover',
+  bgScale: 1.0,
+  bgPanX: 0,
+  bgPanY: 0,
+  isBgGif: false,
+  bgGifFrames: [],
+  gifBgFrameIndex: 0,
+  lastNatW: 500,
+  lastNatH: 500,
   faceX: 0,
   faceY: -65,
   faceScale: 1.0,
@@ -758,7 +825,110 @@ function init() {{
   setupEvents();
   setupDragging();
   startAnim();
+  if (templates.length > 0 && loadedTemplates[templates[0].id]) {{
+    const firstImg = loadedTemplates[templates[0].id];
+    if (firstImg.complete && firstImg.naturalWidth) {{
+      updateCanvasDimensions(firstImg.naturalWidth, firstImg.naturalHeight);
+    }} else {{
+      firstImg.onload = () => updateCanvasDimensions(firstImg.naturalWidth, firstImg.naturalHeight);
+    }}
+  }} else {{
+    updateCanvasDimensions(500, 500);
+  }}
   draw();
+}}
+
+function updateCanvasDimensions(natW, natH) {{
+  if (natW && natH) {{
+    state.lastNatW = natW;
+    state.lastNatH = natH;
+  }}
+  const nw = state.lastNatW || 500;
+  const nh = state.lastNatH || 500;
+
+  if (state.canvasSizeRatio === 'true_size') {{
+    const maxSide = 520;
+    const aspect = nw / nh;
+    let tw, th;
+    if (aspect >= 1) {{
+      tw = Math.min(nw, maxSide);
+      th = Math.round(tw / aspect);
+    }} else {{
+      th = Math.min(nh, maxSide);
+      tw = Math.round(th * aspect);
+    }}
+    canvas.width = Math.max(280, tw);
+    canvas.height = Math.max(280, th);
+  }} else if (state.canvasSizeRatio === 'square') {{
+    canvas.width = 500;
+    canvas.height = 500;
+  }} else if (state.canvasSizeRatio === 'landscape') {{
+    canvas.width = 533;
+    canvas.height = 300;
+  }} else if (state.canvasSizeRatio === 'portrait') {{
+    canvas.width = 300;
+    canvas.height = 533;
+  }}
+  const badge = document.getElementById('canvasDimsBadge');
+  if (badge) badge.innerText = `${{canvas.width}}x${{canvas.height}}`;
+  draw();
+}}
+
+function processGifBuffer(buffer) {{
+  try {{
+    if (!window.GIF) return false;
+    const gif = new window.GIF(buffer);
+    const rawFrames = gif.decompressFrames(true);
+    if (!rawFrames || rawFrames.length === 0) return false;
+
+    const gifW = rawFrames[0].dims.width;
+    const gifH = rawFrames[0].dims.height;
+
+    const fullFrames = [];
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = gifW;
+    tempCanvas.height = gifH;
+    const tempCtx = tempCanvas.getContext('2d');
+
+    rawFrames.forEach((frame) => {{
+      const frameCanvas = document.createElement('canvas');
+      frameCanvas.width = gifW;
+      frameCanvas.height = gifH;
+      const frameCtx = frameCanvas.getContext('2d');
+
+      const patchData = new ImageData(frame.patch, frame.dims.width, frame.dims.height);
+      const patchCanvas = document.createElement('canvas');
+      patchCanvas.width = frame.dims.width;
+      patchCanvas.height = frame.dims.height;
+      patchCanvas.getContext('2d').putImageData(patchData, 0, 0);
+
+      frameCtx.drawImage(tempCanvas, 0, 0);
+      frameCtx.drawImage(patchCanvas, frame.dims.left, frame.dims.top);
+
+      if (frame.disposalType === 2) {{
+        tempCtx.clearRect(0, 0, gifW, gifH);
+      }} else {{
+        tempCtx.drawImage(frameCanvas, 0, 0);
+      }}
+
+      fullFrames.push({{
+        canvas: frameCanvas,
+        delay: frame.delay || 100
+      }});
+    }});
+
+    state.isBgGif = true;
+    state.bgGifFrames = fullFrames;
+    state.gifBgFrameIndex = 0;
+    state.bgType = 'custom';
+    state.customBgImg = null;
+
+    updateCanvasDimensions(gifW, gifH);
+    return true;
+  }} catch (err) {{
+    console.error('Error parsing GIF:', err);
+    return false;
+  }}
 }}
 
 function buildTemplatesUI() {{
@@ -773,6 +943,8 @@ function buildTemplatesUI() {{
     btn.onclick = () => {{
       document.querySelectorAll('#bgPresetsRow .preset-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      state.isBgGif = false;
+      state.bgGifFrames = [];
       state.bgType = 'preset';
       state.presetBg = t.id;
       state.customBgImg = null;
@@ -781,6 +953,13 @@ function buildTemplatesUI() {{
       else if (t.id === 'throne') {{ state.faceX = 0; state.faceY = -50; state.faceScale = 0.85; }}
       else if (t.id === 'astronaut') {{ state.faceX = 0; state.faceY = -35; state.faceScale = 0.85; }}
       else if (t.id === 'doge') {{ state.faceX = 0; state.faceY = -35; state.faceScale = 0.9; }}
+
+      const tplImg = loadedTemplates[t.id];
+      if (tplImg && tplImg.naturalWidth) {{
+        updateCanvasDimensions(tplImg.naturalWidth, tplImg.naturalHeight);
+      }} else {{
+        updateCanvasDimensions(500, 500);
+      }}
       draw();
     }};
     container.appendChild(btn);
@@ -809,20 +988,106 @@ function buildFacesUI() {{
 function setupEvents() {{
   document.getElementById('bgFileInput').onchange = (e) => {{
     if (e.target.files && e.target.files[0]) {{
-      const reader = new FileReader();
-      reader.onload = (evt) => {{
-        const img = new Image();
-        img.onload = () => {{
-          state.customBgImg = img;
-          state.bgType = 'custom';
-          document.querySelectorAll('#bgPresetsRow .preset-btn').forEach(b => b.classList.remove('active'));
-          draw();
+      const file = e.target.files[0];
+      const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
+
+      if (isGif && window.GIF) {{
+        const reader = new FileReader();
+        reader.onload = (evt) => {{
+          const ok = processGifBuffer(evt.target.result);
+          if (!ok) {{
+            loadAsStaticImage(file);
+          }} else {{
+            document.querySelectorAll('#bgPresetsRow .preset-btn').forEach(b => b.classList.remove('active'));
+            draw();
+          }}
         }};
-        img.src = evt.target.result;
-      }};
-      reader.readAsDataURL(e.target.files[0]);
+        reader.readAsArrayBuffer(file);
+      }} else {{
+        loadAsStaticImage(file);
+      }}
     }}
   }};
+
+  function loadAsStaticImage(file) {{
+    const reader = new FileReader();
+    reader.onload = (evt) => {{
+      const img = new Image();
+      img.onload = () => {{
+        state.isBgGif = false;
+        state.bgGifFrames = [];
+        state.customBgImg = img;
+        state.bgType = 'custom';
+        document.querySelectorAll('#bgPresetsRow .preset-btn').forEach(b => b.classList.remove('active'));
+        updateCanvasDimensions(img.naturalWidth, img.naturalHeight);
+        draw();
+      }};
+      img.src = evt.target.result;
+    }};
+    reader.readAsDataURL(file);
+  }}
+
+  // Canvas size mode buttons (True Size, Square, 16:9, 9:16)
+  document.querySelectorAll('#canvasSizeGroup .btn-toggle').forEach(btn => {{
+    btn.onclick = () => {{
+      document.querySelectorAll('#canvasSizeGroup .btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.canvasSizeRatio = btn.dataset.size;
+      updateCanvasDimensions();
+    }};
+  }});
+
+  // Background Fit mode buttons (Cover vs Fit)
+  document.querySelectorAll('#bgFitGroup .btn-toggle').forEach(btn => {{
+    btn.onclick = () => {{
+      document.querySelectorAll('#bgFitGroup .btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.bgFitMode = btn.dataset.fit;
+      draw();
+    }};
+  }});
+
+  // Background zoom slider
+  const bgZoomSlider = document.getElementById('bgZoomSlider');
+  if (bgZoomSlider) {{
+    bgZoomSlider.oninput = (e) => {{
+      state.bgScale = parseFloat(e.target.value);
+      document.getElementById('bgZoomVal').innerText = Math.round(state.bgScale * 100) + '%';
+      draw();
+    }};
+  }}
+
+  // Background Pan X and Pan Y sliders
+  const bgPanXSlider = document.getElementById('bgPanXSlider');
+  if (bgPanXSlider) {{
+    bgPanXSlider.oninput = (e) => {{
+      state.bgPanX = parseInt(e.target.value);
+      draw();
+    }};
+  }}
+
+  const bgPanYSlider = document.getElementById('bgPanYSlider');
+  if (bgPanYSlider) {{
+    bgPanYSlider.oninput = (e) => {{
+      state.bgPanY = parseInt(e.target.value);
+      draw();
+    }};
+  }}
+
+  // Reset Background Crop button
+  const resetBgCropBtn = document.getElementById('resetBgCropBtn');
+  if (resetBgCropBtn) {{
+    resetBgCropBtn.onclick = () => {{
+      state.bgScale = 1.0;
+      state.bgPanX = 0;
+      state.bgPanY = 0;
+      if (bgZoomSlider) bgZoomSlider.value = 1.0;
+      if (bgPanXSlider) bgPanXSlider.value = 0;
+      if (bgPanYSlider) bgPanYSlider.value = 0;
+      document.getElementById('bgZoomVal').innerText = '100%';
+      draw();
+    }};
+  }}
 
   document.querySelectorAll('#maskGroup .btn-toggle').forEach(btn => {{
     btn.onclick = () => {{
@@ -980,27 +1245,51 @@ function setupDragging() {{
 }}
 
 function drawBackground(tCtx, w, h) {{
-  if (state.bgType === 'custom' && state.customBgImg) {{
-    const img = state.customBgImg;
-    const scale = Math.max(w / img.width, h / img.height);
-    const dw = img.width * scale;
-    const dh = img.height * scale;
-    tCtx.drawImage(img, (w - dw)/2, (h - dh)/2, dw, dh);
+  let source = null;
+  let srcW = 0, srcH = 0;
+
+  if (state.bgType === 'custom') {{
+    if (state.isBgGif && state.bgGifFrames.length > 0) {{
+      const frameIdx = state.gifBgFrameIndex % state.bgGifFrames.length;
+      source = state.bgGifFrames[frameIdx].canvas;
+      srcW = source.width;
+      srcH = source.height;
+    }} else if (state.customBgImg) {{
+      source = state.customBgImg;
+      srcW = source.naturalWidth || source.width;
+      srcH = source.naturalHeight || source.height;
+    }}
+  }} else {{
+    const tplImg = loadedTemplates[state.presetBg];
+    if (tplImg && tplImg.complete && tplImg.naturalWidth > 0) {{
+      source = tplImg;
+      srcW = tplImg.naturalWidth;
+      srcH = tplImg.naturalHeight;
+    }}
+  }}
+
+  if (!source || !srcW || !srcH) {{
+    tCtx.fillStyle = '#1e1f22';
+    tCtx.fillRect(0, 0, w, h);
     return;
   }}
 
-  const tplImg = loadedTemplates[state.presetBg];
-  if (tplImg && tplImg.complete && tplImg.naturalWidth > 0) {{
-    const scale = Math.max(w / tplImg.naturalWidth, h / tplImg.naturalHeight);
-    const dw = tplImg.naturalWidth * scale;
-    const dh = tplImg.naturalHeight * scale;
-    tCtx.drawImage(tplImg, (w - dw)/2, (h - dh)/2, dw, dh);
-    return;
+  let baseScale = 1;
+  if (state.bgFitMode === 'fit') {{
+    baseScale = Math.min(w / srcW, h / srcH);
+  }} else {{
+    baseScale = Math.max(w / srcW, h / srcH);
   }}
 
-  // Fallback dark canvas
-  tCtx.fillStyle = '#1e1f22';
+  const finalScale = baseScale * state.bgScale;
+  const dw = srcW * finalScale;
+  const dh = srcH * finalScale;
+  const dx = (w - dw) / 2 + state.bgPanX;
+  const dy = (h - dh) / 2 + state.bgPanY;
+
+  tCtx.fillStyle = '#111214';
   tCtx.fillRect(0, 0, w, h);
+  tCtx.drawImage(source, dx, dy, dw, dh);
 }}
 
 function render(tCtx, w, h, frameIdx) {{
@@ -1184,8 +1473,16 @@ function draw() {{
 
 function startAnim() {{
   setInterval(() => {{
+    let needsRedraw = false;
+    if (state.isBgGif && state.bgGifFrames.length > 1) {{
+      state.gifBgFrameIndex = (state.gifBgFrameIndex + 1) % state.bgGifFrames.length;
+      needsRedraw = true;
+    }}
     if (state.anim !== 'none') {{
       state.frame = (state.frame + 1) % state.totalFrames;
+      needsRedraw = true;
+    }}
+    if (needsRedraw) {{
       draw();
     }}
   }}, Math.round(1000 / state.fps));
@@ -1199,7 +1496,8 @@ function downloadPng() {{
 }}
 
 function exportGif() {{
-  if (state.anim === 'none') {{
+  const isAnimated = state.anim !== 'none' || (state.isBgGif && state.bgGifFrames.length > 1);
+  if (!isAnimated) {{
     downloadPng();
     return;
   }}
@@ -1210,17 +1508,42 @@ function exportGif() {{
   bar.style.width = '10%';
   txt.innerText = 'Capturing GIF frames...';
 
-  const exportSize = 256;
+  const maxExp = 320;
+  const aspect = canvas.width / canvas.height;
+  let expW, expH;
+  if (aspect >= 1) {{
+    expW = maxExp;
+    expH = Math.round(maxExp / aspect);
+  }} else {{
+    expH = maxExp;
+    expW = Math.round(maxExp * aspect);
+  }}
+
   const offscreen = document.createElement('canvas');
-  offscreen.width = exportSize;
-  offscreen.height = exportSize;
+  offscreen.width = expW;
+  offscreen.height = expH;
   const offCtx = offscreen.getContext('2d');
 
+  let totalExportFrames = state.totalFrames;
+  if (state.isBgGif && state.bgGifFrames.length > 1) {{
+    totalExportFrames = Math.max(state.totalFrames, Math.min(state.bgGifFrames.length, 30));
+  }}
+
   const frames = [];
-  for (let i = 0; i < state.totalFrames; i++) {{
-    render(offCtx, exportSize, exportSize, i);
+  const origGifIndex = state.gifBgFrameIndex;
+  const origFrame = state.frame;
+
+  for (let i = 0; i < totalExportFrames; i++) {{
+    if (state.isBgGif && state.bgGifFrames.length > 0) {{
+      state.gifBgFrameIndex = i % state.bgGifFrames.length;
+    }}
+    state.frame = i % state.totalFrames;
+    render(offCtx, expW, expH, state.frame);
     frames.push(offscreen.toDataURL('image/png'));
   }}
+
+  state.gifBgFrameIndex = origGifIndex;
+  state.frame = origFrame;
 
   bar.style.width = '40%';
   txt.innerText = 'Encoding Discord GIF...';
@@ -1228,10 +1551,10 @@ function exportGif() {{
   if (window.gifshot) {{
     window.gifshot.createGIF({{
       images: frames,
-      gifWidth: exportSize,
-      gifHeight: exportSize,
+      gifWidth: expW,
+      gifHeight: expH,
       interval: 1 / state.fps,
-      numFrames: state.totalFrames,
+      numFrames: totalExportFrames,
       sampleInterval: 8,
       numWorkers: 2,
       progressCallback: (p) => {{
@@ -1244,7 +1567,7 @@ function exportGif() {{
       txt.innerText = 'Ready!';
       if (!obj.error) {{
         const link = document.createElement('a');
-        link.download = `murad_${{state.anim}}_meme.gif`;
+        link.download = `murad_meme.gif`;
         link.href = obj.image;
         link.click();
         setTimeout(() => {{ wrap.style.display = 'none'; }}, 2000);
@@ -1371,4 +1694,4 @@ with col_head_right:
             st.error("❌ Incorrect Admin Password.")
 
 # Embed Interactive HTML5 Canvas Application with Real-Time Mouse Dragging
-components.html(html_app, height=940, scrolling=True)
+components.html(html_app, height=1120, scrolling=True)
