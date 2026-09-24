@@ -275,14 +275,38 @@ html_app = f"""
   }}
   .app-container {{
     display: grid;
-    grid-template-columns: 360px 1fr;
-    gap: 16px;
-    max-width: 1300px;
+    grid-template-columns: minmax(560px, 680px) 1fr;
+    gap: 20px;
+    max-width: 100%;
+    width: 100%;
     margin: 0 auto;
+    align-items: start;
+    padding: 4px 8px;
   }}
-  @media (max-width: 920px) {{
-    .app-container {{ grid-template-columns: 1fr; }}
+  .sidebar-col {{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: start;
   }}
+  @media (max-width: 1240px) {{
+    .app-container {{
+      grid-template-columns: minmax(480px, 560px) 1fr;
+      gap: 16px;
+    }}
+  }}
+  @media (max-width: 980px) {{
+    .sidebar-col {{
+      grid-template-columns: 1fr;
+    }}
+    .app-container {{
+      grid-template-columns: 1fr;
+    }}
+    .canvas-stage {{
+      position: static !important;
+    }}
+  }}
+
   .card {{
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -480,12 +504,23 @@ html_app = f"""
     flex-direction: column;
     align-items: center;
   }}
+
+  .canvas-stage {{
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    position: sticky;
+    top: 8px;
+    z-index: 10;
+  }}
   .canvas-header {{
     width: 100%;
-    max-width: 440px;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
+    gap: 8px;
     margin-bottom: 8px;
   }}
   .drag-badge {{
@@ -499,34 +534,40 @@ html_app = f"""
   }}
   .canvas-box {{
     width: 100%;
-    max-width: 480px;
+    max-width: 100%;
+    min-height: 480px;
     background: #111214;
     border: 2px solid rgba(88,101,242,0.5);
-    border-radius: 12px;
+    border-radius: 14px;
     overflow: hidden;
     position: relative;
-    box-shadow: 0 10px 36px rgba(0,0,0,0.6);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
     touch-action: none;
     display: flex;
     justify-content: center;
     align-items: center;
+    padding: 10px;
   }}
   #mainCanvas {{
     max-width: 100%;
-    max-height: 520px;
+    width: auto;
     height: auto;
+    max-height: 68vh;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
     display: block;
     cursor: grab;
+    transition: max-height 0.2s ease;
   }}
   #mainCanvas:active {{
     cursor: grabbing;
   }}
   .quick-tools {{
     display: flex;
+    flex-wrap: wrap;
     gap: 6px;
-    margin-top: 8px;
+    margin-top: 10px;
     width: 100%;
-    max-width: 440px;
     justify-content: center;
   }}
   .quick-btn {{
@@ -534,19 +575,27 @@ html_app = f"""
     border: 1px solid var(--border);
     color: var(--text-muted);
     font-size: 11px;
-    padding: 5px 10px;
+    padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;
     font-weight: 600;
+    transition: all 0.15s ease;
   }}
   .quick-btn:hover {{ color: #fff; border-color: var(--blurple); }}
   .action-row {{
     width: 100%;
-    max-width: 440px;
     display: flex;
     gap: 8px;
     margin-top: 10px;
   }}
+  .filename-row {{
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    width: 100%;
+  }}
+
   .btn-action-primary {{
     flex: 2;
     background: var(--blurple);
@@ -830,8 +879,18 @@ html_app = f"""
   <!-- Stage Column -->
   <div class="canvas-stage">
     <div class="canvas-header">
-      <div class="drag-badge">🖱️ CLICK & DRAG MURAD'S FACE WITH MOUSE!</div>
-      <span style="font-size: 11px; color: var(--text-muted);">Scroll wheel = Zoom</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <div class="drag-badge">🖱️ CLICK & DRAG MURAD'S FACE WITH MOUSE!</div>
+        <span style="font-size: 11px; color: var(--text-muted);">Scroll wheel = Zoom</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Preview Size:</span>
+        <div class="btn-group" id="previewScaleGroup" style="display:flex; gap:3px;">
+          <button class="btn-toggle active" data-scale="fit" title="Fit comfortably in screen height">📐 Auto-Fit</button>
+          <button class="btn-toggle" data-scale="large" title="Enlarged 1.3x view">🔍 Large</button>
+          <button class="btn-toggle" data-scale="max" title="Full size theater view">🌟 Max</button>
+        </div>
+      </div>
     </div>
 
     <div class="canvas-box" id="canvasBox">
@@ -847,7 +906,7 @@ html_app = f"""
     </div>
 
     <!-- Filename Input with Random Letters Suffix -->
-    <div style="display:flex; align-items:center; gap:6px; margin-top:10px; width:100%; max-width:440px;">
+    <div class="filename-row">
       <span style="font-size:11px; color:var(--text-muted); font-weight:600; white-space:nowrap;">Save As:</span>
       <input type="text" id="customFilenameInput" placeholder="murad_meme" value="murad_meme" style="flex:1; background:var(--bg-input); border:1px solid var(--border); color:#fff; font-size:11px; padding:6px 10px; border-radius:6px; outline:none;">
       <span style="font-size:10px; color:#5865F2; background:rgba(88,101,242,0.15); padding:3px 6px; border-radius:4px; font-family:monospace;" title="Random letters are automatically attached to avoid duplicates">+ random letters</span>
@@ -977,27 +1036,27 @@ function updateCanvasDimensions(natW, natH) {{
   const nh = state.lastNatH || 500;
 
   if (state.canvasSizeRatio === 'true_size') {{
-    const maxSide = 520;
+    const maxSide = 900;
     const aspect = nw / nh;
     let tw, th;
     if (aspect >= 1) {{
-      tw = Math.min(nw, maxSide);
+      tw = Math.min(Math.max(nw, 640), maxSide);
       th = Math.round(tw / aspect);
     }} else {{
-      th = Math.min(nh, maxSide);
+      th = Math.min(Math.max(nh, 640), maxSide);
       tw = Math.round(th * aspect);
     }}
-    canvas.width = Math.max(280, tw);
-    canvas.height = Math.max(280, th);
+    canvas.width = Math.max(360, tw);
+    canvas.height = Math.max(360, th);
   }} else if (state.canvasSizeRatio === 'square') {{
-    canvas.width = 500;
-    canvas.height = 500;
+    canvas.width = 720;
+    canvas.height = 720;
   }} else if (state.canvasSizeRatio === 'landscape') {{
-    canvas.width = 533;
-    canvas.height = 300;
+    canvas.width = 800;
+    canvas.height = 450;
   }} else if (state.canvasSizeRatio === 'portrait') {{
-    canvas.width = 300;
-    canvas.height = 533;
+    canvas.width = 450;
+    canvas.height = 800;
   }}
   const badge = document.getElementById('canvasDimsBadge');
   if (badge) badge.innerText = `${{canvas.width}}x${{canvas.height}}`;
@@ -1414,6 +1473,25 @@ function setupEvents() {{
       btn.classList.add('active');
       state.captionColor = btn.dataset.color;
       draw();
+    }};
+  }});
+
+  document.querySelectorAll('#previewScaleGroup .btn-toggle').forEach(btn => {{
+    btn.onclick = () => {{
+      document.querySelectorAll('#previewScaleGroup .btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const scale = btn.dataset.scale;
+      const canvasEl = document.getElementById('mainCanvas');
+      if (scale === 'fit') {{
+        canvasEl.style.maxHeight = '68vh';
+        canvasEl.style.width = 'auto';
+      }} else if (scale === 'large') {{
+        canvasEl.style.maxHeight = '82vh';
+        canvasEl.style.width = 'auto';
+      }} else if (scale === 'max') {{
+        canvasEl.style.maxHeight = '94vh';
+        canvasEl.style.width = '100%';
+      }}
     }};
   }});
 
@@ -2168,4 +2246,4 @@ with col_head_right:
             st.error("❌ Incorrect Admin Password.")
 
 # Embed Interactive HTML5 Canvas Application with Real-Time Mouse Dragging
-components.html(html_app, height=1120, scrolling=True)
+components.html(html_app, height=1220, scrolling=True)
