@@ -1,10 +1,47 @@
 [
-  {"id": "murad_wide", "name": "Wide Cam 📸", "file": "murad_wide.png"},
-  {"id": "murad_scream", "name": "Scream 😱", "file": "murad_scream.png"},
-  {"id": "murad_purple", "name": "Purple Grin 😈", "file": "murad_purple.png"},
-  {"id": "murad_pixel", "name": "Pixel Smirk 👾", "file": "murad_pixel.png"},
-  {"id": "murad_serious", "name": "Serious 🤨", "file": "murad_serious.png"},
-  {"id": "murad_laser", "name": "Laser Scream ⚡", "file": "murad_laser.png"},
-  {"id": "murad_snap1", "name": "Chill Murad 😎", "file": "murad_snap1.png"},
-  {"id": "murad_snap2", "name": "Murad Vibe ✨", "file": "murad_snap2.png"}
+  {
+    "id": "murad_wide",
+    "name": "Wide Cam \ud83d\udcf8",
+    "file": "murad_wide.png"
+  },
+  {
+    "id": "murad_scream",
+    "name": "Scream \ud83d\ude31",
+    "file": "murad_scream.png"
+  },
+  {
+    "id": "murad_purple",
+    "name": "Purple Grin \ud83d\ude08",
+    "file": "murad_purple.png"
+  },
+  {
+    "id": "murad_pixel",
+    "name": "Pixel Smirk \ud83d\udc7e",
+    "file": "murad_pixel.png"
+  },
+  {
+    "id": "murad_serious",
+    "name": "Serious \ud83e\udd28",
+    "file": "murad_serious.png"
+  },
+  {
+    "id": "murad_laser",
+    "name": "Laser Scream \u26a1",
+    "file": "murad_laser.png"
+  },
+  {
+    "id": "murad_snap1",
+    "name": "Chill Murad \ud83d\ude0e",
+    "file": "murad_snap1.png"
+  },
+  {
+    "id": "murad_snap2",
+    "name": "Murad Vibe \u2728",
+    "file": "murad_snap2.png"
+  },
+  {
+    "id": "murad_vax",
+    "name": "Vax",
+    "file": "murad_vax.png"
+  }
 ]
