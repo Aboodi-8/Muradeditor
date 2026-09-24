@@ -1,5 +1,7 @@
 import base64
 import json
+import urllib.request
+import re
 from pathlib import Path
 import streamlit as st
 import streamlit.components.v1 as components
@@ -18,7 +20,7 @@ st.markdown("""
     #MainMenu, header, footer { visibility: hidden; }
     .block-container {
         padding-top: 0.5rem;
-        padding-bottom: 0rem;
+        padding-bottom: 1rem;
         padding-left: 1rem;
         padding-right: 1rem;
         max-width: 100%;
@@ -26,12 +28,21 @@ st.markdown("""
     .stApp {
         background-color: #1e1f22;
     }
+    .admin-box {
+        background-color: #2b2d31;
+        border: 1px solid rgba(88, 101, 242, 0.3);
+        border-radius: 10px;
+        padding: 16px;
+        margin-top: 15px;
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# Load assets and encode to base64 for seamless self-contained browser execution
+# Assets directory
 ASSETS_DIR = Path(__file__).parent / "assets"
+MANIFEST_FILE = ASSETS_DIR / "manifest.json"
 
+# Helper: encode file to base64
 def get_base64_data_uri(file_path: Path) -> str:
     with open(file_path, "rb") as f:
         encoded = base64.b64encode(f.read()).decode("utf-8")
@@ -39,19 +50,76 @@ def get_base64_data_uri(file_path: Path) -> str:
         mime = "image/png" if ext == "png" else "image/jpeg"
         return f"data:{mime};base64,{encoded}"
 
-faces_data = [
-    {"id": "murad_wide", "name": "Wide Cam 📸", "src": get_base64_data_uri(ASSETS_DIR / "murad_wide.png")},
-    {"id": "murad_scream", "name": "Scream 😱", "src": get_base64_data_uri(ASSETS_DIR / "murad_scream.png")},
-    {"id": "murad_purple", "name": "Purple Grin 😈", "src": get_base64_data_uri(ASSETS_DIR / "murad_purple.png")},
-    {"id": "murad_pixel", "name": "Pixel Smirk 👾", "src": get_base64_data_uri(ASSETS_DIR / "murad_pixel.png")},
-    {"id": "murad_serious", "name": "Serious 🤨", "src": get_base64_data_uri(ASSETS_DIR / "murad_serious.png")},
-    {"id": "murad_laser", "name": "Laser Scream ⚡", "src": get_base64_data_uri(ASSETS_DIR / "murad_laser.png")},
-]
+# Helper: load faces dynamically from manifest
+def load_faces_catalog():
+    faces_list = []
+    if MANIFEST_FILE.exists():
+        try:
+            with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
+                manifest_items = json.load(f)
+                for item in manifest_items:
+                    img_path = ASSETS_DIR / item["file"]
+                    if img_path.exists():
+                        faces_list.append({
+                            "id": item["id"],
+                            "name": item["name"],
+                            "src": get_base64_data_uri(img_path)
+                        })
+        except Exception:
+            pass
+
+    # Fallback to scan directory if manifest missing
+    if not faces_list:
+        for p in ASSETS_DIR.glob("*.png"):
+            faces_list.append({
+                "id": p.stem,
+                "name": p.stem.replace("murad_", "").replace("_", " ").title() + " 📸",
+                "src": get_base64_data_uri(p)
+            })
+
+    return faces_list
+
+# Helper: GitHub Contents API to commit without browser login
+def push_file_to_github(repo_owner: str, repo_name: str, file_path: str, content_bytes: bytes, commit_message: str, token: str) -> bool:
+    url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{file_path}"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "MuradMemeAdmin",
+    }
+
+    # Check if file exists to fetch sha
+    sha = None
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode("utf-8"))
+                sha = data.get("sha")
+    except Exception:
+        pass
+
+    payload = {
+        "message": commit_message,
+        "content": base64.b64encode(content_bytes).decode("utf-8")
+    }
+    if sha:
+        payload["sha"] = sha
+
+    put_req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={**headers, "Content-Type": "application/json"},
+        method="PUT"
+    )
+    with urllib.request.urlopen(put_req) as resp:
+        return resp.status in (200, 201)
 
 # Read local gifshot library
 with open(ASSETS_DIR / "gifshot.min.js", "r", encoding="utf-8") as f:
     gifshot_script = f.read()
 
+faces_data = load_faces_catalog()
 faces_json = json.dumps(faces_data)
 
 # Embed Interactive HTML5 Canvas Application with Real-Time Mouse Dragging
@@ -163,6 +231,8 @@ html_app = f"""
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 6px;
+    max-height: 230px;
+    overflow-y: auto;
   }}
   .face-btn {{
     background: var(--bg-input);
@@ -606,7 +676,6 @@ const state = {{
   dragStartY: 0,
   initialFaceX: 0,
   initialFaceY: 0,
-  // Accessories toggles
   accShades: false,
   accLaser: false,
   accCrown: false,
@@ -646,11 +715,12 @@ function buildFacesUI() {{
     }};
     container.appendChild(btn);
   }});
-  document.getElementById('discordAvatar').src = faces[0].src;
+  if (faces.length > 0) {{
+    document.getElementById('discordAvatar').src = faces[0].src;
+  }}
 }}
 
 function setupEvents() {{
-  // Background presets
   document.querySelectorAll('#bgPresetsRow .preset-btn').forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll('#bgPresetsRow .preset-btn').forEach(b => b.classList.remove('active'));
@@ -662,7 +732,6 @@ function setupEvents() {{
     }};
   }});
 
-  // Background file upload
   document.getElementById('bgFileInput').onchange = (e) => {{
     if (e.target.files && e.target.files[0]) {{
       const reader = new FileReader();
@@ -680,7 +749,6 @@ function setupEvents() {{
     }}
   }};
 
-  // Cutout mask
   document.querySelectorAll('#maskGroup .btn-toggle').forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll('#maskGroup .btn-toggle').forEach(b => b.classList.remove('active'));
@@ -690,7 +758,6 @@ function setupEvents() {{
     }};
   }});
 
-  // Accessories toggles
   document.querySelectorAll('#accRow .acc-btn').forEach(btn => {{
     btn.onclick = () => {{
       const acc = btn.dataset.acc;
@@ -703,7 +770,6 @@ function setupEvents() {{
     }};
   }});
 
-  // Sliders
   document.getElementById('faceScale').oninput = (e) => {{
     state.faceScale = parseFloat(e.target.value);
     document.getElementById('sizeVal').innerText = Math.round(state.faceScale * 100) + '%';
@@ -716,7 +782,6 @@ function setupEvents() {{
     draw();
   }};
 
-  // Quick Tools
   document.getElementById('zoomInBtn').onclick = () => {{
     state.faceScale = Math.min(2.5, state.faceScale + 0.15);
     document.getElementById('faceScale').value = state.faceScale;
@@ -757,7 +822,6 @@ function setupEvents() {{
     draw();
   }};
 
-  // Mouse wheel zoom over canvas
   canvas.addEventListener('wheel', (e) => {{
     e.preventDefault();
     const delta = e.deltaY < 0 ? 0.05 : -0.05;
@@ -767,7 +831,6 @@ function setupEvents() {{
     draw();
   }}, {{ passive: false }});
 
-  // Animations
   document.querySelectorAll('#animGrid .anim-btn').forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll('#animGrid .anim-btn').forEach(b => b.classList.remove('active'));
@@ -780,14 +843,12 @@ function setupEvents() {{
     }};
   }});
 
-  // Caption
   document.getElementById('memeCaption').oninput = (e) => {{
     state.caption = e.target.value;
     document.getElementById('discordMsgText').innerText = state.caption || 'Look at this new meme sticker! 💀';
     draw();
   }};
 
-  // Downloads
   document.getElementById('downloadPngBtn').onclick = downloadPng;
   document.getElementById('downloadGifBtn').onclick = exportGif;
 }}
@@ -856,27 +917,21 @@ function drawBackground(tCtx, w, h) {{
   const id = state.presetBg;
 
   if (id === 'suit') {{
-    // Fancy Tuxedo / Bodyguard Body
     tCtx.fillStyle = '#181e29';
     tCtx.fillRect(0, 0, w, h);
-    // Neck collar
     tCtx.fillStyle = '#f1c27d';
     tCtx.fillRect(w*0.42, h*0.35, w*0.16, h*0.15);
-    // Dark suit jacket
     tCtx.fillStyle = '#0f172a';
     tCtx.beginPath();
     tCtx.moveTo(w*0.05, h); tCtx.lineTo(w*0.18, h*0.46); tCtx.lineTo(w*0.34, h*0.44);
     tCtx.lineTo(w*0.5, h*0.72); tCtx.lineTo(w*0.66, h*0.44); tCtx.lineTo(w*0.82, h*0.46);
     tCtx.lineTo(w*0.95, h); tCtx.closePath(); tCtx.fill();
-    // Crisp white shirt
     tCtx.fillStyle = '#ffffff';
     tCtx.beginPath(); tCtx.moveTo(w*0.34, h*0.44); tCtx.lineTo(w*0.5, h*0.76); tCtx.lineTo(w*0.66, h*0.44); tCtx.fill();
-    // Red power tie
     tCtx.fillStyle = '#dc2626';
     tCtx.beginPath(); tCtx.moveTo(w*0.46, h*0.46); tCtx.lineTo(w*0.54, h*0.46); tCtx.lineTo(w*0.56, h*0.54);
     tCtx.lineTo(w*0.57, h*0.88); tCtx.lineTo(w*0.5, h*0.95); tCtx.lineTo(w*0.43, h*0.88); tCtx.lineTo(w*0.44, h*0.54); tCtx.fill();
   }} else if (id === 'gigachad') {{
-    // Muscular Gigachad Chest
     tCtx.fillStyle = '#2d3748'; tCtx.fillRect(0, 0, w, h);
     tCtx.fillStyle = '#b45309';
     tCtx.beginPath(); tCtx.moveTo(w*0.34, h*0.36); tCtx.lineTo(w*0.12, h); tCtx.lineTo(w*0.88, h); tCtx.lineTo(w*0.66, h*0.36); tCtx.fill();
@@ -884,20 +939,16 @@ function drawBackground(tCtx, w, h) {{
     tCtx.beginPath(); tCtx.arc(w*0.38, h*0.68, w*0.15, 0.2, Math.PI*0.9); tCtx.stroke();
     tCtx.beginPath(); tCtx.arc(w*0.62, h*0.68, w*0.15, 0.1, Math.PI*0.8); tCtx.stroke();
   }} else if (id === 'throne') {{
-    // Royal King Throne
     tCtx.fillStyle = '#31102f'; tCtx.fillRect(0, 0, w, h);
     tCtx.fillStyle = '#991b1b';
     tCtx.fillRect(w*0.2, h*0.2, w*0.6, h*0.8);
     tCtx.fillStyle = '#eab308';
     tCtx.fillRect(w*0.18, h*0.16, w*0.64, 16);
-    // Robe
     tCtx.fillStyle = '#b91c1c';
     tCtx.beginPath(); tCtx.moveTo(w*0.05, h); tCtx.lineTo(w*0.22, h*0.44); tCtx.lineTo(w*0.78, h*0.44); tCtx.lineTo(w*0.95, h); tCtx.fill();
-    // Fur trim
     tCtx.fillStyle = '#f8fafc';
     tCtx.beginPath(); tCtx.ellipse(w*0.5, h*0.5, w*0.25, h*0.08, 0, 0, Math.PI*2); tCtx.fill();
   }} else if (id === 'astronaut') {{
-    // Space Suit
     tCtx.fillStyle = '#090d16'; tCtx.fillRect(0, 0, w, h);
     tCtx.fillStyle = '#fff';
     for (let i=0; i<30; i++) tCtx.fillRect((i*47)%w, (i*73)%h, 2, 2);
@@ -919,7 +970,6 @@ function render(tCtx, w, h, frameIdx) {{
   tCtx.clearRect(0, 0, w, h);
   drawBackground(tCtx, w, h);
 
-  // Animation deltas
   let ax = 0, ay = 0, as = 1.0, ar = 0;
   const progress = (frameIdx / state.totalFrames) * Math.PI * 2;
   if (state.anim === 'bob') {{
@@ -990,7 +1040,6 @@ function render(tCtx, w, h, frameIdx) {{
       tCtx.stroke();
     }}
 
-    // ACCESSORIES DRAWN ON HEAD
     // 1. Thug Shades
     if (state.accShades) {{
       tCtx.fillStyle = '#000000';
@@ -1177,3 +1226,92 @@ window.onload = init;
 """
 
 components.html(html_app, height=940, scrolling=True)
+
+# --- ADMIN PANEL SECTION ---
+st.markdown("---")
+with st.expander("🔐 Admin Panel (Add New Faces to Default Catalog)"):
+    st.markdown("#### Push New Faces to Permanent Default Catalog")
+    st.caption("Upload a new face of Murad to permanently add it to the website's default list for all users!")
+
+    admin_pwd = st.text_input("Enter Admin Password:", type="password", key="admin_pwd_input", placeholder="Admin password...")
+
+    if admin_pwd == "MuradAdmin":
+        st.success("✅ Admin Access Granted!")
+
+        col_a, col_b = st.columns(2)
+        with col_a:
+            new_face_name = st.text_input("Face Display Name & Emoji:", placeholder="e.g. Gaming Murad 🎮")
+            new_face_file = st.file_uploader("Upload Face Image (PNG / JPG):", type=["png", "jpg", "jpeg", "webp"], key="admin_file_upload")
+
+        with col_b:
+            token_secret = ""
+            try:
+                token_secret = st.secrets.get("GITHUB_TOKEN", "")
+            except Exception:
+                pass
+
+            gh_token = st.text_input(
+                "GitHub Personal Access Token:",
+                value=token_secret,
+                type="password",
+                placeholder="ghp_xxxxxxxxxxxx",
+                help="Add GITHUB_TOKEN to Streamlit Secrets or paste once here."
+            )
+            st.caption("💡 Without GitHub login: Anyone with the Admin password can push using this stored token.")
+
+        if st.button("🚀 Push Face to Default Catalog", type="primary"):
+            if not new_face_name or not new_face_file:
+                st.error("Please enter a name and select an image file!")
+            else:
+                img_bytes = new_face_file.read()
+                clean_name = re.sub(r'[^a-zA-Z0-9_]', '_', new_face_name.split()[0].lower())
+                filename = f"murad_{clean_name}.png"
+                face_id = f"murad_{clean_name}"
+
+                # 1. Save locally to assets
+                local_path = ASSETS_DIR / filename
+                with open(local_path, "wb") as f:
+                    f.write(img_bytes)
+
+                # 2. Update local manifest.json
+                current_manifest = []
+                if MANIFEST_FILE.exists():
+                    try:
+                        with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
+                            current_manifest = json.load(f)
+                    except Exception:
+                        pass
+
+                current_manifest.append({
+                    "id": face_id,
+                    "name": new_face_name,
+                    "file": filename
+                })
+
+                manifest_bytes = json.dumps(current_manifest, indent=2).encode("utf-8")
+                with open(MANIFEST_FILE, "wb") as f:
+                    f.write(manifest_bytes)
+
+                # 3. If GitHub Token is provided, push to GitHub repository
+                if gh_token:
+                    with st.spinner("Pushing to GitHub repository (Aboodi-8/Muradeditor)..."):
+                        ok_img = push_file_to_github(
+                            "Aboodi-8", "Muradeditor", f"assets/{filename}", img_bytes,
+                            f"Add new default face: {new_face_name}", gh_token
+                        )
+                        ok_manifest = push_file_to_github(
+                            "Aboodi-8", "Muradeditor", "assets/manifest.json", manifest_bytes,
+                            f"Update manifest for {new_face_name}", gh_token
+                        )
+
+                        if ok_img and ok_manifest:
+                            st.success(f"🎉 Successfully committed to GitHub! '{new_face_name}' is permanently saved to the default list for all users!")
+                            st.balloons()
+                            st.rerun()
+                        else:
+                            st.warning("Saved locally, but GitHub API returned an issue. Check your GitHub Token permissions (needs Contents: Read & Write).")
+                else:
+                    st.success(f"Saved locally! '{new_face_name}' is now active. Add your GitHub Token to automatically push it to GitHub for all visitors.")
+                    st.rerun()
+    elif admin_pwd:
+        st.error("❌ Incorrect Admin Password.")
