@@ -646,11 +646,11 @@ html_app = f"""
       </div>
     </div>
 
-    <!-- 2. Choose Murad's Face -->
+    <!-- 2. Choose fruits Faces -->
     <div class="card">
       <div class="card-title">
         <span class="step-badge">2</span>
-        <span>Choose Murad's Face</span>
+        <span>Choose fruits Faces</span>
       </div>
       <div class="hint">Pick a face to slap on the meme:</div>
       <div class="faces-grid" id="facesGrid"></div>
