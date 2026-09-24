@@ -652,15 +652,21 @@ html_app = f"""
         <span class="step-badge">2</span>
         <span>Choose fruits Faces</span>
       </div>
-      <div class="hint">Pick a face to slap on the meme:</div>
+      <div class="hint">Pick a face or upload your own to slap on the meme:</div>
+      
+      <label class="btn-upload" style="margin-bottom:8px; padding:6px 10px; font-size:11px;">
+        <span>📸 Upload Custom Face / Sticker</span>
+        <input type="file" id="faceFileInput" accept="image/*">
+      </label>
+
       <div class="faces-grid" id="facesGrid"></div>
       
       <div class="row-flex">
         <span style="font-size: 11px; color: var(--text-muted);">Cutout Shape:</span>
         <div class="btn-group" id="maskGroup">
-          <button class="btn-toggle active" data-mask="circle">Sticker Circle</button>
+          <button class="btn-toggle active" data-mask="square">Full Frame (True Size)</button>
+          <button class="btn-toggle" data-mask="circle">Sticker Circle</button>
           <button class="btn-toggle" data-mask="oval">Oval Face</button>
-          <button class="btn-toggle" data-mask="square">Full Frame</button>
         </div>
       </div>
     </div>
@@ -783,7 +789,7 @@ const state = {{
   faceY: -65,
   faceScale: 1.0,
   faceRot: 0,
-  mask: 'circle',
+  mask: 'square',
   anim: 'none',
   caption: '',
   frame: 0,
@@ -1089,6 +1095,34 @@ function setupEvents() {{
     }};
   }}
 
+  // Custom Face Upload
+  const faceFileInput = document.getElementById('faceFileInput');
+  if (faceFileInput) {{
+    faceFileInput.onchange = (e) => {{
+      if (e.target.files && e.target.files[0]) {{
+        const reader = new FileReader();
+        reader.onload = (evt) => {{
+          const img = new Image();
+          img.onload = () => {{
+            loadedFaces.unshift(img);
+            faces.unshift({{
+              id: 'custom_upload_' + Date.now(),
+              name: 'My Upload 📸',
+              src: evt.target.result
+            }});
+            state.activeFaceIndex = 0;
+            state.mask = 'square';
+            document.querySelectorAll('#maskGroup .btn-toggle').forEach(b => b.classList.toggle('active', b.dataset.mask === 'square'));
+            buildFacesUI();
+            draw();
+          }};
+          img.src = evt.target.result;
+        }};
+        reader.readAsDataURL(e.target.files[0]);
+      }}
+    }};
+  }}
+
   document.querySelectorAll('#maskGroup .btn-toggle').forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll('#maskGroup .btn-toggle').forEach(b => b.classList.remove('active'));
@@ -1324,62 +1358,72 @@ function render(tCtx, w, h, frameIdx) {{
     tCtx.rotate((state.faceRot * Math.PI / 180) + ar);
     tCtx.scale(state.faceScale * as, state.faceScale * as);
 
-    const fSize = w * 0.44;
+    const baseSize = w * 0.44;
+    const fAspect = (faceImg.naturalWidth || faceImg.width) / (faceImg.naturalHeight || faceImg.height);
+    let fw, fh;
+    if (fAspect >= 1) {{
+      fw = baseSize;
+      fh = baseSize / fAspect;
+    }} else {{
+      fh = baseSize;
+      fw = baseSize * fAspect;
+    }}
 
-    // Drop Shadow for Sticker Cutout
-    if (state.mask !== 'square') {{
+    if (state.mask === 'circle') {{
       tCtx.shadowColor = 'rgba(0, 0, 0, 0.45)';
       tCtx.shadowBlur = 16;
       tCtx.shadowOffsetX = 0;
       tCtx.shadowOffsetY = 6;
-    }}
-
-    tCtx.beginPath();
-    if (state.mask === 'circle') {{
-      tCtx.arc(0, 0, fSize/2, 0, Math.PI*2);
-    }} else if (state.mask === 'oval') {{
-      tCtx.ellipse(0, 0, fSize*0.42, fSize*0.55, 0, 0, Math.PI*2);
-    }} else {{
-      tCtx.rect(-fSize/2, -fSize/2, fSize, fSize);
-    }}
-    tCtx.save();
-    tCtx.clip();
-
-    const aspect = faceImg.width / faceImg.height;
-    let fw = fSize, fh = fSize;
-    if (aspect > 1) fw = fSize * aspect;
-    else fh = fSize / aspect;
-    tCtx.drawImage(faceImg, -fw/2, -fh/2, fw, fh);
-    tCtx.restore();
-
-    // Clean white sticker border
-    if (state.mask !== 'square') {{
+      const rad = Math.min(fw, fh) / 2;
+      tCtx.beginPath();
+      tCtx.arc(0, 0, rad, 0, Math.PI * 2);
+      tCtx.save();
+      tCtx.clip();
+      tCtx.drawImage(faceImg, -fw/2, -fh/2, fw, fh);
+      tCtx.restore();
       tCtx.strokeStyle = '#ffffff';
       tCtx.lineWidth = 4;
       tCtx.stroke();
+    }} else if (state.mask === 'oval') {{
+      tCtx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+      tCtx.shadowBlur = 16;
+      tCtx.shadowOffsetX = 0;
+      tCtx.shadowOffsetY = 6;
+      tCtx.beginPath();
+      tCtx.ellipse(0, 0, fw * 0.42, fh * 0.55, 0, 0, Math.PI * 2);
+      tCtx.save();
+      tCtx.clip();
+      tCtx.drawImage(faceImg, -fw/2, -fh/2, fw, fh);
+      tCtx.restore();
+      tCtx.strokeStyle = '#ffffff';
+      tCtx.lineWidth = 4;
+      tCtx.stroke();
+    }} else {{
+      // Full Frame (True natural aspect ratio, completely uncropped!)
+      tCtx.drawImage(faceImg, -fw/2, -fh/2, fw, fh);
     }}
 
     // Selection ring indicator while dragging
     if (state.isDragging) {{
       tCtx.strokeStyle = '#5865F2';
-      tCtx.lineWidth = 3;
-      tCtx.stroke();
+      tCtx.lineWidth = 2;
+      tCtx.strokeRect(-fw/2, -fh/2, fw, fh);
     }}
 
     // 1. Thug Shades
     if (state.accShades) {{
       tCtx.fillStyle = '#000000';
-      tCtx.fillRect(-fSize*0.35, -fSize*0.12, fSize*0.32, fSize*0.14);
-      tCtx.fillRect(fSize*0.03, -fSize*0.12, fSize*0.32, fSize*0.14);
-      tCtx.fillRect(-fSize*0.05, -fSize*0.08, fSize*0.1, 4);
+      tCtx.fillRect(-fw*0.35, -fh*0.12, fw*0.32, fh*0.14);
+      tCtx.fillRect(fw*0.03, -fh*0.12, fw*0.32, fh*0.14);
+      tCtx.fillRect(-fw*0.05, -fh*0.08, fw*0.1, 4);
       tCtx.fillStyle = 'rgba(255,255,255,0.4)';
-      tCtx.fillRect(-fSize*0.3, -fSize*0.1, 4, 6);
-      tCtx.fillRect(fSize*0.08, -fSize*0.1, 4, 6);
+      tCtx.fillRect(-fw*0.3, -fh*0.1, 4, 6);
+      tCtx.fillRect(fw*0.08, -fh*0.1, 4, 6);
     }}
 
     // 2. Laser Eyes
     if (state.accLaser) {{
-      const eye1X = -fSize*0.15, eye2X = fSize*0.15, eyeY = -fSize*0.06;
+      const eye1X = -fw*0.15, eye2X = fw*0.15, eyeY = -fh*0.06;
       [eye1X, eye2X].forEach(ex => {{
         const rad = tCtx.createRadialGradient(ex, eyeY, 2, ex, eyeY, 25);
         rad.addColorStop(0, '#ffffff'); rad.addColorStop(0.3, '#ff003b'); rad.addColorStop(1, 'transparent');
@@ -1396,17 +1440,17 @@ function render(tCtx, w, h, frameIdx) {{
       tCtx.strokeStyle = '#a16207';
       tCtx.lineWidth = 2;
       tCtx.beginPath();
-      tCtx.moveTo(-fSize*0.35, -fSize*0.36);
-      tCtx.lineTo(-fSize*0.38, -fSize*0.55);
-      tCtx.lineTo(-fSize*0.18, -fSize*0.44);
-      tCtx.lineTo(0, -fSize*0.62);
-      tCtx.lineTo(fSize*0.18, -fSize*0.44);
-      tCtx.lineTo(fSize*0.38, -fSize*0.55);
-      tCtx.lineTo(fSize*0.35, -fSize*0.36);
+      tCtx.moveTo(-fw*0.35, -fh*0.36);
+      tCtx.lineTo(-fw*0.38, -fh*0.55);
+      tCtx.lineTo(-fw*0.18, -fh*0.44);
+      tCtx.lineTo(0, -fh*0.62);
+      tCtx.lineTo(fw*0.18, -fh*0.44);
+      tCtx.lineTo(fw*0.38, -fh*0.55);
+      tCtx.lineTo(fw*0.35, -fh*0.36);
       tCtx.closePath();
       tCtx.fill(); tCtx.stroke();
       tCtx.fillStyle = '#ef4444';
-      tCtx.beginPath(); tCtx.arc(0, -fSize*0.46, 5, 0, Math.PI*2); tCtx.fill();
+      tCtx.beginPath(); tCtx.arc(0, -fh*0.46, 5, 0, Math.PI*2); tCtx.fill();
     }}
 
     // 4. Speech Bubble
@@ -1416,12 +1460,17 @@ function render(tCtx, w, h, frameIdx) {{
       tCtx.strokeStyle = '#000000';
       tCtx.lineWidth = 2;
       tCtx.beginPath();
-      tCtx.roundRect(fSize*0.25, -fSize*0.6, 90, 36, 8);
+      tCtx.roundRect(fw*0.25, -fh*0.6, 90, 36, 8);
       tCtx.fill(); tCtx.stroke();
+      tCtx.beginPath();
+      tCtx.moveTo(fw*0.25, -fh*0.4);
+      tCtx.lineTo(fw*0.15, -fh*0.3);
+      tCtx.lineTo(fw*0.35, -fh*0.35);
+      tCtx.closePath();
+      tCtx.fill(); tCtx.stroke();
+      tCtx.font = '700 11px sans-serif';
       tCtx.fillStyle = '#000000';
-      tCtx.font = 'bold 12px sans-serif';
-      tCtx.textAlign = 'center';
-      tCtx.fillText('W MURAD', fSize*0.25 + 45, -fSize*0.6 + 22);
+      tCtx.fillText('MURAD! 💀', fw*0.25 + 14, -fh*0.6 + 22);
       tCtx.restore();
     }}
 
