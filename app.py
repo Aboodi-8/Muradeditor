@@ -1250,25 +1250,24 @@ window.onload = init;
 </html>
 """
 
-components.html(html_app, height=940, scrolling=True)
+# --- TOP HEADER & ADMIN PANEL (TOP RIGHT) ---
+col_head_left, col_head_right = st.columns([5, 2])
+with col_head_left:
+    st.markdown("<div style='padding: 4px 0;'><h2 style='margin:0; font-size: 22px; color: #fff; display: flex; align-items: center; gap: 8px;'>🎭 Murad Face Slapper <span style='font-size: 13px; color: #5865F2; background: rgba(88,101,242,0.15); padding: 2px 8px; border-radius: 12px; font-weight: 500;'>Discord Meme & GIF Maker</span></h2></div>", unsafe_allow_html=True)
 
-# --- ADMIN PANEL SECTION ---
-st.markdown("---")
-with st.expander("🔐 Admin Panel (Add New Faces to Default Catalog)"):
-    st.markdown("#### Push New Faces to Permanent Default Catalog")
-    st.caption("Upload a new face of Murad to permanently add it to the website's default list for all users!")
+with col_head_right:
+    admin_ui = st.popover("🔐 Admin Panel", use_container_width=True) if hasattr(st, "popover") else st.expander("🔐 Admin Panel")
+    with admin_ui:
+        st.markdown("### 🔐 Admin Panel")
+        st.caption("Upload new faces directly to the permanent default catalog for all users!")
 
-    admin_pwd = st.text_input("Enter Admin Password:", type="password", key="admin_pwd_input", placeholder="Admin password...")
+        admin_pwd = st.text_input("Enter Admin Password:", type="password", key="top_admin_pwd", placeholder="Password...")
 
-    if admin_pwd == "MuradAdmin":
-        st.success("✅ Admin Access Granted!")
-
-        col_a, col_b = st.columns(2)
-        with col_a:
+        if admin_pwd == "MuradAdmin":
+            st.success("✅ Admin Access Granted!")
             new_face_name = st.text_input("Face Display Name & Emoji:", placeholder="e.g. Gaming Murad 🎮")
-            new_face_file = st.file_uploader("Upload Face Image (PNG / JPG):", type=["png", "jpg", "jpeg", "webp"], key="admin_file_upload")
+            new_face_file = st.file_uploader("Upload Face Image (PNG / JPG):", type=["png", "jpg", "jpeg", "webp"], key="top_face_file")
 
-        with col_b:
             token_secret = ""
             try:
                 token_secret = st.secrets.get("GITHUB_TOKEN", "")
@@ -1276,61 +1275,60 @@ with st.expander("🔐 Admin Panel (Add New Faces to Default Catalog)"):
                 pass
 
             if token_secret:
-                st.success("🟢 GitHub Auto-Sync Active")
-                st.info("✨ Connected via Streamlit Secrets! No GitHub login is required for you or anyone else.")
+                st.markdown("<small style='color: #23a55a; font-weight: 600;'>🟢 GitHub Auto-Sync: Active (Connected via Streamlit Secrets)</small>", unsafe_allow_html=True)
                 gh_token = token_secret
             else:
                 gh_token = st.text_input(
                     "GitHub Personal Access Token:",
                     type="password",
-                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxx",
-                    help="Tip: Add GITHUB_TOKEN to Streamlit Cloud Secrets so you never have to paste it here!"
+                    placeholder="github_pat_... or ghp_...",
+                    help="Tip: Add GITHUB_TOKEN to Streamlit Secrets so you never have to paste it here!"
                 )
-                with st.expander("ℹ️ How to make it auto-commit without GitHub login"):
+                with st.expander("ℹ️ How to keep token safe in Streamlit Secrets"):
                     st.markdown("""
-                    **To make pushes permanent for everyone without logging in:**
-                    1. Generate a GitHub Token at [github.com/settings/tokens](https://github.com/settings/tokens) with `repo` scope.
-                    2. In your Streamlit Cloud Dashboard (`share.streamlit.io`):
-                       - Click `...` next to `muradeditor` → **Settings** → **Secrets**.
-                       - Add: `GITHUB_TOKEN = "ghp_your_token_here"`
-                    3. Save! Once added, anyone entering `MuradAdmin` can push faces directly with 1 click!
+                    **Add to Streamlit Cloud Secrets (Never store in Git files):**
+                    1. In [share.streamlit.io](https://share.streamlit.io) → Click `...` next to `muradeditor` → **Settings** → **Secrets**.
+                    2. Add:
+                       ```toml
+                       GITHUB_TOKEN = "your_token_here"
+                       ```
+                    3. Click **Save**. Your token stays completely private!
                     """)
 
-        if st.button("🚀 Push Face to Default Catalog", type="primary"):
-            if not new_face_name or not new_face_file:
-                st.error("Please enter a name and select an image file!")
-            else:
-                img_bytes = new_face_file.read()
-                clean_name = re.sub(r'[^a-zA-Z0-9_]', '_', new_face_name.split()[0].lower())
-                filename = f"murad_{clean_name}.png"
-                face_id = f"murad_{clean_name}"
+            if st.button("🚀 Push Face to Default Catalog", type="primary", use_container_width=True):
+                if not new_face_name or not new_face_file:
+                    st.error("Please enter a name and select an image file!")
+                else:
+                    img_bytes = new_face_file.read()
+                    clean_name = re.sub(r'[^a-zA-Z0-9_]', '_', new_face_name.split()[0].lower())
+                    filename = f"murad_{clean_name}.png"
+                    face_id = f"murad_{clean_name}"
 
-                # 1. Save locally to assets
-                local_path = ASSETS_DIR / filename
-                with open(local_path, "wb") as f:
-                    f.write(img_bytes)
+                    # 1. Save locally to assets
+                    local_path = ASSETS_DIR / filename
+                    with open(local_path, "wb") as f:
+                        f.write(img_bytes)
 
-                # 2. Update local manifest.json
-                current_manifest = []
-                if MANIFEST_FILE.exists():
-                    try:
-                        with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
-                            current_manifest = json.load(f)
-                    except Exception:
-                        pass
+                    # 2. Update local manifest.json
+                    current_manifest = []
+                    if MANIFEST_FILE.exists():
+                        try:
+                            with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
+                                current_manifest = json.load(f)
+                        except Exception:
+                            pass
 
-                current_manifest.append({
-                    "id": face_id,
-                    "name": new_face_name,
-                    "file": filename
-                })
+                    current_manifest.append({
+                        "id": face_id,
+                        "name": new_face_name,
+                        "file": filename
+                    })
 
-                manifest_bytes = json.dumps(current_manifest, indent=2).encode("utf-8")
-                with open(MANIFEST_FILE, "wb") as f:
-                    f.write(manifest_bytes)
+                    manifest_bytes = json.dumps(current_manifest, indent=2).encode("utf-8")
+                    with open(MANIFEST_FILE, "wb") as f:
+                        f.write(manifest_bytes)
 
-                # 3. If GitHub Token is provided, push to GitHub repository
-                if gh_token:
+                    # 3. Push to GitHub repository
                     with st.spinner("Pushing to GitHub repository (Aboodi-8/Muradeditor)..."):
                         ok_img, err_img = push_file_to_github(
                             "Aboodi-8", "Muradeditor", f"assets/{filename}", img_bytes,
@@ -1338,25 +1336,19 @@ with st.expander("🔐 Admin Panel (Add New Faces to Default Catalog)"):
                         )
                         if not ok_img:
                             st.error(f"❌ Could not upload image to GitHub: {err_img}")
-                            st.warning("""
-                            **How to fix HTTP 403 / 401 Error:**
-                            1. **Classic Token**: Make sure the **`repo`** box is checked at [github.com/settings/tokens](https://github.com/settings/tokens).
-                            2. **Fine-grained Token**: Make sure **Repository Access** includes `Muradeditor`, and **Permissions → Contents** is set to **Read and write**.
-                            3. **Streamlit Secrets**: Double check `GITHUB_TOKEN = "ghp_..."` in Streamlit App Settings → Secrets.
-                            """)
                         else:
                             ok_manifest, err_manifest = push_file_to_github(
                                 "Aboodi-8", "Muradeditor", "assets/manifest.json", manifest_bytes,
                                 f"Update manifest for {new_face_name}", gh_token
                             )
                             if ok_manifest:
-                                st.success(f"🎉 Successfully committed to GitHub! '{new_face_name}' is permanently saved to the default list for all users!")
+                                st.success(f"🎉 Successfully saved! '{new_face_name}' is permanently added to the default catalog!")
                                 st.balloons()
                                 st.rerun()
                             else:
-                                st.error(f"❌ Image was saved, but manifest.json update failed: {err_manifest}")
-                else:
-                    st.success(f"Saved locally! '{new_face_name}' is now active. Add your GitHub Token to automatically push it to GitHub for all visitors.")
-                    st.rerun()
-    elif admin_pwd:
-        st.error("❌ Incorrect Admin Password.")
+                                st.error(f"❌ Image saved, but manifest.json update failed: {err_manifest}")
+        elif admin_pwd:
+            st.error("❌ Incorrect Admin Password.")
+
+# Embed Interactive HTML5 Canvas Application with Real-Time Mouse Dragging
+components.html(html_app, height=940, scrolling=True)
