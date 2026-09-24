@@ -1261,9 +1261,17 @@ with col_head_right:
         st.markdown("### 🔐 Admin Panel")
         st.caption("Upload new faces directly to the permanent default catalog for all users!")
 
+        expected_pwd = ""
+        try:
+            expected_pwd = st.secrets.get("ADMIN_PASSWORD", "")
+        except Exception:
+            pass
+        if not expected_pwd:
+            expected_pwd = "MuradAdmin"
+
         admin_pwd = st.text_input("Enter Admin Password:", type="password", key="top_admin_pwd", placeholder="Password...")
 
-        if admin_pwd == "MuradAdmin":
+        if admin_pwd and admin_pwd == expected_pwd:
             st.success("✅ Admin Access Granted!")
             new_face_name = st.text_input("Face Display Name & Emoji:", placeholder="e.g. Gaming Murad 🎮")
             new_face_file = st.file_uploader("Upload Face Image (PNG / JPG):", type=["png", "jpg", "jpeg", "webp"], key="top_face_file")
