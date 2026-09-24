@@ -63,8 +63,8 @@ st.markdown("""
     }
     .lock-box {
         max-width: 440px;
-        margin: 60px auto;
-        padding: 30px;
+        margin: 60px auto 20px;
+        padding: 24px;
         background-color: #2b2d31;
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 12px;
@@ -83,24 +83,25 @@ if "authenticated" not in st.session_state:
 if not st.session_state["authenticated"]:
     st.markdown("""
     <div class="lock-box">
-        <h1 style="font-size: 40px; margin-bottom: 8px;">🔒</h1>
+        <h1 style="font-size: 44px; margin-bottom: 8px;">🔒</h1>
         <h2 style="color: #ffffff; margin-bottom: 6px;">Murad's Private Meme Lab</h2>
-        <p style="color: #949ba4; font-size: 13px; margin-bottom: 20px;">
-            This website is private. Please enter the password to continue.
+        <p style="color: #949ba4; font-size: 13px;">
+            This website is private. Enter password to unlock.
         </p>
     </div>
     """, unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns([1, 1.2, 1])
     with col2:
-        pwd_input = st.text_input("Enter Password:", type="password", key="login_pwd", placeholder="Password...")
-        if st.button("Unlock Website 🔓", type="primary", use_container_width=True):
-            if pwd_input == CORRECT_PASSWORD:
-                st.session_state["authenticated"] = True
-                st.success("Access Granted! Welcome Murad!")
-                st.rerun()
-            else:
-                st.error("Incorrect password! Access denied.")
+        with st.form("login_form"):
+            pwd_input = st.text_input("Enter Password:", type="password", placeholder="Password...")
+            submitted = st.form_submit_button("Unlock Website 🔓", type="primary", use_container_width=True)
+            if submitted:
+                if pwd_input == CORRECT_PASSWORD:
+                    st.session_state["authenticated"] = True
+                    st.rerun()
+                else:
+                    st.error("❌ Incorrect password! Access denied.")
     st.stop()
 
 # Assets directory
@@ -295,9 +296,13 @@ def composite_frame(
         except Exception:
             font = ImageFont.load_default()
 
-        bbox = draw.textbbox((0, 0), text, font=font)
-        text_w = bbox[2] - bbox[0]
-        tx = (w - text_w) // 2
+        try:
+            bbox = draw.textbbox((0, 0), text, font=font)
+            text_w = bbox[2] - bbox[0]
+        except Exception:
+            text_w = int(len(text) * font_size * 0.5)
+
+        tx = max(8, (w - text_w) // 2)
         ty = 12
 
         stroke_w = max(2, int(w * 0.015))
@@ -366,10 +371,12 @@ with st.sidebar:
     else:
         selected_face_img = Image.open(MURAD_FACES[face_choice]).convert("RGBA")
 
-    cutout_shape = st.segmented_control(
+    # Use st.radio for universal compatibility across all Streamlit versions
+    cutout_shape = st.radio(
         "Cutout Mask:",
         ["Circle", "Oval Face", "Square"],
-        default="Circle"
+        index=0,
+        horizontal=True
     )
 
     st.divider()
