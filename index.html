@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Murad Face Swapper | Slap Murad's Face on Anything</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="assets/gifshot.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <span class="logo-emoji">🎭</span>
+        <div>
+          <h1>Murad <span>Face Slapper</span></h1>
+          <p>Upload any picture and slap Murad's face on it for Discord!</p>
+        </div>
+      </div>
+      <div class="header-tag">Discord GIF & Meme Ready</div>
+    </header>
+
+    <!-- Main Workspace -->
+    <div class="workspace">
+      <!-- Left Sidebar: Controls -->
+      <aside class="sidebar">
+        
+        <!-- Section 1: Base Image -->
+        <div class="box">
+          <div class="box-title">
+            <span class="step">1</span>
+            <h3>Background Image</h3>
+          </div>
+          <p class="box-hint">Upload any image or choose a template:</p>
+          
+          <!-- Upload Button -->
+          <label class="btn-upload" for="bgUploadInput">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+            </svg>
+            <span>Upload Any Picture / Meme</span>
+            <input type="file" id="bgUploadInput" accept="image/*">
+          </label>
+
+          <!-- Preset Backgrounds -->
+          <div class="preset-label">Or choose a base:</div>
+          <div class="bg-presets" id="bgPresetsList">
+            <button class="bg-preset-btn active" data-bg="suit">🤵 Suit</button>
+            <button class="bg-preset-btn" data-bg="gigachad">🗿 Chad</button>
+            <button class="bg-preset-btn" data-bg="astronaut">🚀 Space</button>
+            <button class="bg-preset-btn" data-bg="doge">🐕 Doge</button>
+            <button class="bg-preset-btn" data-bg="buff">💪 Buff Guy</button>
+          </div>
+        </div>
+
+        <!-- Section 2: Choose Murad's Face -->
+        <div class="box">
+          <div class="box-title">
+            <span class="step">2</span>
+            <h3>Choose Murad's Face</h3>
+          </div>
+          <p class="box-hint">Click a face to slap it on the picture:</p>
+
+          <div class="faces-grid" id="facesGrid">
+            <!-- Populated via JS with Murad's real photos -->
+          </div>
+
+          <!-- Cutout Shape -->
+          <div class="cutout-row">
+            <label>Face Cutout:</label>
+            <div class="btn-group" id="cropTypeGroup">
+              <button class="btn-toggle active" data-crop="circle">Circle</button>
+              <button class="btn-toggle" data-crop="oval">Oval Face</button>
+              <button class="btn-toggle" data-crop="square">Original</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 3: Face Controls (Size / Rotation / Drag) -->
+        <div class="box">
+          <div class="box-title">
+            <span class="step">3</span>
+            <h3>Adjust Murad's Face</h3>
+          </div>
+          <p class="box-hint">💡 You can also drag the face directly on the canvas!</p>
+
+          <div class="control-row">
+            <label>Face Size: <span id="sizeVal">100%</span></label>
+            <input type="range" id="faceScale" min="0.2" max="2.5" step="0.05" value="1.0">
+          </div>
+
+          <div class="control-row">
+            <label>Rotate: <span id="rotVal">0°</span></label>
+            <input type="range" id="faceRotate" min="-180" max="180" step="5" value="0">
+          </div>
+
+          <div class="control-row">
+            <label>Horizontal Position (X)</label>
+            <input type="range" id="facePosX" min="-250" max="250" step="2" value="0">
+          </div>
+
+          <div class="control-row">
+            <label>Vertical Position (Y)</label>
+            <input type="range" id="facePosY" min="-250" max="250" step="2" value="-20">
+          </div>
+
+          <button id="resetFaceBtn" class="btn-reset">↺ Center Face</button>
+        </div>
+
+        <!-- Section 4: Discord GIF Animation -->
+        <div class="box">
+          <div class="box-title">
+            <span class="step">4</span>
+            <h3>Discord Animation (GIF)</h3>
+          </div>
+          <p class="box-hint">Make it move for Discord chat or emojis:</p>
+
+          <div class="anim-types-grid" id="animTypesGrid">
+            <button class="anim-btn active" data-anim="none">
+              <span class="anim-icon">🖼️</span>
+              <span class="anim-name">Still Image</span>
+            </button>
+            <button class="anim-btn" data-anim="bob">
+              <span class="anim-icon">🕺</span>
+              <span class="anim-name">Head Bob</span>
+            </button>
+            <button class="anim-btn" data-anim="shake">
+              <span class="anim-icon">💢</span>
+              <span class="anim-name">Shake Meme</span>
+            </button>
+            <button class="anim-btn" data-anim="spin">
+              <span class="anim-icon">🌀</span>
+              <span class="anim-name">Speen</span>
+            </button>
+            <button class="anim-btn" data-anim="petpet">
+              <span class="anim-icon">👋</span>
+              <span class="anim-name">Petpet Hand</span>
+            </button>
+            <button class="anim-btn" data-anim="zoom">
+              <span class="anim-icon">💥</span>
+              <span class="anim-name">Pulse Zoom</span>
+            </button>
+          </div>
+
+          <!-- Caption Text -->
+          <div class="caption-box">
+            <label>Top Caption (Optional):</label>
+            <input type="text" id="memeCaption" placeholder="e.g. WHEN MURAD SEES THIS..." maxlength="50">
+          </div>
+        </div>
+
+      </aside>
+
+      <!-- Center / Right: Canvas Preview & Download -->
+      <main class="canvas-area">
+        <div class="canvas-wrapper">
+          <div class="canvas-top-bar">
+            <div class="status-indicator">
+              <span class="green-dot"></span> LIVE PREVIEW
+            </div>
+            <div class="drag-hint">🖱️ Click and drag Murad's face anywhere!</div>
+          </div>
+
+          <div class="canvas-container" id="canvasContainer">
+            <canvas id="mainCanvas" width="400" height="400"></canvas>
+          </div>
+
+          <!-- Actions -->
+          <div class="export-actions">
+            <button id="exportGifBtn" class="btn-primary-action">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/>
+              </svg>
+              <span>Download for Discord (.GIF)</span>
+            </button>
+            
+            <button id="downloadPngBtn" class="btn-secondary-action">
+              <span>Download Picture (.PNG)</span>
+            </button>
+          </div>
+
+          <!-- Export Progress Bar -->
+          <div class="progress-box" id="progressBox" style="display: none;">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-label" id="progressLabel">Creating your Discord GIF...</div>
+          </div>
+
+          <!-- Rendered Result Display -->
+          <div class="gif-result-box" id="gifResultBox" style="display: none;">
+            <h4>🎉 Your Discord GIF is Ready!</h4>
+            <div class="result-img-wrap">
+              <img id="gifResultImg" src="" alt="Murad Discord GIF">
+            </div>
+            <div class="result-btns">
+              <a id="downloadGifAnchor" class="btn-download-direct" download="murad_discord_meme.gif">
+                ⬇️ Download .GIF Now
+              </a>
+              <button id="copyGifLinkBtn" class="btn-copy">
+                📋 Copy GIF
+              </button>
+            </div>
+          </div>
+
+          <!-- Discord Chat Preview Simulator -->
+          <div class="discord-preview">
+            <div class="discord-header">
+              <span class="discord-hash">#</span>
+              <span class="discord-room">general</span>
+              <span class="discord-sub">Discord Chat Preview</span>
+            </div>
+            <div class="discord-chat-msg">
+              <img src="assets/murad_wide.png" class="discord-pfp" alt="Murad" id="discordPfp">
+              <div class="discord-body">
+                <div class="discord-meta">
+                  <span class="discord-name">Murad</span>
+                  <span class="discord-time">Today at 10:30 PM</span>
+                </div>
+                <div class="discord-msg-content" id="discordCaptionPreview">
+                  Look at this new meme I made 💀
+                </div>
+                <div class="discord-embed-wrap" id="discordEmbedWrap">
+                  <!-- Live preview mirrored here -->
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+    </div>
+  </div>
+
+  <!-- Password Lock Modal -->
+  <div id="passwordGateModal" class="password-overlay">
+    <div class="password-card">
+      <div class="lock-icon">🔒</div>
+      <h2>Murad's Private Meme Lab</h2>
+      <p>This generator is private. Enter the password to unlock.</p>
+      <form id="passwordForm" onsubmit="event.preventDefault(); verifyPassword();">
+        <input type="password" id="passwordInput" placeholder="Enter password..." autofocus required>
+        <button type="submit" class="btn-unlock">Unlock 🔓</button>
+      </form>
+      <div id="passwordError" class="password-error" style="display: none;">❌ Incorrect password! Access denied.</div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
