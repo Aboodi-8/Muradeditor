@@ -745,14 +745,18 @@ html_app = f"""
         <button class="acc-btn" data-acc="laser">🔴 Laser Eyes</button>
         <button class="acc-btn" data-acc="crown">👑 Gold Crown</button>
         <button class="acc-btn" data-acc="bubble">💬 Speech Bubble</button>
+        <button class="acc-btn" data-acc="party">🥳 Party Hat</button>
+        <button class="acc-btn" data-acc="halo">😇 Angel Halo</button>
+        <button class="acc-btn" data-acc="horns">😈 Devil Horns</button>
+        <button class="acc-btn" data-acc="stache">🥸 Mustache</button>
       </div>
     </div>
 
-    <!-- 4. Face Sizing & Rotation -->
+    <!-- 4. Face Sizing, Flip & Filters -->
     <div class="card">
       <div class="card-title">
         <span class="step-badge">4</span>
-        <span>Face Sizing & Rotation</span>
+        <span>Face Sizing, Flip & FX</span>
       </div>
       <div class="slider-control">
         <label>Size: <span id="sizeVal">100%</span></label>
@@ -762,13 +766,36 @@ html_app = f"""
         <label>Rotation: <span id="rotVal">0°</span></label>
         <input type="range" id="faceRot" min="-180" max="180" step="5" value="0">
       </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+        <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Flip Face:</span>
+        <div class="btn-group" id="flipGroup" style="display:flex; gap:3px;">
+          <button class="btn-toggle" id="flipHBtn" title="Mirror / Flip horizontally">↔️ Flip H</button>
+          <button class="btn-toggle" id="flipVBtn" title="Flip vertically">↕️ Flip V</button>
+        </div>
+      </div>
+
+      <div class="slider-control" style="margin-top:8px;">
+        <label>Face Opacity: <span id="opacityVal">100%</span></label>
+        <input type="range" id="faceOpacity" min="0.2" max="1.0" step="0.05" value="1.0">
+      </div>
+
+      <div style="margin-top:6px;">
+        <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px; font-weight:600;">Face Color FX:</label>
+        <div class="btn-group" id="faceFilterGroup" style="display:flex; flex-wrap:wrap; gap:3px;">
+          <button class="btn-toggle active" data-filter="none">Normal</button>
+          <button class="btn-toggle" data-filter="grayscale">Noir B&W</button>
+          <button class="btn-toggle" data-filter="deepfried">Deep Fried 🔥</button>
+          <button class="btn-toggle" data-filter="invert">Invert ⚡</button>
+        </div>
+      </div>
     </div>
 
-    <!-- 5. Discord Animation -->
+    <!-- 5. Discord Animation & Captions -->
     <div class="card">
       <div class="card-title">
         <span class="step-badge">5</span>
-        <span>Discord GIF Animation</span>
+        <span>Discord GIF Animation & Text</span>
       </div>
       <div class="anim-grid" id="animGrid">
         <button class="anim-btn active" data-anim="none"><span>🖼️</span><span>Still</span></button>
@@ -777,8 +804,25 @@ html_app = f"""
         <button class="anim-btn" data-anim="spin"><span>🌀</span><span>Speen</span></button>
         <button class="anim-btn" data-anim="petpet"><span>👋</span><span>Petpet</span></button>
         <button class="anim-btn" data-anim="zoom"><span>💥</span><span>Zoom</span></button>
+        <button class="anim-btn" data-anim="pulse"><span>💓</span><span>Pulse</span></button>
+        <button class="anim-btn" data-anim="wobble"><span>🌊</span><span>Wobble</span></button>
+        <button class="anim-btn" data-anim="disco"><span>🪩</span><span>Disco</span></button>
       </div>
-      <input type="text" id="memeCaption" class="caption-input" placeholder="Meme caption (e.g. WHEN MURAD...)" maxlength="45">
+
+      <div style="margin-top:8px; display:flex; flex-direction:column; gap:4px;">
+        <input type="text" id="memeCaptionTop" class="caption-input" placeholder="TOP TEXT (e.g. WHEN MURAD...)" maxlength="45">
+        <input type="text" id="memeCaptionBottom" class="caption-input" placeholder="BOTTOM TEXT (e.g. BOTTOM TEXT)" maxlength="45">
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:6px;">
+        <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Text Color:</span>
+        <div class="btn-group" id="captionColorGroup" style="display:flex; gap:3px;">
+          <button class="btn-toggle active" data-color="#ffffff" style="color:#ffffff;">White</button>
+          <button class="btn-toggle" data-color="#facc15" style="color:#facc15;">Yellow</button>
+          <button class="btn-toggle" data-color="#ef4444" style="color:#ef4444;">Red</button>
+          <button class="btn-toggle" data-color="#22d3ee" style="color:#22d3ee;">Cyan</button>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -802,9 +846,17 @@ html_app = f"""
       <button class="quick-btn" id="recenterBtn">🎯 Center Face</button>
     </div>
 
+    <!-- Filename Input with Random Letters Suffix -->
+    <div style="display:flex; align-items:center; gap:6px; margin-top:10px; width:100%; max-width:440px;">
+      <span style="font-size:11px; color:var(--text-muted); font-weight:600; white-space:nowrap;">Save As:</span>
+      <input type="text" id="customFilenameInput" placeholder="murad_meme" value="murad_meme" style="flex:1; background:var(--bg-input); border:1px solid var(--border); color:#fff; font-size:11px; padding:6px 10px; border-radius:6px; outline:none;">
+      <span style="font-size:10px; color:#5865F2; background:rgba(88,101,242,0.15); padding:3px 6px; border-radius:4px; font-family:monospace;" title="Random letters are automatically attached to avoid duplicates">+ random letters</span>
+    </div>
+
     <div class="action-row">
-      <button id="downloadGifBtn" class="btn-action-primary">⬇️ Download for Discord (.GIF)</button>
-      <button id="downloadPngBtn" class="btn-action-secondary">Download .PNG</button>
+      <button id="downloadGifBtn" class="btn-action-primary">⬇️ Download .GIF</button>
+      <button id="downloadPngBtn" class="btn-action-secondary">⬇️ Download .PNG</button>
+      <button id="copyPngBtn" class="btn-action-secondary" title="Copy image to clipboard for instant pasting in Discord">📋 Copy</button>
     </div>
 
     <!-- Progress bar -->
@@ -851,9 +903,15 @@ const state = {{
   faceY: -65,
   faceScale: 1.0,
   faceRot: 0,
+  flipH: false,
+  flipV: false,
+  faceOpacity: 1.0,
+  faceFilter: 'none',
   mask: 'square',
   anim: 'none',
-  caption: '',
+  topCaption: '',
+  bottomCaption: '',
+  captionColor: '#ffffff',
   frame: 0,
   totalFrames: 12,
   fps: 12,
@@ -865,7 +923,11 @@ const state = {{
   accShades: false,
   accLaser: false,
   accCrown: false,
-  accBubble: false
+  accBubble: false,
+  accParty: false,
+  accHalo: false,
+  accHorns: false,
+  accStache: false
 }};
 
 // Preload face images
@@ -1201,7 +1263,50 @@ function setupEvents() {{
       else if (acc === 'laser') state.accLaser = !state.accLaser;
       else if (acc === 'crown') state.accCrown = !state.accCrown;
       else if (acc === 'bubble') state.accBubble = !state.accBubble;
+      else if (acc === 'party') state.accParty = !state.accParty;
+      else if (acc === 'halo') state.accHalo = !state.accHalo;
+      else if (acc === 'horns') state.accHorns = !state.accHorns;
+      else if (acc === 'stache') state.accStache = !state.accStache;
       btn.classList.toggle('active');
+      draw();
+    }};
+  }});
+
+  // Flip Horizontal & Vertical
+  const flipHBtn = document.getElementById('flipHBtn');
+  if (flipHBtn) {{
+    flipHBtn.onclick = () => {{
+      state.flipH = !state.flipH;
+      flipHBtn.classList.toggle('active', state.flipH);
+      draw();
+    }};
+  }}
+
+  const flipVBtn = document.getElementById('flipVBtn');
+  if (flipVBtn) {{
+    flipVBtn.onclick = () => {{
+      state.flipV = !state.flipV;
+      flipVBtn.classList.toggle('active', state.flipV);
+      draw();
+    }};
+  }}
+
+  // Face Opacity
+  const faceOpacitySlider = document.getElementById('faceOpacity');
+  if (faceOpacitySlider) {{
+    faceOpacitySlider.oninput = (e) => {{
+      state.faceOpacity = parseFloat(e.target.value);
+      document.getElementById('opacityVal').innerText = Math.round(state.faceOpacity * 100) + '%';
+      draw();
+    }};
+  }}
+
+  // Face Filter Group
+  document.querySelectorAll('#faceFilterGroup .btn-toggle').forEach(btn => {{
+    btn.onclick = () => {{
+      document.querySelectorAll('#faceFilterGroup .btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.faceFilter = btn.dataset.filter;
       draw();
     }};
   }});
@@ -1251,6 +1356,10 @@ function setupEvents() {{
     state.faceY = -35;
     state.faceRot = 0;
     state.faceScale = 1.0;
+    state.flipH = false;
+    state.flipV = false;
+    if (flipHBtn) flipHBtn.classList.remove('active');
+    if (flipVBtn) flipVBtn.classList.remove('active');
     document.getElementById('faceScale').value = 1.0;
     document.getElementById('faceRot').value = 0;
     document.getElementById('sizeVal').innerText = '100%';
@@ -1273,20 +1382,45 @@ function setupEvents() {{
       btn.classList.add('active');
       state.anim = btn.dataset.anim;
       state.frame = 0;
-      state.totalFrames = state.anim === 'none' ? 1 : (state.anim === 'petpet' ? 8 : 12);
+      state.totalFrames = state.anim === 'none' ? 1 : (state.anim === 'petpet' ? 8 : (state.anim === 'disco' ? 16 : 12));
       state.fps = state.anim === 'petpet' ? 14 : 12;
       draw();
     }};
   }});
 
-  document.getElementById('memeCaption').oninput = (e) => {{
-    state.caption = e.target.value;
-    document.getElementById('discordMsgText').innerText = state.caption || 'Look at this new meme sticker! 💀';
-    draw();
-  }};
+  const topInput = document.getElementById('memeCaptionTop');
+  if (topInput) {{
+    topInput.oninput = (e) => {{
+      state.topCaption = e.target.value;
+      const displayTxt = state.topCaption || state.bottomCaption || 'Look at this new meme sticker! 💀';
+      document.getElementById('discordMsgText').innerText = displayTxt;
+      draw();
+    }};
+  }}
+
+  const bottomInput = document.getElementById('memeCaptionBottom');
+  if (bottomInput) {{
+    bottomInput.oninput = (e) => {{
+      state.bottomCaption = e.target.value;
+      const displayTxt = state.topCaption || state.bottomCaption || 'Look at this new meme sticker! 💀';
+      document.getElementById('discordMsgText').innerText = displayTxt;
+      draw();
+    }};
+  }}
+
+  document.querySelectorAll('#captionColorGroup .btn-toggle').forEach(btn => {{
+    btn.onclick = () => {{
+      document.querySelectorAll('#captionColorGroup .btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.captionColor = btn.dataset.color;
+      draw();
+    }};
+  }});
 
   document.getElementById('downloadPngBtn').onclick = downloadPng;
   document.getElementById('downloadGifBtn').onclick = exportGif;
+  const copyBtn = document.getElementById('copyPngBtn');
+  if (copyBtn) copyBtn.onclick = copyToClipboard;
 }}
 
 // REAL-TIME MOUSE DRAG & DROP FOR MURAD'S FACE
@@ -1408,6 +1542,13 @@ function render(tCtx, w, h, frameIdx) {{
     const squish = Math.sin((frameIdx % 5) / 5 * Math.PI);
     as = 1 - squish * 0.2;
     ay = squish * 12;
+  }} else if (state.anim === 'pulse') {{
+    as = 1 + Math.sin(progress) * 0.22;
+  }} else if (state.anim === 'wobble') {{
+    ax = Math.sin(progress) * 14;
+    ar = Math.cos(progress) * 0.18;
+  }} else if (state.anim === 'disco') {{
+    ay = Math.sin(progress * 2) * 8;
   }}
 
   // Draw Murad's Face
@@ -1418,7 +1559,18 @@ function render(tCtx, w, h, frameIdx) {{
     const cy = h/2 + state.faceY + ay;
     tCtx.translate(cx, cy);
     tCtx.rotate((state.faceRot * Math.PI / 180) + ar);
-    tCtx.scale(state.faceScale * as, state.faceScale * as);
+    const scaleX = (state.flipH ? -1 : 1) * state.faceScale * as;
+    const scaleY = (state.flipV ? -1 : 1) * state.faceScale * as;
+    tCtx.scale(scaleX, scaleY);
+    tCtx.globalAlpha = state.faceOpacity !== undefined ? state.faceOpacity : 1.0;
+
+    if (state.faceFilter === 'grayscale') {{
+      tCtx.filter = 'grayscale(100%)';
+    }} else if (state.faceFilter === 'deepfried') {{
+      tCtx.filter = 'contrast(220%) saturate(320%)';
+    }} else if (state.faceFilter === 'invert') {{
+      tCtx.filter = 'invert(100%)';
+    }}
 
     const baseSize = w * 0.44;
     const fAspect = (faceImg.naturalWidth || faceImg.width) / (faceImg.naturalHeight || faceImg.height);
@@ -1465,11 +1617,27 @@ function render(tCtx, w, h, frameIdx) {{
       tCtx.drawImage(faceImg, -fw/2, -fh/2, fw, fh);
     }}
 
+    // Reset filters and opacity for accessories & overlays
+    tCtx.filter = 'none';
+    tCtx.globalAlpha = 1.0;
+
     // Selection ring indicator while dragging
     if (state.isDragging) {{
       tCtx.strokeStyle = '#5865F2';
       tCtx.lineWidth = 2;
       tCtx.strokeRect(-fw/2, -fh/2, fw, fh);
+    }}
+
+    // Disco Rainbow Aura
+    if (state.anim === 'disco') {{
+      const hue = Math.floor((frameIdx / state.totalFrames) * 360);
+      tCtx.save();
+      tCtx.strokeStyle = `hsl(${{hue}}, 100%, 55%)`;
+      tCtx.lineWidth = 6;
+      tCtx.shadowColor = `hsl(${{hue}}, 100%, 55%)`;
+      tCtx.shadowBlur = 18;
+      tCtx.strokeRect(-fw/2 - 4, -fh/2 - 4, fw + 8, fh + 8);
+      tCtx.restore();
     }}
 
     // 1. Thug Shades
@@ -1536,6 +1704,80 @@ function render(tCtx, w, h, frameIdx) {{
       tCtx.restore();
     }}
 
+    // 5. Party Hat
+    if (state.accParty) {{
+      tCtx.save();
+      tCtx.beginPath();
+      tCtx.moveTo(0, -fh*0.82);
+      tCtx.lineTo(-fw*0.26, -fh*0.42);
+      tCtx.lineTo(fw*0.26, -fh*0.42);
+      tCtx.closePath();
+      tCtx.fillStyle = '#f43f5e';
+      tCtx.fill();
+      tCtx.strokeStyle = '#facc15';
+      tCtx.lineWidth = 4;
+      tCtx.beginPath();
+      tCtx.moveTo(-fw*0.13, -fh*0.64);
+      tCtx.lineTo(fw*0.13, -fh*0.64);
+      tCtx.moveTo(-fw*0.21, -fh*0.49);
+      tCtx.lineTo(fw*0.21, -fh*0.49);
+      tCtx.stroke();
+      tCtx.fillStyle = '#facc15';
+      tCtx.beginPath();
+      tCtx.arc(0, -fh*0.83, 7, 0, Math.PI*2);
+      tCtx.fill();
+      tCtx.restore();
+    }}
+
+    // 6. Angel Halo
+    if (state.accHalo) {{
+      tCtx.save();
+      tCtx.strokeStyle = '#facc15';
+      tCtx.lineWidth = 5;
+      tCtx.shadowColor = '#facc15';
+      tCtx.shadowBlur = 14;
+      tCtx.beginPath();
+      tCtx.ellipse(0, -fh*0.58, fw*0.35, fh*0.11, 0, 0, Math.PI*2);
+      tCtx.stroke();
+      tCtx.restore();
+    }}
+
+    // 7. Devil Horns
+    if (state.accHorns) {{
+      tCtx.save();
+      tCtx.fillStyle = '#ef4444';
+      tCtx.strokeStyle = '#991b1b';
+      tCtx.lineWidth = 2;
+      tCtx.beginPath();
+      tCtx.moveTo(-fw*0.24, -fh*0.38);
+      tCtx.quadraticCurveTo(-fw*0.38, -fh*0.65, -fw*0.46, -fh*0.7);
+      tCtx.quadraticCurveTo(-fw*0.26, -fh*0.58, -fw*0.14, -fh*0.4);
+      tCtx.closePath();
+      tCtx.fill(); tCtx.stroke();
+      tCtx.beginPath();
+      tCtx.moveTo(fw*0.24, -fh*0.38);
+      tCtx.quadraticCurveTo(fw*0.38, -fh*0.65, fw*0.46, -fh*0.7);
+      tCtx.quadraticCurveTo(fw*0.26, -fh*0.58, fw*0.14, -fh*0.4);
+      tCtx.closePath();
+      tCtx.fill(); tCtx.stroke();
+      tCtx.restore();
+    }}
+
+    // 8. Mustache
+    if (state.accStache) {{
+      tCtx.save();
+      tCtx.fillStyle = '#1c1917';
+      tCtx.beginPath();
+      tCtx.moveTo(0, fh*0.12);
+      tCtx.quadraticCurveTo(-fw*0.18, fh*0.06, -fw*0.32, fh*0.2);
+      tCtx.quadraticCurveTo(-fw*0.18, fh*0.22, 0, fh*0.16);
+      tCtx.quadraticCurveTo(fw*0.18, fh*0.22, fw*0.32, fh*0.2);
+      tCtx.quadraticCurveTo(fw*0.18, fh*0.06, 0, fh*0.12);
+      tCtx.closePath();
+      tCtx.fill();
+      tCtx.restore();
+    }}
+
     tCtx.restore();
   }}
 
@@ -1562,18 +1804,33 @@ function render(tCtx, w, h, frameIdx) {{
     tCtx.restore();
   }}
 
-  // Caption text
-  if (state.caption && state.caption.trim()) {{
+  // Top Caption text
+  if (state.topCaption && state.topCaption.trim()) {{
     tCtx.save();
     tCtx.font = `900 ${{Math.max(16, Math.floor(w*0.08))}}px Impact, sans-serif`;
     tCtx.textAlign = 'center';
     tCtx.textBaseline = 'top';
-    tCtx.fillStyle = '#ffffff';
+    tCtx.fillStyle = state.captionColor || '#ffffff';
     tCtx.strokeStyle = '#000000';
     tCtx.lineWidth = Math.max(4, Math.floor(w*0.02));
-    const txt = state.caption.toUpperCase();
-    tCtx.strokeText(txt, w/2, 12, w-16);
-    tCtx.fillText(txt, w/2, 12, w-16);
+    const txt = state.topCaption.toUpperCase();
+    tCtx.strokeText(txt, w/2, 12, w-20);
+    tCtx.fillText(txt, w/2, 12, w-20);
+    tCtx.restore();
+  }}
+
+  // Bottom Caption text
+  if (state.bottomCaption && state.bottomCaption.trim()) {{
+    tCtx.save();
+    tCtx.font = `900 ${{Math.max(16, Math.floor(w*0.08))}}px Impact, sans-serif`;
+    tCtx.textAlign = 'center';
+    tCtx.textBaseline = 'bottom';
+    tCtx.fillStyle = state.captionColor || '#ffffff';
+    tCtx.strokeStyle = '#000000';
+    tCtx.lineWidth = Math.max(4, Math.floor(w*0.02));
+    const txt = state.bottomCaption.toUpperCase();
+    tCtx.strokeText(txt, w/2, h-12, w-20);
+    tCtx.fillText(txt, w/2, h-12, w-20);
     tCtx.restore();
   }}
 }}
@@ -1599,11 +1856,47 @@ function startAnim() {{
   }}, Math.round(1000 / state.fps));
 }}
 
+function getRandomLetters(len = 5) {{
+  const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+  let s = '';
+  for (let i = 0; i < len; i++) {{
+    s += chars.charAt(Math.floor(Math.random() * chars.length));
+  }}
+  return s;
+}}
+
+function getDownloadFilename(ext) {{
+  const customInput = document.getElementById('customFilenameInput');
+  const raw = (customInput && customInput.value.trim()) ? customInput.value.trim() : 'murad_meme';
+  const cleanBase = raw.replace(/[^a-zA-Z0-9_-]/g, '_');
+  return `${{cleanBase}}_${{getRandomLetters(5)}}.${{ext}}`;
+}}
+
 function downloadPng() {{
   const link = document.createElement('a');
-  link.download = 'murad_meme.png';
+  link.download = getDownloadFilename('png');
   link.href = canvas.toDataURL('image/png');
   link.click();
+}}
+
+function copyToClipboard() {{
+  const btn = document.getElementById('copyPngBtn');
+  if (!canvas.toBlob || !navigator.clipboard) {{
+    alert('Clipboard copying not supported in this browser. Please use Download .PNG.');
+    return;
+  }}
+  canvas.toBlob(async (blob) => {{
+    try {{
+      await navigator.clipboard.write([
+        new ClipboardItem({{ 'image/png': blob }})
+      ]);
+      const prev = btn.innerText;
+      btn.innerText = '✅ Copied!';
+      setTimeout(() => {{ btn.innerText = prev; }}, 2000);
+    }} catch (e) {{
+      alert('Could not copy image to clipboard. Use Download .PNG instead.');
+    }}
+  }});
 }}
 
 function exportGif() {{
@@ -1678,7 +1971,7 @@ function exportGif() {{
       txt.innerText = 'Ready!';
       if (!obj.error) {{
         const link = document.createElement('a');
-        link.download = `murad_meme.gif`;
+        link.download = getDownloadFilename('gif');
         link.href = obj.image;
         link.click();
         setTimeout(() => {{ wrap.style.display = 'none'; }}, 2000);
