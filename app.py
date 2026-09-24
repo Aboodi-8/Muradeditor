@@ -1250,14 +1250,26 @@ with st.expander("🔐 Admin Panel (Add New Faces to Default Catalog)"):
             except Exception:
                 pass
 
-            gh_token = st.text_input(
-                "GitHub Personal Access Token:",
-                value=token_secret,
-                type="password",
-                placeholder="ghp_xxxxxxxxxxxx",
-                help="Add GITHUB_TOKEN to Streamlit Secrets or paste once here."
-            )
-            st.caption("💡 Without GitHub login: Anyone with the Admin password can push using this stored token.")
+            if token_secret:
+                st.success("🟢 GitHub Auto-Sync Active")
+                st.info("✨ Connected via Streamlit Secrets! No GitHub login is required for you or anyone else.")
+                gh_token = token_secret
+            else:
+                gh_token = st.text_input(
+                    "GitHub Personal Access Token:",
+                    type="password",
+                    placeholder="ghp_xxxxxxxxxxxxxxxxxxxx",
+                    help="Tip: Add GITHUB_TOKEN to Streamlit Cloud Secrets so you never have to paste it here!"
+                )
+                with st.expander("ℹ️ How to make it auto-commit without GitHub login"):
+                    st.markdown("""
+                    **To make pushes permanent for everyone without logging in:**
+                    1. Generate a GitHub Token at [github.com/settings/tokens](https://github.com/settings/tokens) with `repo` scope.
+                    2. In your Streamlit Cloud Dashboard (`share.streamlit.io`):
+                       - Click `...` next to `muradeditor` → **Settings** → **Secrets**.
+                       - Add: `GITHUB_TOKEN = "ghp_your_token_here"`
+                    3. Save! Once added, anyone entering `MuradAdmin` can push faces directly with 1 click!
+                    """)
 
         if st.button("🚀 Push Face to Default Catalog", type="primary"):
             if not new_face_name or not new_face_file:
