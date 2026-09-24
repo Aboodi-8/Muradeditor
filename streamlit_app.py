@@ -284,10 +284,90 @@ html_app = f"""
     padding: 4px 8px;
   }}
   .sidebar-col {{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }}
+  .sidebar-grid {{
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 12px;
     align-items: start;
+  }}
+  .sidebar-subcol {{
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }}
+  .card-step5 {{
+    margin-bottom: 0 !important;
+  }}
+  .step5-body {{
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 14px;
+    margin-top: 6px;
+    align-items: start;
+  }}
+  .btn-add-face {{
+    background: var(--blurple);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 3px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }}
+  .btn-add-face:hover {{
+    background: var(--blurple-hover);
+  }}
+  .face-layers-bar {{
+    background: rgba(0,0,0,0.35);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    margin-bottom: 8px;
+  }}
+  .face-layer-pill {{
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.15s ease;
+  }}
+  .face-layer-pill:hover {{
+    border-color: rgba(88,101,242,0.5);
+  }}
+  .face-layer-pill.active {{
+    background: rgba(88,101,242,0.3);
+    border-color: var(--blurple);
+    color: #fff;
+    box-shadow: 0 0 8px rgba(88,101,242,0.4);
+  }}
+  .pill-del {{
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0 2px;
+    line-height: 1;
+    font-weight: 700;
+  }}
+  .pill-del:hover {{
+    color: #ef4444;
   }}
   @media (max-width: 1240px) {{
     .app-container {{
@@ -296,7 +376,10 @@ html_app = f"""
     }}
   }}
   @media (max-width: 980px) {{
-    .sidebar-col {{
+    .sidebar-grid {{
+      grid-template-columns: 1fr;
+    }}
+    .step5-body {{
       grid-template-columns: 1fr;
     }}
     .app-container {{
@@ -695,181 +778,210 @@ html_app = f"""
 <div class="app-container">
   <!-- Controls Column -->
   <div class="sidebar-col">
-    
-    <!-- 1. Background -->
-    <div class="card">
-      <div class="card-title">
-        <span class="step-badge">1</span>
-        <span>Background Image / Meme / GIF</span>
-      </div>
-      <div class="hint">Upload any image/meme/GIF or pick a preset body:</div>
-      <label class="btn-upload">
-        <span>📁 Upload Picture / Meme / Animated GIF</span>
-        <input type="file" id="bgFileInput" accept="image/*,.gif">
-      </label>
-      <div class="presets-row" id="bgPresetsRow">
-        <!-- Dynamically populated from real meme template images -->
-      </div>
-
-      <!-- Framing & True Size Mode -->
-      <div style="margin-top: 10px; margin-bottom: 6px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Canvas Size & Ratio:</span>
-          <span id="canvasDimsBadge" style="font-size: 10px; background: rgba(88,101,242,0.2); color: #5865F2; padding: 1px 6px; border-radius: 8px;">500x500</span>
-        </div>
-        <div class="btn-group" id="canvasSizeGroup" style="display:flex; gap:3px;">
-          <button class="btn-toggle active" data-size="true_size" title="Keep natural true size and aspect ratio of upload">📐 True Size</button>
-          <button class="btn-toggle" data-size="square" title="1:1 Square Discord sticker">⏹️ Square</button>
-          <button class="btn-toggle" data-size="landscape" title="16:9 Landscape">🖼️ 16:9</button>
-          <button class="btn-toggle" data-size="portrait" title="9:16 Portrait">📱 9:16</button>
-        </div>
-      </div>
-
-      <!-- Crop & Framing Controls -->
-      <div style="margin-top: 8px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-          <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Crop & Fit:</span>
-          <button id="resetBgCropBtn" style="font-size: 10px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 2px 6px; border-radius: 4px; cursor: pointer;">🔄 Reset Crop</button>
-        </div>
-        <div class="btn-group" id="bgFitGroup" style="display:flex; gap:3px; margin-bottom: 6px;">
-          <button class="btn-toggle active" data-fit="cover" title="Fill canvas (auto-crop edges)">✂️ Fill & Crop</button>
-          <button class="btn-toggle" data-fit="fit" title="Fit entire image without cropping">🔍 Full Image</button>
-        </div>
-
-        <div style="background: rgba(0,0,0,0.25); border-radius: 6px; padding: 8px; border: 1px solid rgba(255,255,255,0.05);">
-          <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
-            <span style="color:var(--text-muted);">Background Zoom:</span>
-            <span id="bgZoomVal" style="color:#fff; font-weight:600;">100%</span>
+    <div class="sidebar-grid">
+      <!-- Left Sub-column -->
+      <div class="sidebar-subcol">
+        <!-- 1. Background -->
+        <div class="card">
+          <div class="card-title">
+            <span class="step-badge">1</span>
+            <span>Background Image / Meme / GIF</span>
           </div>
-          <input type="range" id="bgZoomSlider" min="0.4" max="2.5" step="0.05" value="1.0" style="width:100%; margin-bottom:6px;">
+          <div class="hint">Upload any image/meme/GIF or pick a preset body:</div>
+          <label class="btn-upload">
+            <span>📁 Upload Picture / Meme / Animated GIF</span>
+            <input type="file" id="bgFileInput" accept="image/*,.gif">
+          </label>
+          <div class="presets-row" id="bgPresetsRow">
+            <!-- Dynamically populated from real meme template images -->
+          </div>
 
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-            <div>
-              <span style="font-size:10px; color:var(--text-muted);">Pan Left / Right:</span>
-              <input type="range" id="bgPanXSlider" min="-300" max="300" step="2" value="0" style="width:100%;">
+          <!-- Framing & True Size Mode -->
+          <div style="margin-top: 10px; margin-bottom: 6px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Canvas Size & Ratio:</span>
+              <span id="canvasDimsBadge" style="font-size: 10px; background: rgba(88,101,242,0.2); color: #5865F2; padding: 1px 6px; border-radius: 8px;">500x500</span>
             </div>
-            <div>
-              <span style="font-size:10px; color:var(--text-muted);">Pan Up / Down:</span>
-              <input type="range" id="bgPanYSlider" min="-300" max="300" step="2" value="0" style="width:100%;">
+            <div class="btn-group" id="canvasSizeGroup" style="display:flex; gap:3px;">
+              <button class="btn-toggle active" data-size="true_size" title="Keep natural true size and aspect ratio of upload">📐 True Size</button>
+              <button class="btn-toggle" data-size="square" title="1:1 Square Discord sticker">⏹️ Square</button>
+              <button class="btn-toggle" data-size="landscape" title="16:9 Landscape">🖼️ 16:9</button>
+              <button class="btn-toggle" data-size="portrait" title="9:16 Portrait">📱 9:16</button>
             </div>
           </div>
+
+          <!-- Crop & Framing Controls -->
+          <div style="margin-top: 8px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Crop & Fit:</span>
+              <button id="resetBgCropBtn" style="font-size: 10px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 2px 6px; border-radius: 4px; cursor: pointer;">🔄 Reset Crop</button>
+            </div>
+            <div class="btn-group" id="bgFitGroup" style="display:flex; gap:3px; margin-bottom: 6px;">
+              <button class="btn-toggle active" data-fit="cover" title="Fill canvas (auto-crop edges)">✂️ Fill & Crop</button>
+              <button class="btn-toggle" data-fit="fit" title="Fit entire image without cropping">🔍 Full Image</button>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.25); border-radius: 6px; padding: 8px; border: 1px solid rgba(255,255,255,0.05);">
+              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
+                <span style="color:var(--text-muted);">Background Zoom:</span>
+                <span id="bgZoomVal" style="color:#fff; font-weight:600;">100%</span>
+              </div>
+              <input type="range" id="bgZoomSlider" min="0.4" max="2.5" step="0.05" value="1.0" style="width:100%; margin-bottom:6px;">
+
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>
+                  <span style="font-size:10px; color:var(--text-muted);">Pan Left / Right:</span>
+                  <input type="range" id="bgPanXSlider" min="-300" max="300" step="2" value="0" style="width:100%;">
+                </div>
+                <div>
+                  <span style="font-size:10px; color:var(--text-muted);">Pan Up / Down:</span>
+                  <input type="range" id="bgPanYSlider" min="-300" max="300" step="2" value="0" style="width:100%;">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Meme Accessories -->
+        <div class="card">
+          <div class="card-title">
+            <span class="step-badge">3</span>
+            <span>Meme Accessories & Stickers</span>
+          </div>
+          <div class="hint">Toggle funny accessories on Murad's head:</div>
+          <div class="accessories-row" id="accRow">
+            <button class="acc-btn" data-acc="shades">🕶️ Thug Shades</button>
+            <button class="acc-btn" data-acc="laser">🔴 Laser Eyes</button>
+            <button class="acc-btn" data-acc="crown">👑 Gold Crown</button>
+            <button class="acc-btn" data-acc="bubble">💬 Speech Bubble</button>
+            <button class="acc-btn" data-acc="party">🥳 Party Hat</button>
+            <button class="acc-btn" data-acc="halo">😇 Angel Halo</button>
+            <button class="acc-btn" data-acc="horns">😈 Devil Horns</button>
+            <button class="acc-btn" data-acc="stache">🥸 Mustache</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Sub-column -->
+      <div class="sidebar-subcol">
+        <!-- 2. Choose fruits Faces -->
+        <div class="card">
+          <div class="card-title" style="justify-content:space-between;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="step-badge">2</span>
+              <span>Choose fruits Faces</span>
+            </div>
+            <button id="addFaceLayerBtn" type="button" class="btn-add-face" title="Add another face layer to slap on the meme">➕ Add Face to Meme</button>
+          </div>
+          <div class="hint">Pick a face or upload your own to slap on the meme:</div>
+
+          <!-- Face Layers Bar (Multi-face manager) -->
+          <div class="face-layers-bar">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+              <span style="font-size:10px; font-weight:700; color:var(--text-muted);">ACTIVE FACE LAYERS:</span>
+              <span id="faceLayersCount" style="font-size:10px; color:#5865F2; font-weight:700;">1 face</span>
+            </div>
+            <div id="faceLayersContainer" style="display:flex; gap:5px; flex-wrap:wrap; align-items:center;">
+              <!-- Dynamically populated face pills -->
+            </div>
+          </div>
+          
+          <label class="btn-upload" style="margin-bottom:8px; padding:6px 10px; font-size:11px;">
+            <span>📸 Upload Custom Face / Sticker</span>
+            <input type="file" id="faceFileInput" accept="image/*">
+          </label>
+
+          <div class="faces-grid" id="facesGrid"></div>
+          
+          <div class="row-flex">
+            <span style="font-size: 11px; color: var(--text-muted);">Cutout Shape:</span>
+            <div class="btn-group" id="maskGroup">
+              <button class="btn-toggle active" data-mask="square">Full Frame (True Size)</button>
+              <button class="btn-toggle" data-mask="circle">Sticker Circle</button>
+              <button class="btn-toggle" data-mask="oval">Oval Face</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Face Sizing, Flip & Filters -->
+        <div class="card">
+          <div class="card-title">
+            <span class="step-badge">4</span>
+            <span>Face Sizing, Flip & FX</span>
+          </div>
+          <div class="slider-control">
+            <label>Size: <span id="sizeVal">100%</span></label>
+            <input type="range" id="faceScale" min="0.3" max="2.5" step="0.05" value="1.0">
+          </div>
+          <div class="slider-control">
+            <label>Rotation: <span id="rotVal">0°</span></label>
+            <input type="range" id="faceRot" min="-180" max="180" step="5" value="0">
+          </div>
+
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
+            <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Flip Face:</span>
+            <div class="btn-group" id="flipGroup" style="display:flex; gap:3px;">
+              <button class="btn-toggle" id="flipHBtn" title="Mirror / Flip horizontally">↔️ Flip H</button>
+              <button class="btn-toggle" id="flipVBtn" title="Flip vertically">↕️ Flip V</button>
+            </div>
+          </div>
+
+          <div class="slider-control" style="margin-top:8px;">
+            <label>Face Opacity: <span id="opacityVal">100%</span></label>
+            <input type="range" id="faceOpacity" min="0.2" max="1.0" step="0.05" value="1.0">
+          </div>
+
+          <div style="margin-top:6px;">
+            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px; font-weight:600;">Face Color FX:</label>
+            <div class="btn-group" id="faceFilterGroup" style="display:flex; flex-wrap:wrap; gap:3px;">
+              <button class="btn-toggle active" data-filter="none">Normal</button>
+              <button class="btn-toggle" data-filter="grayscale">Noir B&W</button>
+              <button class="btn-toggle" data-filter="deepfried">Deep Fried 🔥</button>
+              <button class="btn-toggle" data-filter="invert">Invert ⚡</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- 2. Choose fruits Faces -->
-    <div class="card">
-      <div class="card-title">
-        <span class="step-badge">2</span>
-        <span>Choose fruits Faces</span>
-      </div>
-      <div class="hint">Pick a face or upload your own to slap on the meme:</div>
-      
-      <label class="btn-upload" style="margin-bottom:8px; padding:6px 10px; font-size:11px;">
-        <span>📸 Upload Custom Face / Sticker</span>
-        <input type="file" id="faceFileInput" accept="image/*">
-      </label>
-
-      <div class="faces-grid" id="facesGrid"></div>
-      
-      <div class="row-flex">
-        <span style="font-size: 11px; color: var(--text-muted);">Cutout Shape:</span>
-        <div class="btn-group" id="maskGroup">
-          <button class="btn-toggle active" data-mask="square">Full Frame (True Size)</button>
-          <button class="btn-toggle" data-mask="circle">Sticker Circle</button>
-          <button class="btn-toggle" data-mask="oval">Oval Face</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 3. Meme Accessories -->
-    <div class="card">
-      <div class="card-title">
-        <span class="step-badge">3</span>
-        <span>Meme Accessories & Stickers</span>
-      </div>
-      <div class="hint">Toggle funny accessories on Murad's head:</div>
-      <div class="accessories-row" id="accRow">
-        <button class="acc-btn" data-acc="shades">🕶️ Thug Shades</button>
-        <button class="acc-btn" data-acc="laser">🔴 Laser Eyes</button>
-        <button class="acc-btn" data-acc="crown">👑 Gold Crown</button>
-        <button class="acc-btn" data-acc="bubble">💬 Speech Bubble</button>
-        <button class="acc-btn" data-acc="party">🥳 Party Hat</button>
-        <button class="acc-btn" data-acc="halo">😇 Angel Halo</button>
-        <button class="acc-btn" data-acc="horns">😈 Devil Horns</button>
-        <button class="acc-btn" data-acc="stache">🥸 Mustache</button>
-      </div>
-    </div>
-
-    <!-- 4. Face Sizing, Flip & Filters -->
-    <div class="card">
-      <div class="card-title">
-        <span class="step-badge">4</span>
-        <span>Face Sizing, Flip & FX</span>
-      </div>
-      <div class="slider-control">
-        <label>Size: <span id="sizeVal">100%</span></label>
-        <input type="range" id="faceScale" min="0.3" max="2.5" step="0.05" value="1.0">
-      </div>
-      <div class="slider-control">
-        <label>Rotation: <span id="rotVal">0°</span></label>
-        <input type="range" id="faceRot" min="-180" max="180" step="5" value="0">
-      </div>
-
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-        <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Flip Face:</span>
-        <div class="btn-group" id="flipGroup" style="display:flex; gap:3px;">
-          <button class="btn-toggle" id="flipHBtn" title="Mirror / Flip horizontally">↔️ Flip H</button>
-          <button class="btn-toggle" id="flipVBtn" title="Flip vertically">↕️ Flip V</button>
-        </div>
-      </div>
-
-      <div class="slider-control" style="margin-top:8px;">
-        <label>Face Opacity: <span id="opacityVal">100%</span></label>
-        <input type="range" id="faceOpacity" min="0.2" max="1.0" step="0.05" value="1.0">
-      </div>
-
-      <div style="margin-top:6px;">
-        <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px; font-weight:600;">Face Color FX:</label>
-        <div class="btn-group" id="faceFilterGroup" style="display:flex; flex-wrap:wrap; gap:3px;">
-          <button class="btn-toggle active" data-filter="none">Normal</button>
-          <button class="btn-toggle" data-filter="grayscale">Noir B&W</button>
-          <button class="btn-toggle" data-filter="deepfried">Deep Fried 🔥</button>
-          <button class="btn-toggle" data-filter="invert">Invert ⚡</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- 5. Discord Animation & Captions -->
-    <div class="card">
+    <!-- 5. Discord GIF Animation & Text (Full width spanning both columns) -->
+    <div class="card card-step5">
       <div class="card-title">
         <span class="step-badge">5</span>
         <span>Discord GIF Animation & Text</span>
       </div>
-      <div class="anim-grid" id="animGrid">
-        <button class="anim-btn active" data-anim="none"><span>🖼️</span><span>Still</span></button>
-        <button class="anim-btn" data-anim="bob"><span>🕺</span><span>Head Bob</span></button>
-        <button class="anim-btn" data-anim="shake"><span>💢</span><span>Shake</span></button>
-        <button class="anim-btn" data-anim="spin"><span>🌀</span><span>Speen</span></button>
-        <button class="anim-btn" data-anim="petpet"><span>👋</span><span>Petpet</span></button>
-        <button class="anim-btn" data-anim="zoom"><span>💥</span><span>Zoom</span></button>
-        <button class="anim-btn" data-anim="pulse"><span>💓</span><span>Pulse</span></button>
-        <button class="anim-btn" data-anim="wobble"><span>🌊</span><span>Wobble</span></button>
-        <button class="anim-btn" data-anim="disco"><span>🪩</span><span>Disco</span></button>
-      </div>
+      <div class="step5-body">
+        <div>
+          <span style="font-size:11px; color:var(--text-muted); font-weight:600; display:block; margin-bottom:4px;">GIF Animation Preset:</span>
+          <div class="anim-grid" id="animGrid">
+            <button class="anim-btn active" data-anim="none"><span>🖼️</span><span>Still</span></button>
+            <button class="anim-btn" data-anim="bob"><span>🕺</span><span>Head Bob</span></button>
+            <button class="anim-btn" data-anim="shake"><span>💢</span><span>Shake</span></button>
+            <button class="anim-btn" data-anim="spin"><span>🌀</span><span>Speen</span></button>
+            <button class="anim-btn" data-anim="petpet"><span>👋</span><span>Petpet</span></button>
+            <button class="anim-btn" data-anim="zoom"><span>💥</span><span>Zoom</span></button>
+            <button class="anim-btn" data-anim="pulse"><span>💓</span><span>Pulse</span></button>
+            <button class="anim-btn" data-anim="wobble"><span>🌊</span><span>Wobble</span></button>
+            <button class="anim-btn" data-anim="disco"><span>🪩</span><span>Disco</span></button>
+          </div>
+        </div>
 
-      <div style="margin-top:8px; display:flex; flex-direction:column; gap:4px;">
-        <input type="text" id="memeCaptionTop" class="caption-input" placeholder="TOP TEXT (e.g. WHEN MURAD...)" maxlength="45">
-        <input type="text" id="memeCaptionBottom" class="caption-input" placeholder="BOTTOM TEXT (e.g. BOTTOM TEXT)" maxlength="45">
-      </div>
+        <div style="display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <span style="font-size:11px; color:var(--text-muted); font-weight:600; display:block; margin-bottom:4px;">Meme Text & Captions:</span>
+            <input type="text" id="memeCaptionTop" class="caption-input" placeholder="TOP TEXT (e.g. WHEN MURAD...)" maxlength="45" style="margin-top:0; margin-bottom:6px;">
+            <input type="text" id="memeCaptionBottom" class="caption-input" placeholder="BOTTOM TEXT (e.g. BOTTOM TEXT)" maxlength="45" style="margin-top:0;">
+          </div>
 
-      <div style="display:flex; align-items:center; justify-content:space-between; margin-top:6px;">
-        <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Text Color:</span>
-        <div class="btn-group" id="captionColorGroup" style="display:flex; gap:3px;">
-          <button class="btn-toggle active" data-color="#ffffff" style="color:#ffffff;">White</button>
-          <button class="btn-toggle" data-color="#facc15" style="color:#facc15;">Yellow</button>
-          <button class="btn-toggle" data-color="#ef4444" style="color:#ef4444;">Red</button>
-          <button class="btn-toggle" data-color="#22d3ee" style="color:#22d3ee;">Cyan</button>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
+            <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Text Color:</span>
+            <div class="btn-group" id="captionColorGroup" style="display:flex; gap:3px;">
+              <button class="btn-toggle active" data-color="#ffffff" style="color:#ffffff;">White</button>
+              <button class="btn-toggle" data-color="#facc15" style="color:#facc15;">Yellow</button>
+              <button class="btn-toggle" data-color="#ef4444" style="color:#ef4444;">Red</button>
+              <button class="btn-toggle" data-color="#22d3ee" style="color:#22d3ee;">Cyan</button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -943,8 +1055,35 @@ html_app = f"""
 <script>
 const faces = {faces_json};
 const templates = {templates_json};
+function makeFaceLayer(faceIndex, x, y, scale) {{
+  return {{
+    id: 'layer_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
+    faceIndex: faceIndex !== undefined ? faceIndex : 0,
+    x: x !== undefined ? x : 0,
+    y: y !== undefined ? y : -65,
+    scale: scale !== undefined ? scale : 1.0,
+    rot: 0,
+    flipH: false,
+    flipV: false,
+    opacity: 1.0,
+    filter: 'none',
+    mask: 'square',
+    accShades: false,
+    accLaser: false,
+    accCrown: false,
+    accBubble: false,
+    accParty: false,
+    accHalo: false,
+    accHorns: false,
+    accStache: false
+  }};
+}}
+
 const state = {{
-  activeFaceIndex: 0,
+  facesOnCanvas: [
+    makeFaceLayer(0, 0, -65, 1.0)
+  ],
+  selectedFaceIdx: 0,
   bgType: 'preset',
   presetBg: templates.length > 0 ? templates[0].id : 'suit',
   customBgImg: null,
@@ -958,15 +1097,6 @@ const state = {{
   gifBgFrameIndex: 0,
   lastNatW: 500,
   lastNatH: 500,
-  faceX: 0,
-  faceY: -65,
-  faceScale: 1.0,
-  faceRot: 0,
-  flipH: false,
-  flipV: false,
-  faceOpacity: 1.0,
-  faceFilter: 'none',
-  mask: 'square',
   anim: 'none',
   topCaption: '',
   bottomCaption: '',
@@ -978,16 +1108,146 @@ const state = {{
   dragStartX: 0,
   dragStartY: 0,
   initialFaceX: 0,
-  initialFaceY: 0,
-  accShades: false,
-  accLaser: false,
-  accCrown: false,
-  accBubble: false,
-  accParty: false,
-  accHalo: false,
-  accHorns: false,
-  accStache: false
+  initialFaceY: 0
 }};
+
+function getSelectedFace() {{
+  if (!state.facesOnCanvas || state.facesOnCanvas.length === 0) return null;
+  if (state.selectedFaceIdx < 0 || state.selectedFaceIdx >= state.facesOnCanvas.length) {{
+    state.selectedFaceIdx = 0;
+  }}
+  return state.facesOnCanvas[state.selectedFaceIdx];
+}}
+
+function syncControlsToSelectedFace() {{
+  const cur = getSelectedFace();
+  if (!cur) return;
+
+  // Face Grid active thumbnail
+  document.querySelectorAll('.face-btn').forEach((b, idx) => {{
+    b.classList.toggle('active', idx === cur.faceIndex);
+  }});
+  if (faces[cur.faceIndex]) {{
+    const avatarEl = document.getElementById('discordAvatar');
+    if (avatarEl) avatarEl.src = faces[cur.faceIndex].src;
+  }}
+
+  // Cutout Mask
+  document.querySelectorAll('#maskGroup .btn-toggle').forEach(b => {{
+    b.classList.toggle('active', b.dataset.mask === cur.mask);
+  }});
+
+  // Scale & Rot
+  const scaleSlider = document.getElementById('faceScale');
+  if (scaleSlider) scaleSlider.value = cur.scale;
+  const sizeVal = document.getElementById('sizeVal');
+  if (sizeVal) sizeVal.innerText = Math.round(cur.scale * 100) + '%';
+
+  const rotSlider = document.getElementById('faceRot');
+  if (rotSlider) rotSlider.value = cur.rot;
+  const rotVal = document.getElementById('rotVal');
+  if (rotVal) rotVal.innerText = cur.rot + '°';
+
+  // Flip
+  const flipHBtn = document.getElementById('flipHBtn');
+  if (flipHBtn) flipHBtn.classList.toggle('active', !!cur.flipH);
+  const flipVBtn = document.getElementById('flipVBtn');
+  if (flipVBtn) flipVBtn.classList.toggle('active', !!cur.flipV);
+
+  // Opacity
+  const opacitySlider = document.getElementById('faceOpacity');
+  if (opacitySlider) opacitySlider.value = cur.opacity !== undefined ? cur.opacity : 1.0;
+  const opacityVal = document.getElementById('opacityVal');
+  if (opacityVal) opacityVal.innerText = Math.round((cur.opacity !== undefined ? cur.opacity : 1.0) * 100) + '%';
+
+  // Filter
+  document.querySelectorAll('#faceFilterGroup .btn-toggle').forEach(b => {{
+    b.classList.toggle('active', b.dataset.filter === (cur.filter || 'none'));
+  }});
+
+  // Accessories
+  document.querySelectorAll('#accRow .acc-btn').forEach(btn => {{
+    const acc = btn.dataset.acc;
+    let isActive = false;
+    if (acc === 'shades') isActive = !!cur.accShades;
+    else if (acc === 'laser') isActive = !!cur.accLaser;
+    else if (acc === 'crown') isActive = !!cur.accCrown;
+    else if (acc === 'bubble') isActive = !!cur.accBubble;
+    else if (acc === 'party') isActive = !!cur.accParty;
+    else if (acc === 'halo') isActive = !!cur.accHalo;
+    else if (acc === 'horns') isActive = !!cur.accHorns;
+    else if (acc === 'stache') isActive = !!cur.accStache;
+    btn.classList.toggle('active', isActive);
+  }});
+}}
+
+function renderFaceLayersUI() {{
+  const container = document.getElementById('faceLayersContainer');
+  const countEl = document.getElementById('faceLayersCount');
+  if (!container) return;
+  container.innerHTML = '';
+  
+  if (countEl) {{
+    countEl.innerText = `${{state.facesOnCanvas.length}} face${{state.facesOnCanvas.length > 1 ? 's' : ''}}`;
+  }}
+
+  state.facesOnCanvas.forEach((layer, idx) => {{
+    const fObj = faces[layer.faceIndex] || {{ name: 'Face ' + (idx + 1), src: '' }};
+    const pill = document.createElement('div');
+    pill.className = 'face-layer-pill' + (idx === state.selectedFaceIdx ? ' active' : '');
+    pill.title = `Click to select and edit ${{fObj.name}}`;
+    
+    let html = `<span style="font-weight:700; opacity:0.8; font-size:10px;">#${{idx + 1}}</span>`;
+    if (fObj.src) {{
+      html += `<img src="${{fObj.src}}">`;
+    }}
+    html += `<span>${{fObj.name.length > 11 ? fObj.name.substring(0, 11) + '…' : fObj.name}}</span>`;
+    
+    if (state.facesOnCanvas.length > 1) {{
+      html += `<button type="button" class="pill-del" title="Remove this face layer">✕</button>`;
+    }}
+    pill.innerHTML = html;
+
+    pill.onclick = (e) => {{
+      if (e.target.classList.contains('pill-del')) {{
+        removeFaceLayer(idx, e);
+        return;
+      }}
+      state.selectedFaceIdx = idx;
+      syncControlsToSelectedFace();
+      renderFaceLayersUI();
+      draw();
+    }};
+
+    container.appendChild(pill);
+  }});
+}}
+
+function addFaceLayer() {{
+  const count = state.facesOnCanvas.length;
+  const nextIdx = count < faces.length ? count : (state.selectedFaceIdx + 1) % faces.length;
+  const offsetSign = count % 2 === 1 ? 1 : -1;
+  const offsetX = offsetSign * (35 + (count * 20));
+  const offsetY = -65 + ((count % 3) * 20);
+  const newLayer = makeFaceLayer(nextIdx, offsetX, offsetY, 0.9);
+  state.facesOnCanvas.push(newLayer);
+  state.selectedFaceIdx = state.facesOnCanvas.length - 1;
+  syncControlsToSelectedFace();
+  renderFaceLayersUI();
+  draw();
+}}
+
+function removeFaceLayer(idx, e) {{
+  if (e) e.stopPropagation();
+  if (state.facesOnCanvas.length <= 1) return;
+  state.facesOnCanvas.splice(idx, 1);
+  if (state.selectedFaceIdx >= state.facesOnCanvas.length) {{
+    state.selectedFaceIdx = state.facesOnCanvas.length - 1;
+  }}
+  syncControlsToSelectedFace();
+  renderFaceLayersUI();
+  draw();
+}}
 
 // Preload face images
 const loadedFaces = [];
@@ -1011,6 +1271,8 @@ const ctx = canvas.getContext('2d');
 function init() {{
   buildTemplatesUI();
   buildFacesUI();
+  renderFaceLayersUI();
+  syncControlsToSelectedFace();
   setupEvents();
   setupDragging();
   startAnim();
@@ -1137,11 +1399,15 @@ function buildTemplatesUI() {{
       state.bgType = 'preset';
       state.presetBg = t.id;
       state.customBgImg = null;
-      if (t.id === 'suit') {{ state.faceX = 0; state.faceY = -65; state.faceScale = 1.0; }}
-      else if (t.id === 'gigachad') {{ state.faceX = 0; state.faceY = -60; state.faceScale = 0.95; }}
-      else if (t.id === 'throne') {{ state.faceX = 0; state.faceY = -50; state.faceScale = 0.85; }}
-      else if (t.id === 'astronaut') {{ state.faceX = 0; state.faceY = -35; state.faceScale = 0.85; }}
-      else if (t.id === 'doge') {{ state.faceX = 0; state.faceY = -35; state.faceScale = 0.9; }}
+      const cur = getSelectedFace();
+      if (cur) {{
+        if (t.id === 'suit') {{ cur.x = 0; cur.y = -65; cur.scale = 1.0; }}
+        else if (t.id === 'gigachad') {{ cur.x = 0; cur.y = -60; cur.scale = 0.95; }}
+        else if (t.id === 'throne') {{ cur.x = 0; cur.y = -50; cur.scale = 0.85; }}
+        else if (t.id === 'astronaut') {{ cur.x = 0; cur.y = -35; cur.scale = 0.85; }}
+        else if (t.id === 'doge') {{ cur.x = 0; cur.y = -35; cur.scale = 0.9; }}
+        syncControlsToSelectedFace();
+      }}
 
       const tplImg = loadedTemplates[t.id];
       if (tplImg && tplImg.naturalWidth) {{
@@ -1157,24 +1423,38 @@ function buildTemplatesUI() {{
 
 function buildFacesUI() {{
   const container = document.getElementById('facesGrid');
+  if (!container) return;
+  container.innerHTML = '';
   faces.forEach((f, idx) => {{
     const btn = document.createElement('div');
-    btn.className = 'face-btn' + (idx === 0 ? ' active' : '');
+    const cur = getSelectedFace();
+    const isAct = cur ? (cur.faceIndex === idx) : (idx === 0);
+    btn.className = 'face-btn' + (isAct ? ' active' : '');
     btn.innerHTML = `<img src="${{f.src}}"><span>${{f.name}}</span>`;
     btn.onclick = () => {{
-      state.activeFaceIndex = idx;
-      document.querySelectorAll('.face-btn').forEach((b, i) => b.classList.toggle('active', i === idx));
-      document.getElementById('discordAvatar').src = f.src;
-      draw();
+      const curFace = getSelectedFace();
+      if (curFace) {{
+        curFace.faceIndex = idx;
+        syncControlsToSelectedFace();
+        renderFaceLayersUI();
+        draw();
+      }}
     }};
     container.appendChild(btn);
   }});
-  if (faces.length > 0) {{
-    document.getElementById('discordAvatar').src = faces[0].src;
+  const curFace = getSelectedFace();
+  if (curFace && faces[curFace.faceIndex]) {{
+    const avatarEl = document.getElementById('discordAvatar');
+    if (avatarEl) avatarEl.src = faces[curFace.faceIndex].src;
   }}
 }}
 
 function setupEvents() {{
+  const addFaceBtn = document.getElementById('addFaceLayerBtn');
+  if (addFaceBtn) {{
+    addFaceBtn.onclick = () => addFaceLayer();
+  }}
+
   document.getElementById('bgFileInput').onchange = (e) => {{
     if (e.target.files && e.target.files[0]) {{
       const file = e.target.files[0];
@@ -1293,10 +1573,17 @@ function setupEvents() {{
               name: 'My Upload 📸',
               src: evt.target.result
             }});
-            state.activeFaceIndex = 0;
-            state.mask = 'square';
-            document.querySelectorAll('#maskGroup .btn-toggle').forEach(b => b.classList.toggle('active', b.dataset.mask === 'square'));
+            state.facesOnCanvas.forEach(fl => {{
+              fl.faceIndex += 1;
+            }});
+            const cur = getSelectedFace();
+            if (cur) {{
+              cur.faceIndex = 0;
+              cur.mask = 'square';
+            }}
             buildFacesUI();
+            syncControlsToSelectedFace();
+            renderFaceLayersUI();
             draw();
           }};
           img.src = evt.target.result;
@@ -1308,24 +1595,28 @@ function setupEvents() {{
 
   document.querySelectorAll('#maskGroup .btn-toggle').forEach(btn => {{
     btn.onclick = () => {{
+      const cur = getSelectedFace();
+      if (!cur) return;
       document.querySelectorAll('#maskGroup .btn-toggle').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      state.mask = btn.dataset.mask;
+      cur.mask = btn.dataset.mask;
       draw();
     }};
   }});
 
   document.querySelectorAll('#accRow .acc-btn').forEach(btn => {{
     btn.onclick = () => {{
+      const cur = getSelectedFace();
+      if (!cur) return;
       const acc = btn.dataset.acc;
-      if (acc === 'shades') state.accShades = !state.accShades;
-      else if (acc === 'laser') state.accLaser = !state.accLaser;
-      else if (acc === 'crown') state.accCrown = !state.accCrown;
-      else if (acc === 'bubble') state.accBubble = !state.accBubble;
-      else if (acc === 'party') state.accParty = !state.accParty;
-      else if (acc === 'halo') state.accHalo = !state.accHalo;
-      else if (acc === 'horns') state.accHorns = !state.accHorns;
-      else if (acc === 'stache') state.accStache = !state.accStache;
+      if (acc === 'shades') cur.accShades = !cur.accShades;
+      else if (acc === 'laser') cur.accLaser = !cur.accLaser;
+      else if (acc === 'crown') cur.accCrown = !cur.accCrown;
+      else if (acc === 'bubble') cur.accBubble = !cur.accBubble;
+      else if (acc === 'party') cur.accParty = !cur.accParty;
+      else if (acc === 'halo') cur.accHalo = !cur.accHalo;
+      else if (acc === 'horns') cur.accHorns = !cur.accHorns;
+      else if (acc === 'stache') cur.accStache = !cur.accStache;
       btn.classList.toggle('active');
       draw();
     }};
@@ -1335,8 +1626,10 @@ function setupEvents() {{
   const flipHBtn = document.getElementById('flipHBtn');
   if (flipHBtn) {{
     flipHBtn.onclick = () => {{
-      state.flipH = !state.flipH;
-      flipHBtn.classList.toggle('active', state.flipH);
+      const cur = getSelectedFace();
+      if (!cur) return;
+      cur.flipH = !cur.flipH;
+      flipHBtn.classList.toggle('active', cur.flipH);
       draw();
     }};
   }}
@@ -1344,8 +1637,10 @@ function setupEvents() {{
   const flipVBtn = document.getElementById('flipVBtn');
   if (flipVBtn) {{
     flipVBtn.onclick = () => {{
-      state.flipV = !state.flipV;
-      flipVBtn.classList.toggle('active', state.flipV);
+      const cur = getSelectedFace();
+      if (!cur) return;
+      cur.flipV = !cur.flipV;
+      flipVBtn.classList.toggle('active', cur.flipV);
       draw();
     }};
   }}
@@ -1354,8 +1649,10 @@ function setupEvents() {{
   const faceOpacitySlider = document.getElementById('faceOpacity');
   if (faceOpacitySlider) {{
     faceOpacitySlider.oninput = (e) => {{
-      state.faceOpacity = parseFloat(e.target.value);
-      document.getElementById('opacityVal').innerText = Math.round(state.faceOpacity * 100) + '%';
+      const cur = getSelectedFace();
+      if (!cur) return;
+      cur.opacity = parseFloat(e.target.value);
+      document.getElementById('opacityVal').innerText = Math.round(cur.opacity * 100) + '%';
       draw();
     }};
   }}
@@ -1363,75 +1660,88 @@ function setupEvents() {{
   // Face Filter Group
   document.querySelectorAll('#faceFilterGroup .btn-toggle').forEach(btn => {{
     btn.onclick = () => {{
+      const cur = getSelectedFace();
+      if (!cur) return;
       document.querySelectorAll('#faceFilterGroup .btn-toggle').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      state.faceFilter = btn.dataset.filter;
+      cur.filter = btn.dataset.filter;
       draw();
     }};
   }});
 
   document.getElementById('faceScale').oninput = (e) => {{
-    state.faceScale = parseFloat(e.target.value);
-    document.getElementById('sizeVal').innerText = Math.round(state.faceScale * 100) + '%';
+    const cur = getSelectedFace();
+    if (!cur) return;
+    cur.scale = parseFloat(e.target.value);
+    document.getElementById('sizeVal').innerText = Math.round(cur.scale * 100) + '%';
     draw();
   }};
 
   document.getElementById('faceRot').oninput = (e) => {{
-    state.faceRot = parseInt(e.target.value);
-    document.getElementById('rotVal').innerText = state.faceRot + '°';
+    const cur = getSelectedFace();
+    if (!cur) return;
+    cur.rot = parseInt(e.target.value);
+    document.getElementById('rotVal').innerText = cur.rot + '°';
     draw();
   }};
 
   document.getElementById('zoomInBtn').onclick = () => {{
-    state.faceScale = Math.min(2.5, state.faceScale + 0.15);
-    document.getElementById('faceScale').value = state.faceScale;
-    document.getElementById('sizeVal').innerText = Math.round(state.faceScale * 100) + '%';
+    const cur = getSelectedFace();
+    if (!cur) return;
+    cur.scale = Math.min(2.5, cur.scale + 0.15);
+    document.getElementById('faceScale').value = cur.scale;
+    document.getElementById('sizeVal').innerText = Math.round(cur.scale * 100) + '%';
     draw();
   }};
 
   document.getElementById('zoomOutBtn').onclick = () => {{
-    state.faceScale = Math.max(0.3, state.faceScale - 0.15);
-    document.getElementById('faceScale').value = state.faceScale;
-    document.getElementById('sizeVal').innerText = Math.round(state.faceScale * 100) + '%';
+    const cur = getSelectedFace();
+    if (!cur) return;
+    cur.scale = Math.max(0.3, cur.scale - 0.15);
+    document.getElementById('faceScale').value = cur.scale;
+    document.getElementById('sizeVal').innerText = Math.round(cur.scale * 100) + '%';
     draw();
   }};
 
   document.getElementById('rotLeftBtn').onclick = () => {{
-    state.faceRot = (state.faceRot - 15) % 360;
-    document.getElementById('faceRot').value = state.faceRot;
-    document.getElementById('rotVal').innerText = state.faceRot + '°';
+    const cur = getSelectedFace();
+    if (!cur) return;
+    cur.rot = (cur.rot - 15) % 360;
+    document.getElementById('faceRot').value = cur.rot;
+    document.getElementById('rotVal').innerText = cur.rot + '°';
     draw();
   }};
 
   document.getElementById('rotRightBtn').onclick = () => {{
-    state.faceRot = (state.faceRot + 15) % 360;
-    document.getElementById('faceRot').value = state.faceRot;
-    document.getElementById('rotVal').innerText = state.faceRot + '°';
+    const cur = getSelectedFace();
+    if (!cur) return;
+    cur.rot = (cur.rot + 15) % 360;
+    document.getElementById('faceRot').value = cur.rot;
+    document.getElementById('rotVal').innerText = cur.rot + '°';
     draw();
   }};
 
   document.getElementById('recenterBtn').onclick = () => {{
-    state.faceX = 0;
-    state.faceY = -35;
-    state.faceRot = 0;
-    state.faceScale = 1.0;
-    state.flipH = false;
-    state.flipV = false;
-    if (flipHBtn) flipHBtn.classList.remove('active');
-    if (flipVBtn) flipVBtn.classList.remove('active');
-    document.getElementById('faceScale').value = 1.0;
-    document.getElementById('faceRot').value = 0;
-    document.getElementById('sizeVal').innerText = '100%';
-    document.getElementById('rotVal').innerText = '0°';
+    const cur = getSelectedFace();
+    if (!cur) return;
+    cur.x = 0;
+    cur.y = -35;
+    cur.rot = 0;
+    cur.scale = 1.0;
+    cur.flipH = false;
+    cur.flipV = false;
+    syncControlsToSelectedFace();
     draw();
   }};
 
   canvas.addEventListener('wheel', (e) => {{
     e.preventDefault();
+    const cur = getSelectedFace();
+    if (!cur) return;
     const delta = e.deltaY < 0 ? 0.05 : -0.05;
-    state.faceScale = Math.max(0.3, Math.min(2.5, state.faceScale + delta));
-    document.getElementById('faceScale').value = state.faceScale;
-    document.getElementById('sizeVal').innerText = Math.round(state.faceScale * 100) + '%';
+    cur.scale = Math.max(0.3, Math.min(2.5, cur.scale + delta));
+    document.getElementById('faceScale').value = cur.scale;
+    document.getElementById('sizeVal').innerText = Math.round(cur.scale * 100) + '%';
     draw();
   }}, {{ passive: false }});
 
@@ -1515,24 +1825,71 @@ function setupDragging() {{
     }};
   }}
 
+  function findFaceAt(canvasX, canvasY, w, h) {{
+    let ax = 0, ay = 0, as = 1.0;
+    const progress = (state.frame / state.totalFrames) * Math.PI * 2;
+    if (state.anim === 'bob') {{
+      ay = Math.sin(progress) * 14;
+    }} else if (state.anim === 'shake') {{
+      ax = (Math.random() - 0.5) * 12;
+      ay = (Math.random() - 0.5) * 12;
+    }}
+
+    for (let i = state.facesOnCanvas.length - 1; i >= 0; i--) {{
+      const f = state.facesOnCanvas[i];
+      const img = loadedFaces[f.faceIndex];
+      if (!img || !img.complete) continue;
+      const cx = w/2 + f.x + ax;
+      const cy = h/2 + f.y + ay;
+      const baseSize = w * 0.44;
+      const fAspect = (img.naturalWidth || img.width) / (img.naturalHeight || img.height);
+      let fw = fAspect >= 1 ? baseSize : baseSize * fAspect;
+      let fh = fAspect >= 1 ? baseSize / fAspect : baseSize;
+      fw *= f.scale * as;
+      fh *= f.scale * as;
+
+      const dx = canvasX - cx;
+      const dy = canvasY - cy;
+      const angle = -(f.rot * Math.PI / 180);
+      const rx = dx * Math.cos(angle) - dy * Math.sin(angle);
+      const ry = dx * Math.sin(angle) + dy * Math.cos(angle);
+
+      if (Math.abs(rx) <= fw/2 + 10 && Math.abs(ry) <= fh/2 + 10) {{
+        return i;
+      }}
+    }}
+    return -1;
+  }}
+
   function onPointerDown(e) {{
     const pos = getCanvasPos(e);
-    state.isDragging = true;
-    state.dragStartX = pos.x;
-    state.dragStartY = pos.y;
-    state.initialFaceX = state.faceX;
-    state.initialFaceY = state.faceY;
-    draw();
+    const hitIdx = findFaceAt(pos.x, pos.y, canvas.width, canvas.height);
+    if (hitIdx !== -1) {{
+      state.selectedFaceIdx = hitIdx;
+      syncControlsToSelectedFace();
+      renderFaceLayersUI();
+    }}
+    const cur = getSelectedFace();
+    if (cur) {{
+      state.isDragging = true;
+      state.dragStartX = pos.x;
+      state.dragStartY = pos.y;
+      state.initialFaceX = cur.x;
+      state.initialFaceY = cur.y;
+      draw();
+    }}
   }}
 
   function onPointerMove(e) {{
     if (!state.isDragging) return;
     if (e.cancelable) e.preventDefault();
+    const cur = getSelectedFace();
+    if (!cur) return;
     const pos = getCanvasPos(e);
     const dx = pos.x - state.dragStartX;
     const dy = pos.y - state.dragStartY;
-    state.faceX = Math.round(state.initialFaceX + dx);
-    state.faceY = Math.round(state.initialFaceY + dy);
+    cur.x = Math.round(state.initialFaceX + dx);
+    cur.y = Math.round(state.initialFaceY + dy);
     draw();
   }}
 
@@ -1629,24 +1986,27 @@ function render(tCtx, w, h, frameIdx) {{
     ay = Math.sin(progress * 2) * 8;
   }}
 
-  // Draw Murad's Face
-  const faceImg = loadedFaces[state.activeFaceIndex];
-  if (faceImg && faceImg.complete) {{
-    tCtx.save();
-    const cx = w/2 + state.faceX + ax;
-    const cy = h/2 + state.faceY + ay;
-    tCtx.translate(cx, cy);
-    tCtx.rotate((state.faceRot * Math.PI / 180) + ar);
-    const scaleX = (state.flipH ? -1 : 1) * state.faceScale * as;
-    const scaleY = (state.flipV ? -1 : 1) * state.faceScale * as;
-    tCtx.scale(scaleX, scaleY);
-    tCtx.globalAlpha = state.faceOpacity !== undefined ? state.faceOpacity : 1.0;
+  // Draw all Face Layers (from bottom to top)
+  state.facesOnCanvas.forEach((fLayer, fIdx) => {{
+    const faceImg = loadedFaces[fLayer.faceIndex];
+    if (!faceImg || !faceImg.complete) return;
+    const isSelected = fIdx === state.selectedFaceIdx;
 
-    if (state.faceFilter === 'grayscale') {{
+    tCtx.save();
+    const cx = w/2 + fLayer.x + ax;
+    const cy = h/2 + fLayer.y + ay;
+    tCtx.translate(cx, cy);
+    tCtx.rotate((fLayer.rot * Math.PI / 180) + ar);
+    const scaleX = (fLayer.flipH ? -1 : 1) * fLayer.scale * as;
+    const scaleY = (fLayer.flipV ? -1 : 1) * fLayer.scale * as;
+    tCtx.scale(scaleX, scaleY);
+    tCtx.globalAlpha = fLayer.opacity !== undefined ? fLayer.opacity : 1.0;
+
+    if (fLayer.filter === 'grayscale') {{
       tCtx.filter = 'grayscale(100%)';
-    }} else if (state.faceFilter === 'deepfried') {{
+    }} else if (fLayer.filter === 'deepfried') {{
       tCtx.filter = 'contrast(220%) saturate(320%)';
-    }} else if (state.faceFilter === 'invert') {{
+    }} else if (fLayer.filter === 'invert') {{
       tCtx.filter = 'invert(100%)';
     }}
 
@@ -1661,7 +2021,7 @@ function render(tCtx, w, h, frameIdx) {{
       fw = baseSize * fAspect;
     }}
 
-    if (state.mask === 'circle') {{
+    if (fLayer.mask === 'circle') {{
       tCtx.shadowColor = 'rgba(0, 0, 0, 0.45)';
       tCtx.shadowBlur = 16;
       tCtx.shadowOffsetX = 0;
@@ -1676,7 +2036,7 @@ function render(tCtx, w, h, frameIdx) {{
       tCtx.strokeStyle = '#ffffff';
       tCtx.lineWidth = 4;
       tCtx.stroke();
-    }} else if (state.mask === 'oval') {{
+    }} else if (fLayer.mask === 'oval') {{
       tCtx.shadowColor = 'rgba(0, 0, 0, 0.45)';
       tCtx.shadowBlur = 16;
       tCtx.shadowOffsetX = 0;
@@ -1695,15 +2055,18 @@ function render(tCtx, w, h, frameIdx) {{
       tCtx.drawImage(faceImg, -fw/2, -fh/2, fw, fh);
     }}
 
-    // Reset filters and opacity for accessories & overlays
+    // Reset filters and opacity for accessories & selection ring
     tCtx.filter = 'none';
     tCtx.globalAlpha = 1.0;
 
-    // Selection ring indicator while dragging
-    if (state.isDragging) {{
+    // Selection ring indicator if selected and (dragging or multiple faces)
+    if (isSelected && (state.isDragging || state.facesOnCanvas.length > 1)) {{
+      tCtx.save();
       tCtx.strokeStyle = '#5865F2';
-      tCtx.lineWidth = 2;
-      tCtx.strokeRect(-fw/2, -fh/2, fw, fh);
+      tCtx.lineWidth = 2.5;
+      tCtx.setLineDash([5, 5]);
+      tCtx.strokeRect(-fw/2 - 3, -fh/2 - 3, fw + 6, fh + 6);
+      tCtx.restore();
     }}
 
     // Disco Rainbow Aura
@@ -1719,7 +2082,7 @@ function render(tCtx, w, h, frameIdx) {{
     }}
 
     // 1. Thug Shades
-    if (state.accShades) {{
+    if (fLayer.accShades) {{
       tCtx.fillStyle = '#000000';
       tCtx.fillRect(-fw*0.35, -fh*0.12, fw*0.32, fh*0.14);
       tCtx.fillRect(fw*0.03, -fh*0.12, fw*0.32, fh*0.14);
@@ -1730,7 +2093,7 @@ function render(tCtx, w, h, frameIdx) {{
     }}
 
     // 2. Laser Eyes
-    if (state.accLaser) {{
+    if (fLayer.accLaser) {{
       const eye1X = -fw*0.15, eye2X = fw*0.15, eyeY = -fh*0.06;
       [eye1X, eye2X].forEach(ex => {{
         const rad = tCtx.createRadialGradient(ex, eyeY, 2, ex, eyeY, 25);
@@ -1743,7 +2106,7 @@ function render(tCtx, w, h, frameIdx) {{
     }}
 
     // 3. Gold Crown
-    if (state.accCrown) {{
+    if (fLayer.accCrown) {{
       tCtx.fillStyle = '#eab308';
       tCtx.strokeStyle = '#a16207';
       tCtx.lineWidth = 2;
@@ -1762,7 +2125,7 @@ function render(tCtx, w, h, frameIdx) {{
     }}
 
     // 4. Speech Bubble
-    if (state.accBubble) {{
+    if (fLayer.accBubble) {{
       tCtx.save();
       tCtx.fillStyle = '#ffffff';
       tCtx.strokeStyle = '#000000';
@@ -1778,12 +2141,13 @@ function render(tCtx, w, h, frameIdx) {{
       tCtx.fill(); tCtx.stroke();
       tCtx.font = '700 11px sans-serif';
       tCtx.fillStyle = '#000000';
-      tCtx.fillText('MURAD! 💀', fw*0.25 + 14, -fh*0.6 + 22);
+      const bubbleName = (faces[fLayer.faceIndex]?.name || 'MURAD').split(' ')[0].toUpperCase();
+      tCtx.fillText(`${{bubbleName}}! 💀`, fw*0.25 + 10, -fh*0.6 + 22);
       tCtx.restore();
     }}
 
     // 5. Party Hat
-    if (state.accParty) {{
+    if (fLayer.accParty) {{
       tCtx.save();
       tCtx.beginPath();
       tCtx.moveTo(0, -fh*0.82);
@@ -1808,7 +2172,7 @@ function render(tCtx, w, h, frameIdx) {{
     }}
 
     // 6. Angel Halo
-    if (state.accHalo) {{
+    if (fLayer.accHalo) {{
       tCtx.save();
       tCtx.strokeStyle = '#facc15';
       tCtx.lineWidth = 5;
@@ -1821,7 +2185,7 @@ function render(tCtx, w, h, frameIdx) {{
     }}
 
     // 7. Devil Horns
-    if (state.accHorns) {{
+    if (fLayer.accHorns) {{
       tCtx.save();
       tCtx.fillStyle = '#ef4444';
       tCtx.strokeStyle = '#991b1b';
@@ -1842,7 +2206,7 @@ function render(tCtx, w, h, frameIdx) {{
     }}
 
     // 8. Mustache
-    if (state.accStache) {{
+    if (fLayer.accStache) {{
       tCtx.save();
       tCtx.fillStyle = '#1c1917';
       tCtx.beginPath();
@@ -1857,13 +2221,14 @@ function render(tCtx, w, h, frameIdx) {{
     }}
 
     tCtx.restore();
-  }}
+  }});
 
-  // Petpet Hand
+  // Petpet Hand on Selected Face
   if (state.anim === 'petpet') {{
+    const cur = getSelectedFace();
     const squish = Math.sin((frameIdx % 5) / 5 * Math.PI);
-    const handY = h * 0.16 + squish * (h * 0.12);
-    const handX = w * 0.5;
+    const handX = cur ? (w * 0.5 + cur.x) : (w * 0.5);
+    const handY = cur ? (h * 0.5 + cur.y - 45 + squish * (h * 0.08)) : (h * 0.16 + squish * (h * 0.12));
     tCtx.save();
     tCtx.translate(handX, handY);
     tCtx.fillStyle = '#fff4e6';
