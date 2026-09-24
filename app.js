@@ -78,40 +78,8 @@ let mainCanvas, ctx;
 let discordSimCanvas;
 let animInterval = null;
 
-// PASSWORD GATE LOGIC
-const APP_PASSWORD = "Muradismurad";
-
-function checkPasswordAuth() {
-  const modal = document.getElementById('passwordGateModal');
-  if (sessionStorage.getItem('murad_auth') === 'true') {
-    if (modal) modal.style.display = 'none';
-  } else {
-    if (modal) modal.style.display = 'flex';
-  }
-}
-
-function verifyPassword() {
-  const input = document.getElementById('passwordInput');
-  const error = document.getElementById('passwordError');
-  const modal = document.getElementById('passwordGateModal');
-
-  if (input && input.value === APP_PASSWORD) {
-    sessionStorage.setItem('murad_auth', 'true');
-    if (error) error.style.display = 'none';
-    if (modal) modal.style.display = 'none';
-  } else {
-    if (error) error.style.display = 'block';
-    if (input) {
-      input.value = '';
-      input.focus();
-    }
-  }
-}
-
 // Initialize on Load
 document.addEventListener('DOMContentLoaded', () => {
-  checkPasswordAuth();
-
   mainCanvas = document.getElementById('mainCanvas');
   ctx = mainCanvas.getContext('2d');
 

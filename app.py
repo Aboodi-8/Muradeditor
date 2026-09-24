@@ -61,48 +61,8 @@ st.markdown("""
         color: #949ba4;
         font-size: 11px;
     }
-    .lock-box {
-        max-width: 440px;
-        margin: 60px auto 20px;
-        padding: 24px;
-        background-color: #2b2d31;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        text-align: center;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-    }
 </style>
 """, unsafe_allow_html=True)
-
-# PASSWORD PROTECTION GATE
-CORRECT_PASSWORD = "Muradismurad"
-
-if "authenticated" not in st.session_state:
-    st.session_state["authenticated"] = False
-
-if not st.session_state["authenticated"]:
-    st.markdown("""
-    <div class="lock-box">
-        <h1 style="font-size: 44px; margin-bottom: 8px;">🔒</h1>
-        <h2 style="color: #ffffff; margin-bottom: 6px;">Murad's Private Meme Lab</h2>
-        <p style="color: #949ba4; font-size: 13px;">
-            This website is private. Enter password to unlock.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1, 1.2, 1])
-    with col2:
-        with st.form("login_form"):
-            pwd_input = st.text_input("Enter Password:", type="password", placeholder="Password...")
-            submitted = st.form_submit_button("Unlock Website 🔓", type="primary", use_container_width=True)
-            if submitted:
-                if pwd_input == CORRECT_PASSWORD:
-                    st.session_state["authenticated"] = True
-                    st.rerun()
-                else:
-                    st.error("❌ Incorrect password! Access denied.")
-    st.stop()
 
 # Assets directory
 ASSETS_DIR = Path(__file__).parent / "assets"
@@ -315,16 +275,9 @@ def composite_frame(
 
 # --- MAIN STREAMLIT APP ---
 
-header_col1, header_col2 = st.columns([4, 1])
-with header_col1:
-    st.title("🎭 Murad Face Slapper")
-    st.markdown('<span class="discord-badge">⚡ Discord Animated GIF & Meme Maker</span>', unsafe_allow_html=True)
-    st.caption("Upload any picture and slap Murad's face onto it for Discord chat or emojis!")
-
-with header_col2:
-    if st.button("Log Out 🔒"):
-        st.session_state["authenticated"] = False
-        st.rerun()
+st.title("🎭 Murad Face Slapper")
+st.markdown('<span class="discord-badge">⚡ Discord Animated GIF & Meme Maker</span>', unsafe_allow_html=True)
+st.caption("Upload any picture and slap Murad's face onto it for Discord chat or emojis!")
 
 # Layout: Sidebar controls + Main stage
 with st.sidebar:
@@ -371,7 +324,6 @@ with st.sidebar:
     else:
         selected_face_img = Image.open(MURAD_FACES[face_choice]).convert("RGBA")
 
-    # Use st.radio for universal compatibility across all Streamlit versions
     cutout_shape = st.radio(
         "Cutout Mask:",
         ["Circle", "Oval Face", "Square"],

@@ -6,12 +6,6 @@ Supports both **Streamlit Cloud (`*.streamlit.app`)** and a standalone web app.
 
 ---
 
-## 🔒 Private Access
-The website is password protected:
-- **Password**: `Muradismurad`
-
----
-
 ## 📸 Real Faces of Murad (6 Presets)
 - 📸 **Wide Cam**: Murad's stretched webcam close-up.
 - 😱 **Scream**: Murad's profile hype screaming face.
@@ -36,7 +30,7 @@ The website is password protected:
    Open your browser at **`http://localhost:8501`**.
 
 ### ☁️ Deploy to Streamlit Cloud (`streamlit.app`)
-1. Push this folder to a GitHub repository.
+1. Push this folder to your GitHub repository.
 2. Go to [share.streamlit.io](https://share.streamlit.io).
 3. Connect your repository and set the main file path to:
    ```
@@ -47,7 +41,7 @@ The website is password protected:
 ---
 
 ## ✨ Features
-1. **Password Protected Gate**: Protects your private meme generator with password `Muradismurad`.
+1. **Instant Access**: Opens directly to the meme creator (no login required).
 2. **Background / Meme Source**: Upload any image or choose a body preset (*Suit & Tie*, *Gigachad*, *Space Suit*, *Doge*, *Buff Guy*).
 3. **Face Cutout & Placement**:
    - Cutout shape: **Circle**, **Oval Face**, or **Square**.
