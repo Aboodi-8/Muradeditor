@@ -48,7 +48,12 @@ def get_base64_data_uri(file_path: Path) -> str:
     with open(file_path, "rb") as f:
         encoded = base64.b64encode(f.read()).decode("utf-8")
         ext = file_path.suffix.lstrip(".").lower()
-        mime = "image/png" if ext == "png" else "image/jpeg"
+        if ext == "png":
+            mime = "image/png"
+        elif ext == "webp":
+            mime = "image/webp"
+        else:
+            mime = "image/jpeg"
         return f"data:{mime};base64,{encoded}"
 
 # Helper: load faces dynamically from manifest
@@ -79,6 +84,28 @@ def load_faces_catalog():
             })
 
     return faces_list
+
+# Templates directory & catalog
+TEMPLATES_DIR = ASSETS_DIR / "templates"
+
+def load_templates_catalog():
+    tpl_defs = [
+        {"id": "suit", "name": "🤵 Fancy Tux", "file": "tux.jpg"},
+        {"id": "gigachad", "name": "🗿 Gigachad", "file": "gigachad.webp"},
+        {"id": "throne", "name": "👑 King Throne", "file": "king_throne.jpg"},
+        {"id": "astronaut", "name": "🚀 Space", "file": "space.jpg"},
+        {"id": "doge", "name": "🐕 Doge", "file": "dog.jpg"},
+    ]
+    tpl_list = []
+    for item in tpl_defs:
+        p = TEMPLATES_DIR / item["file"]
+        if p.exists():
+            tpl_list.append({
+                "id": item["id"],
+                "name": item["name"],
+                "src": get_base64_data_uri(p)
+            })
+    return tpl_list
 
 # Helper: GitHub Contents API to commit without browser login
 def push_file_to_github(repo_owner: str, repo_name: str, file_path: str, content_bytes: bytes, commit_message: str, token: str) -> tuple[bool, str]:
@@ -146,6 +173,9 @@ with open(ASSETS_DIR / "gifshot.min.js", "r", encoding="utf-8") as f:
 
 faces_data = load_faces_catalog()
 faces_json = json.dumps(faces_data)
+
+templates_data = load_templates_catalog()
+templates_json = json.dumps(templates_data)
 
 # Embed Interactive HTML5 Canvas Application with Real-Time Mouse Dragging
 html_app = f"""
@@ -555,12 +585,7 @@ html_app = f"""
         <input type="file" id="bgFileInput" accept="image/*">
       </label>
       <div class="presets-row" id="bgPresetsRow">
-        <button class="preset-btn active" data-bg="suit">🤵 Fancy Tux</button>
-        <button class="preset-btn" data-bg="gigachad">🗿 Gigachad</button>
-        <button class="preset-btn" data-bg="throne">👑 King Throne</button>
-        <button class="preset-btn" data-bg="astronaut">🚀 Space</button>
-        <button class="preset-btn" data-bg="doge">🐕 Doge</button>
-        <button class="preset-btn" data-bg="buff">💪 Gym Buff</button>
+        <!-- Dynamically populated from real meme template images -->
       </div>
     </div>
 
@@ -681,13 +706,14 @@ html_app = f"""
 
 <script>
 const faces = {faces_json};
+const templates = {templates_json};
 const state = {{
   activeFaceIndex: 0,
   bgType: 'preset',
-  presetBg: 'suit',
+  presetBg: templates.length > 0 ? templates[0].id : 'suit',
   customBgImg: null,
   faceX: 0,
-  faceY: -35,
+  faceY: -65,
   faceScale: 1.0,
   faceRot: 0,
   mask: 'circle',
@@ -715,15 +741,50 @@ faces.forEach((f, idx) => {{
   loadedFaces.push(img);
 }});
 
+// Preload template images
+const loadedTemplates = {{}};
+templates.forEach(t => {{
+  const img = new Image();
+  img.src = t.src;
+  loadedTemplates[t.id] = img;
+}});
+
 const canvas = document.getElementById('mainCanvas');
 const ctx = canvas.getContext('2d');
 
 function init() {{
+  buildTemplatesUI();
   buildFacesUI();
   setupEvents();
   setupDragging();
   startAnim();
   draw();
+}}
+
+function buildTemplatesUI() {{
+  const container = document.getElementById('bgPresetsRow');
+  if (!container) return;
+  container.innerHTML = '';
+  templates.forEach((t, idx) => {{
+    const btn = document.createElement('button');
+    btn.className = 'preset-btn' + (idx === 0 ? ' active' : '');
+    btn.dataset.bg = t.id;
+    btn.innerText = t.name;
+    btn.onclick = () => {{
+      document.querySelectorAll('#bgPresetsRow .preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.bgType = 'preset';
+      state.presetBg = t.id;
+      state.customBgImg = null;
+      if (t.id === 'suit') {{ state.faceX = 0; state.faceY = -65; state.faceScale = 1.0; }}
+      else if (t.id === 'gigachad') {{ state.faceX = 0; state.faceY = -60; state.faceScale = 0.95; }}
+      else if (t.id === 'throne') {{ state.faceX = 0; state.faceY = -50; state.faceScale = 0.85; }}
+      else if (t.id === 'astronaut') {{ state.faceX = 0; state.faceY = -35; state.faceScale = 0.85; }}
+      else if (t.id === 'doge') {{ state.faceX = 0; state.faceY = -35; state.faceScale = 0.9; }}
+      draw();
+    }};
+    container.appendChild(btn);
+  }});
 }}
 
 function buildFacesUI() {{
@@ -746,17 +807,6 @@ function buildFacesUI() {{
 }}
 
 function setupEvents() {{
-  document.querySelectorAll('#bgPresetsRow .preset-btn').forEach(btn => {{
-    btn.onclick = () => {{
-      document.querySelectorAll('#bgPresetsRow .preset-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.bgType = 'preset';
-      state.presetBg = btn.dataset.bg;
-      state.customBgImg = null;
-      draw();
-    }};
-  }});
-
   document.getElementById('bgFileInput').onchange = (e) => {{
     if (e.target.files && e.target.files[0]) {{
       const reader = new FileReader();
@@ -939,56 +989,18 @@ function drawBackground(tCtx, w, h) {{
     return;
   }}
 
-  const id = state.presetBg;
-
-  if (id === 'suit') {{
-    tCtx.fillStyle = '#181e29';
-    tCtx.fillRect(0, 0, w, h);
-    tCtx.fillStyle = '#f1c27d';
-    tCtx.fillRect(w*0.42, h*0.35, w*0.16, h*0.15);
-    tCtx.fillStyle = '#0f172a';
-    tCtx.beginPath();
-    tCtx.moveTo(w*0.05, h); tCtx.lineTo(w*0.18, h*0.46); tCtx.lineTo(w*0.34, h*0.44);
-    tCtx.lineTo(w*0.5, h*0.72); tCtx.lineTo(w*0.66, h*0.44); tCtx.lineTo(w*0.82, h*0.46);
-    tCtx.lineTo(w*0.95, h); tCtx.closePath(); tCtx.fill();
-    tCtx.fillStyle = '#ffffff';
-    tCtx.beginPath(); tCtx.moveTo(w*0.34, h*0.44); tCtx.lineTo(w*0.5, h*0.76); tCtx.lineTo(w*0.66, h*0.44); tCtx.fill();
-    tCtx.fillStyle = '#dc2626';
-    tCtx.beginPath(); tCtx.moveTo(w*0.46, h*0.46); tCtx.lineTo(w*0.54, h*0.46); tCtx.lineTo(w*0.56, h*0.54);
-    tCtx.lineTo(w*0.57, h*0.88); tCtx.lineTo(w*0.5, h*0.95); tCtx.lineTo(w*0.43, h*0.88); tCtx.lineTo(w*0.44, h*0.54); tCtx.fill();
-  }} else if (id === 'gigachad') {{
-    tCtx.fillStyle = '#2d3748'; tCtx.fillRect(0, 0, w, h);
-    tCtx.fillStyle = '#b45309';
-    tCtx.beginPath(); tCtx.moveTo(w*0.34, h*0.36); tCtx.lineTo(w*0.12, h); tCtx.lineTo(w*0.88, h); tCtx.lineTo(w*0.66, h*0.36); tCtx.fill();
-    tCtx.strokeStyle = '#78350f'; tCtx.lineWidth = 5;
-    tCtx.beginPath(); tCtx.arc(w*0.38, h*0.68, w*0.15, 0.2, Math.PI*0.9); tCtx.stroke();
-    tCtx.beginPath(); tCtx.arc(w*0.62, h*0.68, w*0.15, 0.1, Math.PI*0.8); tCtx.stroke();
-  }} else if (id === 'throne') {{
-    tCtx.fillStyle = '#31102f'; tCtx.fillRect(0, 0, w, h);
-    tCtx.fillStyle = '#991b1b';
-    tCtx.fillRect(w*0.2, h*0.2, w*0.6, h*0.8);
-    tCtx.fillStyle = '#eab308';
-    tCtx.fillRect(w*0.18, h*0.16, w*0.64, 16);
-    tCtx.fillStyle = '#b91c1c';
-    tCtx.beginPath(); tCtx.moveTo(w*0.05, h); tCtx.lineTo(w*0.22, h*0.44); tCtx.lineTo(w*0.78, h*0.44); tCtx.lineTo(w*0.95, h); tCtx.fill();
-    tCtx.fillStyle = '#f8fafc';
-    tCtx.beginPath(); tCtx.ellipse(w*0.5, h*0.5, w*0.25, h*0.08, 0, 0, Math.PI*2); tCtx.fill();
-  }} else if (id === 'astronaut') {{
-    tCtx.fillStyle = '#090d16'; tCtx.fillRect(0, 0, w, h);
-    tCtx.fillStyle = '#fff';
-    for (let i=0; i<30; i++) tCtx.fillRect((i*47)%w, (i*73)%h, 2, 2);
-    tCtx.fillStyle = '#cbd5e1'; tCtx.beginPath(); tCtx.ellipse(w*0.5, h*0.38, w*0.34, h*0.34, 0, 0, Math.PI*2); tCtx.fill();
-    tCtx.fillStyle = '#0f172a'; tCtx.beginPath(); tCtx.ellipse(w*0.5, h*0.38, w*0.29, h*0.29, 0, 0, Math.PI*2); tCtx.fill();
-    tCtx.fillStyle = '#f8fafc'; tCtx.beginPath(); tCtx.moveTo(0, h); tCtx.lineTo(w*0.15, h*0.62); tCtx.lineTo(w*0.85, h*0.62); tCtx.lineTo(w, h); tCtx.fill();
-  }} else if (id === 'doge') {{
-    tCtx.fillStyle = '#fef3c7'; tCtx.fillRect(0, 0, w, h);
-    tCtx.fillStyle = '#d97706'; tCtx.beginPath(); tCtx.arc(w*0.5, h*0.85, w*0.35, 0, Math.PI*2); tCtx.fill();
-    tCtx.fillStyle = '#fffbeb'; tCtx.beginPath(); tCtx.ellipse(w*0.5, h*0.8, w*0.18, h*0.25, 0, 0, Math.PI*2); tCtx.fill();
-  }} else if (id === 'buff') {{
-    tCtx.fillStyle = '#18181b'; tCtx.fillRect(0, 0, w, h);
-    tCtx.fillStyle = '#f59e0b'; tCtx.beginPath(); tCtx.moveTo(w*0.25, h*0.42); tCtx.lineTo(w*0.05, h*0.6); tCtx.lineTo(w*0.1, h); tCtx.lineTo(w*0.9, h); tCtx.lineTo(w*0.95, h*0.6); tCtx.lineTo(w*0.75, h*0.42); tCtx.fill();
-    tCtx.fillStyle = '#dc2626'; tCtx.beginPath(); tCtx.moveTo(w*0.35, h*0.6); tCtx.lineTo(w*0.3, h); tCtx.lineTo(w*0.7, h); tCtx.lineTo(w*0.65, h*0.6); tCtx.fill();
+  const tplImg = loadedTemplates[state.presetBg];
+  if (tplImg && tplImg.complete && tplImg.naturalWidth > 0) {{
+    const scale = Math.max(w / tplImg.naturalWidth, h / tplImg.naturalHeight);
+    const dw = tplImg.naturalWidth * scale;
+    const dh = tplImg.naturalHeight * scale;
+    tCtx.drawImage(tplImg, (w - dw)/2, (h - dh)/2, dw, dh);
+    return;
   }}
+
+  // Fallback dark canvas
+  tCtx.fillStyle = '#1e1f22';
+  tCtx.fillRect(0, 0, w, h);
 }}
 
 function render(tCtx, w, h, frameIdx) {{
