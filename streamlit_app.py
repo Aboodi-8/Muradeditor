@@ -1,6 +1,7 @@
 import base64
 import json
 import urllib.request
+import urllib.error
 import re
 from pathlib import Path
 import streamlit as st
@@ -80,12 +81,14 @@ def load_faces_catalog():
     return faces_list
 
 # Helper: GitHub Contents API to commit without browser login
-def push_file_to_github(repo_owner: str, repo_name: str, file_path: str, content_bytes: bytes, commit_message: str, token: str) -> bool:
+def push_file_to_github(repo_owner: str, repo_name: str, file_path: str, content_bytes: bytes, commit_message: str, token: str) -> tuple[bool, str]:
+    clean_token = token.strip()
     url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{file_path}"
     headers = {
-        "Authorization": f"Bearer {token}",
-        "Accept": "application/vnd.github.v3+json",
+        "Authorization": f"Bearer {clean_token}",
+        "Accept": "application/vnd.github+json",
         "User-Agent": "MuradMemeAdmin",
+        "X-GitHub-Api-Version": "2022-11-28",
     }
 
     # Check if file exists to fetch sha
@@ -96,7 +99,17 @@ def push_file_to_github(repo_owner: str, repo_name: str, file_path: str, content
             if resp.status == 200:
                 data = json.loads(resp.read().decode("utf-8"))
                 sha = data.get("sha")
-    except Exception:
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            pass  # New file, sha not required
+        elif e.code in (401, 403):
+            err_body = e.read().decode("utf-8", errors="replace")
+            try:
+                msg = json.loads(err_body).get("message", err_body)
+            except Exception:
+                msg = err_body
+            return False, f"HTTP {e.code}: {msg}"
+    except Exception as e:
         pass
 
     payload = {
@@ -112,8 +125,20 @@ def push_file_to_github(repo_owner: str, repo_name: str, file_path: str, content
         headers={**headers, "Content-Type": "application/json"},
         method="PUT"
     )
-    with urllib.request.urlopen(put_req) as resp:
-        return resp.status in (200, 201)
+    try:
+        with urllib.request.urlopen(put_req) as resp:
+            if resp.status in (200, 201):
+                return True, ""
+            return False, f"Unexpected response HTTP {resp.status}"
+    except urllib.error.HTTPError as e:
+        err_body = e.read().decode("utf-8", errors="replace")
+        try:
+            msg = json.loads(err_body).get("message", err_body)
+        except Exception:
+            msg = err_body
+        return False, f"HTTP {e.code}: {msg}"
+    except Exception as e:
+        return False, f"Network error: {str(e)}"
 
 # Read local gifshot library
 with open(ASSETS_DIR / "gifshot.min.js", "r", encoding="utf-8") as f:
@@ -1307,21 +1332,29 @@ with st.expander("🔐 Admin Panel (Add New Faces to Default Catalog)"):
                 # 3. If GitHub Token is provided, push to GitHub repository
                 if gh_token:
                     with st.spinner("Pushing to GitHub repository (Aboodi-8/Muradeditor)..."):
-                        ok_img = push_file_to_github(
+                        ok_img, err_img = push_file_to_github(
                             "Aboodi-8", "Muradeditor", f"assets/{filename}", img_bytes,
                             f"Add new default face: {new_face_name}", gh_token
                         )
-                        ok_manifest = push_file_to_github(
-                            "Aboodi-8", "Muradeditor", "assets/manifest.json", manifest_bytes,
-                            f"Update manifest for {new_face_name}", gh_token
-                        )
-
-                        if ok_img and ok_manifest:
-                            st.success(f"🎉 Successfully committed to GitHub! '{new_face_name}' is permanently saved to the default list for all users!")
-                            st.balloons()
-                            st.rerun()
+                        if not ok_img:
+                            st.error(f"❌ Could not upload image to GitHub: {err_img}")
+                            st.warning("""
+                            **How to fix HTTP 403 / 401 Error:**
+                            1. **Classic Token**: Make sure the **`repo`** box is checked at [github.com/settings/tokens](https://github.com/settings/tokens).
+                            2. **Fine-grained Token**: Make sure **Repository Access** includes `Muradeditor`, and **Permissions → Contents** is set to **Read and write**.
+                            3. **Streamlit Secrets**: Double check `GITHUB_TOKEN = "ghp_..."` in Streamlit App Settings → Secrets.
+                            """)
                         else:
-                            st.warning("Saved locally, but GitHub API returned an issue. Check your GitHub Token permissions (needs Contents: Read & Write).")
+                            ok_manifest, err_manifest = push_file_to_github(
+                                "Aboodi-8", "Muradeditor", "assets/manifest.json", manifest_bytes,
+                                f"Update manifest for {new_face_name}", gh_token
+                            )
+                            if ok_manifest:
+                                st.success(f"🎉 Successfully committed to GitHub! '{new_face_name}' is permanently saved to the default list for all users!")
+                                st.balloons()
+                                st.rerun()
+                            else:
+                                st.error(f"❌ Image was saved, but manifest.json update failed: {err_manifest}")
                 else:
                     st.success(f"Saved locally! '{new_face_name}' is now active. Add your GitHub Token to automatically push it to GitHub for all visitors.")
                     st.rerun()
