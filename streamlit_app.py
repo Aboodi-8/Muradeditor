@@ -167,6 +167,68 @@ def push_file_to_github(repo_owner: str, repo_name: str, file_path: str, content
     except Exception as e:
         return False, f"Network error: {str(e)}"
 
+def delete_file_from_github(repo_owner: str, repo_name: str, file_path: str, commit_message: str, token: str) -> tuple[bool, str]:
+    clean_token = token.strip()
+    url = f"https://api.github.com/repos/{repo_owner}/{repo_name}/contents/{file_path}"
+    headers = {
+        "Authorization": f"Bearer {clean_token}",
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "MuradMemeAdmin",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
+    # Fetch current file sha
+    sha = None
+    try:
+        req = urllib.request.Request(url, headers=headers)
+        with urllib.request.urlopen(req) as resp:
+            if resp.status == 200:
+                data = json.loads(resp.read().decode("utf-8"))
+                sha = data.get("sha")
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return True, ""
+        err_body = e.read().decode("utf-8", errors="replace")
+        try:
+            msg = json.loads(err_body).get("message", err_body)
+        except Exception:
+            msg = err_body
+        return False, f"HTTP {e.code}: {msg}"
+    except Exception as e:
+        return False, f"Network error: {str(e)}"
+
+    if not sha:
+        return True, ""
+
+    payload = {
+        "message": commit_message,
+        "sha": sha
+    }
+
+    del_req = urllib.request.Request(
+        url,
+        data=json.dumps(payload).encode("utf-8"),
+        headers={**headers, "Content-Type": "application/json"},
+        method="DELETE"
+    )
+    try:
+        with urllib.request.urlopen(del_req) as resp:
+            if resp.status in (200, 204):
+                return True, ""
+            return False, f"Unexpected response HTTP {resp.status}"
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return True, ""
+        err_body = e.read().decode("utf-8", errors="replace")
+        try:
+            msg = json.loads(err_body).get("message", err_body)
+        except Exception:
+            msg = err_body
+        return False, f"HTTP {e.code}: {msg}"
+    except Exception as e:
+        return False, f"Network error: {str(e)}"
+
+
 # Read local libraries
 with open(ASSETS_DIR / "gifshot.min.js", "r", encoding="utf-8") as f:
     gifshot_script = f.read()
@@ -1643,7 +1705,7 @@ with col_head_right:
     admin_ui = st.popover("🔐 Admin Panel", use_container_width=True) if hasattr(st, "popover") else st.expander("🔐 Admin Panel")
     with admin_ui:
         st.markdown("### 🔐 Admin Panel")
-        st.caption("Upload new faces directly to the permanent default catalog for all users!")
+        st.caption("Manage default faces or upload new ones for all users.")
 
         expected_pwd = ""
         try:
@@ -1657,9 +1719,8 @@ with col_head_right:
 
         if admin_pwd and admin_pwd == expected_pwd:
             st.success("✅ Admin Access Granted!")
-            new_face_name = st.text_input("Face Display Name & Emoji:", placeholder="e.g. Gaming Murad 🎮")
-            new_face_file = st.file_uploader("Upload Face Image (PNG / JPG):", type=["png", "jpg", "jpeg", "webp"], key="top_face_file")
 
+            # GitHub Token verification / Secret detection
             token_secret = ""
             try:
                 token_secret = st.secrets.get("GITHUB_TOKEN", "")
@@ -1687,58 +1748,129 @@ with col_head_right:
                     3. Click **Save**. Your token stays completely private!
                     """)
 
-            if st.button("🚀 Push Face to Default Catalog", type="primary", use_container_width=True):
-                if not new_face_name or not new_face_file:
-                    st.error("Please enter a name and select an image file!")
+            admin_tab_manage, admin_tab_add = st.tabs(["🗑️ Manage / Remove Faces", "➕ Add New Face"])
+
+            with admin_tab_manage:
+                st.markdown("#### Default Faces Catalog")
+                current_manifest = []
+                if MANIFEST_FILE.exists():
+                    try:
+                        with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
+                            current_manifest = json.load(f)
+                    except Exception:
+                        pass
+
+                if not current_manifest:
+                    st.info("No default faces found in catalog.")
                 else:
-                    img_bytes = new_face_file.read()
-                    clean_name = re.sub(r'[^a-zA-Z0-9_]', '_', new_face_name.split()[0].lower())
-                    filename = f"murad_{clean_name}.png"
-                    face_id = f"murad_{clean_name}"
-
-                    # 1. Save locally to assets
-                    local_path = ASSETS_DIR / filename
-                    with open(local_path, "wb") as f:
-                        f.write(img_bytes)
-
-                    # 2. Update local manifest.json
-                    current_manifest = []
-                    if MANIFEST_FILE.exists():
-                        try:
-                            with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
-                                current_manifest = json.load(f)
-                        except Exception:
-                            pass
-
-                    current_manifest.append({
-                        "id": face_id,
-                        "name": new_face_name,
-                        "file": filename
-                    })
-
-                    manifest_bytes = json.dumps(current_manifest, indent=2).encode("utf-8")
-                    with open(MANIFEST_FILE, "wb") as f:
-                        f.write(manifest_bytes)
-
-                    # 3. Push to GitHub repository
-                    with st.spinner("Pushing to GitHub repository (Aboodi-8/Muradeditor)..."):
-                        ok_img, err_img = push_file_to_github(
-                            "Aboodi-8", "Muradeditor", f"assets/{filename}", img_bytes,
-                            f"Add new default face: {new_face_name}", gh_token
-                        )
-                        if not ok_img:
-                            st.error(f"❌ Could not upload image to GitHub: {err_img}")
-                        else:
-                            ok_manifest, err_manifest = push_file_to_github(
-                                "Aboodi-8", "Muradeditor", "assets/manifest.json", manifest_bytes,
-                                f"Update manifest for {new_face_name}", gh_token
-                            )
-                            if ok_manifest:
-                                st.success(f"🎉 Successfully saved! '{new_face_name}' is permanently added to the default catalog!")
-                                st.balloons()
-                                st.rerun()
+                    st.caption(f"{len(current_manifest)} faces found. Click Delete to remove duplicates, spam, or unwanted faces.")
+                    for idx, item in enumerate(current_manifest):
+                        c_img, c_name, c_action = st.columns([1, 2.8, 1.2])
+                        local_f = ASSETS_DIR / item.get("file", "")
+                        with c_img:
+                            if local_f.exists():
+                                st.image(str(local_f), width=44)
                             else:
-                                st.error(f"❌ Image saved, but manifest.json update failed: {err_manifest}")
+                                st.write("🖼️")
+                        with c_name:
+                            st.markdown(f"<div style='font-size: 13px; font-weight: 600;'>{item.get('name', 'Unnamed')}</div><div style='font-size: 11px; color: #949ba4;'><code>{item.get('file', '')}</code></div>", unsafe_allow_html=True)
+                        with c_action:
+                            if st.button("🗑️ Remove", key=f"del_face_{idx}_{item.get('id', 'face')}", use_container_width=True):
+                                # 1. Create updated manifest excluding this entry
+                                new_manifest = [x for i, x in enumerate(current_manifest) if i != idx]
+                                manifest_bytes = json.dumps(new_manifest, indent=2).encode("utf-8")
+                                with open(MANIFEST_FILE, "wb") as f:
+                                    f.write(manifest_bytes)
+
+                                # 2. Delete local image file only if no other entry uses it
+                                file_still_used = any(x.get("file") == item.get("file") for i, x in enumerate(current_manifest) if i != idx)
+                                if not file_still_used and local_f.exists():
+                                    try:
+                                        local_f.unlink()
+                                    except Exception:
+                                        pass
+
+                                # 3. Sync deletion to GitHub if token present
+                                if gh_token:
+                                    with st.spinner(f"Syncing deletion to GitHub repo..."):
+                                        if not file_still_used:
+                                            delete_file_from_github(
+                                                "Aboodi-8", "Muradeditor", f"assets/{item.get('file', '')}",
+                                                f"Delete face image: {item.get('name')}", gh_token
+                                            )
+                                        ok_man, err_man = push_file_to_github(
+                                            "Aboodi-8", "Muradeditor", "assets/manifest.json",
+                                            manifest_bytes,
+                                            f"Update manifest: remove {item.get('name')}", gh_token
+                                        )
+                                        if ok_man:
+                                            st.success(f"Removed '{item.get('name')}' from GitHub and local catalog!")
+                                        else:
+                                            st.warning(f"Removed locally, but GitHub manifest sync returned: {err_man}")
+                                else:
+                                    st.success(f"Removed '{item.get('name')}' locally! (Provide token to sync to GitHub)")
+                                st.rerun()
+
+            with admin_tab_add:
+                new_face_name = st.text_input("Face Display Name & Emoji:", placeholder="e.g. Gaming Murad 🎮")
+                new_face_file = st.file_uploader("Upload Face Image (PNG / JPG / WebP):", type=["png", "jpg", "jpeg", "webp"], key="top_face_file")
+
+                if st.button("🚀 Push Face to Default Catalog", type="primary", use_container_width=True):
+                    if not new_face_name or not new_face_file:
+                        st.error("Please enter a name and select an image file!")
+                    else:
+                        img_bytes = new_face_file.read()
+                        clean_name = re.sub(r'[^a-zA-Z0-9_]', '_', new_face_name.split()[0].lower())
+                        filename = f"murad_{clean_name}.png"
+                        face_id = f"murad_{clean_name}"
+
+                        # 1. Save locally to assets
+                        local_path = ASSETS_DIR / filename
+                        with open(local_path, "wb") as f:
+                            f.write(img_bytes)
+
+                        # 2. Update local manifest.json
+                        current_manifest = []
+                        if MANIFEST_FILE.exists():
+                            try:
+                                with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
+                                    current_manifest = json.load(f)
+                            except Exception:
+                                pass
+
+                        current_manifest.append({
+                            "id": face_id,
+                            "name": new_face_name,
+                            "file": filename
+                        })
+
+                        manifest_bytes = json.dumps(current_manifest, indent=2).encode("utf-8")
+                        with open(MANIFEST_FILE, "wb") as f:
+                            f.write(manifest_bytes)
+
+                        # 3. Push to GitHub repository
+                        if gh_token:
+                            with st.spinner("Pushing to GitHub repository (Aboodi-8/Muradeditor)..."):
+                                ok_img, err_img = push_file_to_github(
+                                    "Aboodi-8", "Muradeditor", f"assets/{filename}", img_bytes,
+                                    f"Add new default face: {new_face_name}", gh_token
+                                )
+                                if not ok_img:
+                                    st.error(f"❌ Could not upload image to GitHub: {err_img}")
+                                else:
+                                    ok_manifest, err_manifest = push_file_to_github(
+                                        "Aboodi-8", "Muradeditor", "assets/manifest.json", manifest_bytes,
+                                        f"Update manifest for {new_face_name}", gh_token
+                                    )
+                                    if ok_manifest:
+                                        st.success(f"🎉 Successfully saved! '{new_face_name}' is permanently added to the default catalog!")
+                                        st.balloons()
+                                        st.rerun()
+                                    else:
+                                        st.error(f"❌ Image saved, but manifest.json update failed: {err_manifest}")
+                        else:
+                            st.success(f"🎉 Saved locally! '{new_face_name}' added. Provide GitHub token to sync to repository.")
+                            st.rerun()
         elif admin_pwd:
             st.error("❌ Incorrect Admin Password.")
 
