@@ -346,6 +346,22 @@ html_app = f"""
     align-items: center;
     gap: 5px;
     transition: all 0.15s ease;
+    max-width: 140px;
+    white-space: nowrap;
+    overflow: hidden;
+  }}
+  .face-layer-pill img {{
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    display: inline-block;
+  }}
+  .face-layer-pill span {{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }}
   .face-layer-pill:hover {{
     border-color: rgba(88,101,242,0.5);
@@ -866,20 +882,20 @@ html_app = f"""
       <div class="sidebar-subcol">
         <!-- 2. Choose fruits Faces -->
         <div class="card">
-          <div class="card-title" style="justify-content:space-between;">
-            <div style="display:flex; align-items:center; gap:8px;">
-              <span class="step-badge">2</span>
-              <span>Choose fruits Faces</span>
-            </div>
-            <button id="addFaceLayerBtn" type="button" class="btn-add-face" title="Add another face layer to slap on the meme">➕ Add Face to Meme</button>
+          <div class="card-title">
+            <span class="step-badge">2</span>
+            <span>Choose fruits Faces</span>
           </div>
           <div class="hint">Pick a face or upload your own to slap on the meme:</div>
 
           <!-- Face Layers Bar (Multi-face manager) -->
           <div class="face-layers-bar">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-              <span style="font-size:10px; font-weight:700; color:var(--text-muted);">ACTIVE FACE LAYERS:</span>
-              <span id="faceLayersCount" style="font-size:10px; color:#5865F2; font-weight:700;">1 face</span>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-size:10px; font-weight:700; color:var(--text-muted);">ACTIVE FACE LAYERS:</span>
+                <span id="faceLayersCount" style="font-size:10px; color:#5865F2; font-weight:700;">1 face</span>
+              </div>
+              <button id="addFaceLayerBtn" type="button" class="btn-add-face" title="Add another face layer to slap on the meme">➕ Add Face</button>
             </div>
             <div id="faceLayersContainer" style="display:flex; gap:5px; flex-wrap:wrap; align-items:center;">
               <!-- Dynamically populated face pills -->
