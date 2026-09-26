@@ -421,8 +421,8 @@ html_app = f"""
   }}
 
   #mainCanvas {{
-    max-width: calc(100vw - 380px);
-    max-height: calc(100vh - 90px);
+    max-width: calc(100vw - 390px);
+    max-height: calc(100vh - 70px);
     border: 1px solid var(--ps-border);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
     display: block;
@@ -430,9 +430,9 @@ html_app = f"""
     background: #000;
   }}
 
-  /* RIGHT DOCKED PANELS */
+  /* RIGHT DOCKED PANELS - ALL OPEN AND SCROLLABLE */
   .ps-panels-sidebar {{
-    width: 310px;
+    width: 330px;
     background: var(--ps-panel);
     border-left: 1px solid var(--ps-border);
     display: flex;
@@ -440,59 +440,42 @@ html_app = f"""
     flex-shrink: 0;
     height: 100%;
     z-index: 50;
-  }}
-
-  .ps-panel-tabs {{
-    display: flex;
-    background: #1c1c1d;
-    border-bottom: 1px solid var(--ps-border);
-    overflow-x: auto;
-    scrollbar-width: none;
-  }}
-  .ps-panel-tabs::-webkit-scrollbar {{ display: none; }}
-
-  .panel-tab {{
-    background: transparent;
-    border: none;
-    border-bottom: 2px solid transparent;
-    color: var(--ps-text-muted);
-    padding: 9px 11px;
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.15s ease;
-  }}
-  .panel-tab:hover {{
-    color: var(--ps-text-bright);
-  }}
-  .panel-tab.active {{
-    color: #fff;
-    border-bottom-color: var(--ps-blue);
-    background: var(--ps-panel);
-  }}
-
-  /* PANEL CONTENT AREA */
-  .ps-panel-body {{
-    flex: 1;
     overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ps-border-light) var(--ps-panel);
+  }}
+  .ps-panels-sidebar::-webkit-scrollbar {{
+    width: 6px;
+  }}
+  .ps-panels-sidebar::-webkit-scrollbar-thumb {{
+    background: var(--ps-border-light);
+    border-radius: 3px;
+  }}
+
+  .ps-panel-section {{
+    border-bottom: 1px solid var(--ps-border);
     padding: 12px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
+  }}
+  .ps-panel-section:last-child {{
+    border-bottom: none;
+    padding-bottom: 28px;
   }}
 
   .panel-section-header {{
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid var(--ps-border);
-    padding-bottom: 6px;
-    margin-bottom: 4px;
+    background: var(--ps-topbar);
+    border: 1px solid var(--ps-border);
+    border-radius: 4px;
+    padding: 6px 10px;
   }}
   .panel-section-title {{
     font-weight: 800;
-    font-size: 12.5px;
+    font-size: 11.5px;
     color: var(--ps-text-bright);
     display: flex;
     align-items: center;
@@ -525,7 +508,7 @@ html_app = f"""
     border: 1.5px dashed var(--ps-blue);
     background: rgba(0, 122, 204, 0.08);
     border-radius: 6px;
-    padding: 10px;
+    padding: 9px;
     text-align: center;
     cursor: pointer;
     transition: all 0.15s ease;
@@ -550,7 +533,7 @@ html_app = f"""
     background: var(--ps-input);
     border: 1px solid var(--ps-border);
     border-radius: 6px;
-    padding: 6px;
+    padding: 5px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -567,8 +550,8 @@ html_app = f"""
     background: rgba(0, 122, 204, 0.2);
   }}
   .grid-card img {{
-    width: 60px;
-    height: 60px;
+    width: 58px;
+    height: 58px;
     border-radius: 4px;
     object-fit: cover;
     margin-bottom: 4px;
@@ -785,16 +768,16 @@ html_app = f"""
     overflow-y: auto;
   }}
 
-  /* RESPONSIVE SCALING - GUARANTEE ALL BUTTONS FIT */
-  @media (max-width: 900px) {{
+  /* RESPONSIVE SCALING */
+  @media (max-width: 960px) {{
     .ps-panels-sidebar {{
-      width: 260px;
+      width: 290px;
     }}
     #mainCanvas {{
-      max-width: calc(100vw - 320px);
+      max-width: calc(100vw - 350px);
     }}
   }}
-  @media (max-width: 720px) {{
+  @media (max-width: 760px) {{
     .ps-title, .ps-doc-badge {{
       display: none;
     }}
@@ -803,7 +786,7 @@ html_app = f"""
       right: 0;
       top: 38px;
       height: calc(100vh - 38px);
-      width: 280px;
+      width: 300px;
       box-shadow: -10px 0 30px rgba(0,0,0,0.8);
     }}
     #mainCanvas {{
@@ -854,14 +837,14 @@ html_app = f"""
   <!-- BODY (TOOLBAR + CANVAS + RIGHT PANELS) -->
   <div class="ps-body">
 
-    <!-- LEFT SLIM TOOLBAR -->
+    <!-- LEFT SLIM TOOLBAR (QUICK JUMP SCROLL ANCHORS) -->
     <aside class="ps-toolbar">
-      <button class="tool-btn active" data-tool="move" data-target="layers" title="Move & Free Transform (V)">↖️</button>
-      <button class="tool-btn" data-tool="faces" data-target="faces" title="Murad Faces (F)">🎭</button>
-      <button class="tool-btn" data-tool="bg" data-target="bg" title="Backdrop & Templates (B)">🖼️</button>
-      <button class="tool-btn" data-tool="text" data-target="text" title="Meme Text (T)">✍️</button>
-      <button class="tool-btn" data-tool="stickers" data-target="stickers" title="Custom Stickers (S)">🎀</button>
-      <button class="tool-btn" data-tool="anim" data-target="anim" title="Animation FX (A)">✨</button>
+      <button class="tool-btn active" data-target="section-layers" title="Move & Active Layers (V)">↖️</button>
+      <button class="tool-btn" data-target="section-faces" title="Murad Faces (F)">🎭</button>
+      <button class="tool-btn" data-target="section-bg" title="Backdrop & Templates (B)">🖼️</button>
+      <button class="tool-btn" data-target="section-text" title="Meme Text (T)">✍️</button>
+      <button class="tool-btn" data-target="section-stickers" title="Custom Stickers (S)">🎀</button>
+      <button class="tool-btn" data-target="section-anim" title="Animation FX (A)">✨</button>
     </aside>
 
     <!-- CENTER CANVAS VIEWPORT -->
@@ -871,20 +854,11 @@ html_app = f"""
       </div>
     </main>
 
-    <!-- RIGHT DOCKED PANELS -->
+    <!-- RIGHT DOCKED PANELS (ALL SECTIONS OPEN BY DEFAULT) -->
     <aside class="ps-panels-sidebar" id="panelsSidebar">
-      <!-- PANEL TABS -->
-      <div class="ps-panel-tabs">
-        <button class="panel-tab active" data-tab="faces">🎭 Faces</button>
-        <button class="panel-tab" data-tab="bg">🖼️ Backdrop</button>
-        <button class="panel-tab" data-tab="text">✍️ Text</button>
-        <button class="panel-tab" data-tab="stickers">🎀 Stickers</button>
-        <button class="panel-tab" data-tab="anim">✨ FX</button>
-        <button class="panel-tab" data-tab="layers">📑 Layers</button>
-      </div>
 
-      <!-- PANEL: FACES -->
-      <div class="ps-panel-body" id="tabContent-faces">
+      <!-- 1. SECTION: MURAD FACES -->
+      <div class="ps-panel-section" id="section-faces">
         <div class="panel-section-header">
           <span class="panel-section-title">🎭 Murad Faces</span>
           <!-- DISCRETE CORNER ADMIN LOCK BUTTON -->
@@ -898,11 +872,11 @@ html_app = f"""
 
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="font-size:10.5px; color:var(--ps-text-muted); font-weight:700;">DEFAULT FACES:</span>
-          <button id="addFaceBtn" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff;">➕ Add to Canvas</button>
+          <button id="addFaceBtn" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff;">➕ Add Face</button>
         </div>
-        <div class="grid-cards" id="facesGrid" style="max-height:190px; overflow-y:auto;"></div>
+        <div class="grid-cards" id="facesGrid" style="max-height:180px; overflow-y:auto;"></div>
 
-        <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
+        <div style="display:flex; flex-direction:column; gap:4px; margin-top:2px;">
           <span style="font-size:10.5px; color:var(--ps-text-muted); font-weight:700;">CUTOUT SHAPE:</span>
           <div class="btn-group" id="maskGroup">
             <button class="btn-toggle active" data-mask="square">Full Frame</button>
@@ -921,14 +895,14 @@ html_app = f"""
         </div>
       </div>
 
-      <!-- PANEL: BACKDROP -->
-      <div class="ps-panel-body" id="tabContent-bg" style="display:none;">
+      <!-- 2. SECTION: BACKDROP & TEMPLATES -->
+      <div class="ps-panel-section" id="section-bg">
         <div class="panel-section-header">
           <span class="panel-section-title">🖼️ Backdrop & Templates</span>
         </div>
 
         <label class="ps-dropzone">
-          <span>📁 Upload Image, Meme or GIF</span>
+          <span>📁 Upload Image, Meme or Animated GIF</span>
           <input type="file" id="bgFileInput" accept="image/*,.gif">
         </label>
 
@@ -942,12 +916,12 @@ html_app = f"""
           </div>
         </div>
 
-        <span style="font-size:10.5px; color:var(--ps-text-muted); font-weight:700; margin-top:4px;">POPULAR TEMPLATES:</span>
+        <span style="font-size:10.5px; color:var(--ps-text-muted); font-weight:700;">POPULAR TEMPLATES:</span>
         <div class="grid-cards" id="bgPresetsRow" style="grid-template-columns: repeat(2, 1fr);"></div>
       </div>
 
-      <!-- PANEL: TEXT -->
-      <div class="ps-panel-body" id="tabContent-text" style="display:none;">
+      <!-- 3. SECTION: MEME TEXT -->
+      <div class="ps-panel-section" id="section-text">
         <div class="panel-section-header">
           <span class="panel-section-title">✍️ Meme Text</span>
         </div>
@@ -958,8 +932,7 @@ html_app = f"""
           <button id="addCustomTextBtn" class="ps-opt-btn" style="flex:1; background:var(--ps-blue); color:#fff; border-color:var(--ps-blue);">➕ Custom</button>
         </div>
 
-        <div id="textEditorBox" style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
-          <span style="font-size:10.5px; color:var(--ps-text-muted); font-weight:700;">EDIT TEXT:</span>
+        <div id="textEditorBox" style="display:flex; flex-direction:column; gap:8px;">
           <input type="text" id="activeTextInput" class="ps-input" placeholder="Type meme text here...">
 
           <div class="slider-row">
@@ -980,8 +953,8 @@ html_app = f"""
         </div>
       </div>
 
-      <!-- PANEL: STICKERS -->
-      <div class="ps-panel-body" id="tabContent-stickers" style="display:none;">
+      <!-- 4. SECTION: CUSTOM STICKERS -->
+      <div class="ps-panel-section" id="section-stickers">
         <div class="panel-section-header">
           <span class="panel-section-title">🎀 Custom Stickers</span>
         </div>
@@ -1003,8 +976,8 @@ html_app = f"""
         </div>
       </div>
 
-      <!-- PANEL: ANIMATION FX -->
-      <div class="ps-panel-body" id="tabContent-anim" style="display:none;">
+      <!-- 5. SECTION: ANIMATION FX -->
+      <div class="ps-panel-section" id="section-anim">
         <div class="panel-section-header">
           <span class="panel-section-title">✨ Discord GIF Effects</span>
         </div>
@@ -1022,10 +995,10 @@ html_app = f"""
         </div>
       </div>
 
-      <!-- PANEL: LAYERS -->
-      <div class="ps-panel-body" id="tabContent-layers" style="display:none;">
+      <!-- 6. SECTION: ACTIVE LAYERS -->
+      <div class="ps-panel-section" id="section-layers">
         <div class="panel-section-header">
-          <span class="panel-section-title">📑 Layers Stack</span>
+          <span class="panel-section-title">📑 Active Layers</span>
         </div>
         <div class="layers-list" id="layersList"></div>
       </div>
@@ -1800,16 +1773,14 @@ function deleteLayer(type, idx) {{
   render();
 }}
 
-// Switch panel tabs
-function switchTab(tabId) {{
-  document.querySelectorAll('.panel-tab').forEach(t => {{
-    t.classList.toggle('active', t.dataset.tab === tabId);
-  }});
-  document.querySelectorAll('.ps-panel-body').forEach(b => {{
-    b.style.display = (b.id === 'tabContent-' + tabId) ? 'flex' : 'none';
-  }});
+// Scroll directly to a section when toolbar icon clicked
+function scrollToSection(sectionId) {{
+  const el = document.getElementById(sectionId);
+  if (el) {{
+    el.scrollIntoView({{ behavior: 'smooth', block: 'start' }});
+  }}
   document.querySelectorAll('.tool-btn').forEach(btn => {{
-    btn.classList.toggle('active', btn.dataset.target === tabId);
+    btn.classList.toggle('active', btn.dataset.target === sectionId);
   }});
 }}
 
@@ -1863,12 +1834,9 @@ function initUIEvents() {{
   updateLayersList();
   updateOptionsBar();
 
-  // Tab switching
-  document.querySelectorAll('.panel-tab').forEach(tab => {{
-    tab.onclick = () => switchTab(tab.dataset.tab);
-  }});
+  // Toolbar icons scroll to section
   document.querySelectorAll('.tool-btn').forEach(btn => {{
-    btn.onclick = () => switchTab(btn.dataset.target);
+    btn.onclick = () => scrollToSection(btn.dataset.target);
   }});
 
   // Topbar Options buttons
@@ -2251,7 +2219,6 @@ function initUIEvents() {{
 
   // Export buttons
   document.getElementById('btnExportPng').onclick = () => {{
-    // Deselect handles before export
     const prevFace = state.selectedFaceIdx;
     const prevAcc = state.selectedAccIdx;
     const prevText = state.selectedTextIdx;
