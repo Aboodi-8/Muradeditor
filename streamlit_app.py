@@ -111,18 +111,20 @@ def load_faces_catalog():
                             "file": item["file"],
                             "src": get_base64_data_uri(img_path)
                         })
+            return faces_list
         except Exception:
             pass
 
-    # Fallback to scan directory if manifest missing
-    if not faces_list:
+    # Fallback to scan directory ONLY if manifest is missing
+    if not MANIFEST_FILE.exists():
         for p in ASSETS_DIR.glob("*.png"):
-            faces_list.append({
-                "id": p.stem,
-                "name": p.stem.replace("murad_", "").replace("_", " ").title() + " 🍉",
-                "file": p.name,
-                "src": get_base64_data_uri(p)
-            })
+            if not p.name.startswith("murad_"):
+                faces_list.append({
+                    "id": p.stem,
+                    "name": p.stem.replace("_", " ").title() + " 🍉",
+                    "file": p.name,
+                    "src": get_base64_data_uri(p)
+                })
 
     return faces_list
 
@@ -1442,6 +1444,10 @@ function applyLanguage(lang) {{
   document.getElementById('animDisco').innerText = t.animDisco;
 
   document.getElementById('secTitleLayers').innerText = t.secTitleLayers;
+  const emptyNotice = document.getElementById('emptyFacesNotice');
+  if (emptyNotice) {{
+    emptyNotice.innerText = lang === 'ar' ? 'لا توجد وجوه افتراضية. ارفع فاكهة أو صورة مخصصة بالأعلى للبدء!' : 'No default faces. Upload a custom fruit or photo above to start!';
+  }}
   updateTopbarToolOptions();
   syncLayersUI();
 }}
@@ -1466,8 +1472,8 @@ function makeFaceLayer(faceIndex, x, y, scale, z) {{
 
 // DEFAULT STATE
 const state = {{
-  facesOnCanvas: [makeFaceLayer(0, 0, -50, 1.0, 1)],
-  selectedFaceIdx: 0,
+  facesOnCanvas: [],
+  selectedFaceIdx: -1,
 
   bgType: 'template',
   bgTemplateId: 'suit',
@@ -1486,7 +1492,7 @@ const state = {{
 
   animation: 'none',
 
-  activeTransformTarget: {{ type: 'face', idx: 0 }},
+  activeTransformTarget: null,
   dragTarget: null
 }};
 
@@ -2195,29 +2201,41 @@ function initUIEvents() {{
   // 2. Populate Fruits Faces Grid
   const facesGrid = document.getElementById('facesGrid');
   facesGrid.innerHTML = '';
-  faces.forEach((f, idx) => {{
-    const card = document.createElement('div');
-    card.className = 'grid-card' + (idx === 0 ? ' active' : '');
-    card.innerHTML = `<img src="${{f.src}}" alt="${{f.name}}"><span>${{f.name}}</span>`;
-    card.onclick = () => {{
-      document.querySelectorAll('#facesGrid .grid-card').forEach(c => c.classList.remove('active'));
-      card.classList.add('active');
-      const active = getActiveLayerData();
-      if (active && active.type === 'face') {{
-        active.obj.faceIndex = idx;
-        active.obj.customImg = null;
-      }} else {{
-        state.facesOnCanvas.push(makeFaceLayer(idx, 0, 0, 1.0));
-        state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
-      }}
-      render();
-      syncLayersUI();
-    }};
-    facesGrid.appendChild(card);
-  }});
+  if (faces.length === 0) {{
+    const emptyNotice = document.createElement('div');
+    emptyNotice.id = 'emptyFacesNotice';
+    emptyNotice.style.cssText = 'grid-column: 1 / -1; padding: 14px 10px; text-align: center; color: var(--ps-text-muted); font-size: 11.5px; border: 1px dashed var(--ps-border); border-radius: 6px; background: rgba(255,255,255,0.02); line-height: 1.5;';
+    emptyNotice.innerText = currentLang === 'ar' ? 'لا توجد وجوه افتراضية. ارفع فاكهة أو صورة مخصصة بالأعلى للبدء!' : 'No default faces. Upload a custom fruit or photo above to start!';
+    facesGrid.appendChild(emptyNotice);
+  }} else {{
+    faces.forEach((f, idx) => {{
+      const card = document.createElement('div');
+      card.className = 'grid-card' + (idx === 0 ? ' active' : '');
+      card.innerHTML = `<img src="${{f.src}}" alt="${{f.name}}"><span>${{f.name}}</span>`;
+      card.onclick = () => {{
+        document.querySelectorAll('#facesGrid .grid-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        const active = getActiveLayerData();
+        if (active && active.type === 'face') {{
+          active.obj.faceIndex = idx;
+          active.obj.customImg = null;
+        }} else {{
+          state.facesOnCanvas.push(makeFaceLayer(idx, 0, 0, 1.0));
+          state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
+        }}
+        render();
+        syncLayersUI();
+      }};
+      facesGrid.appendChild(card);
+    }});
+  }}
 
   // Add Face Button
   document.getElementById('addFaceBtn').onclick = () => {{
+    if (faces.length === 0) {{
+      document.getElementById('faceFileInput').click();
+      return;
+    }}
     state.facesOnCanvas.push(makeFaceLayer(0, Math.floor((Math.random() - 0.5) * 80), Math.floor((Math.random() - 0.5) * 80), 1.0));
     state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
     render();
@@ -2565,6 +2583,12 @@ function renderAdminCatalog() {{
   const list = document.getElementById('adminFacesCatalogList');
   if (!list) return;
   list.innerHTML = '';
+  if (faces.length === 0) {{
+    const emptyRow = document.createElement('div');
+    emptyRow.style = 'color:var(--ps-text-muted); font-size:12px; text-align:center; padding:12px;';
+    emptyRow.innerText = 'Catalog is empty. Add new fruit faces using the form above!';
+    list.appendChild(emptyRow);
+  }}
   faces.forEach((f, idx) => {{
     const row = document.createElement('div');
     row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:7px 10px; border-radius:6px; border:1px solid #1f2028;';
