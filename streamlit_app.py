@@ -9,7 +9,7 @@ import streamlit.components.v1 as components
 
 # Configure Streamlit page for full width
 st.set_page_config(
-    page_title="Muradiator | Meme Editor & GIF Maker",
+    page_title="Frutisator | Meme Editor & GIF Maker",
     page_icon="🍉",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -183,14 +183,14 @@ if not expected_pwd:
 gh_token_json = json.dumps(token_secret)
 admin_pwd_json = json.dumps(expected_pwd)
 
-# --- EMBEDDED MURADIATOR WEB STUDIO ---
+# --- EMBEDDED FRUTISATOR WEB STUDIO ---
 html_app = f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Muradiator</title>
+<title>Frutisator</title>
 <style>
   :root {{
     --ps-bg: #000000;
@@ -967,8 +967,8 @@ html_app = f"""
   <!-- TOP OPTIONS BAR -->
   <header class="ps-topbar">
     <div class="ps-brand">
-      <span class="ps-logo">Mu</span>
-      <span class="ps-title" id="appTitle">Muradiator</span>
+      <span class="ps-logo">Fr</span>
+      <span class="ps-title" id="appTitle">Frutisator</span>
       <span class="ps-doc-badge" id="docSizeBadge">800 × 800 px</span>
     </div>
 
@@ -1270,7 +1270,7 @@ let currentLang = 'en';
 const i18n = {{
   en: {{
     langBtn: '🌐 العربية',
-    appTitle: 'Muradiator',
+    appTitle: 'Frutisator',
     fitScreen: '🔍 Fit Screen',
     lblTransform: 'Transform:',
     noLayer: 'No layer selected',
@@ -1328,7 +1328,7 @@ const i18n = {{
   }},
   ar: {{
     langBtn: '🌐 English',
-    appTitle: 'مورادياتور',
+    appTitle: 'فروتيساتور',
     fitScreen: '🔍 ملاءمة الشاشة',
     lblTransform: 'تحويل:',
     noLayer: 'لم يتم تحديد طبقة',
@@ -2725,7 +2725,7 @@ function exportPng() {{
   render();
 
   const link = document.createElement('a');
-  link.download = 'muradiator_meme.png';
+  link.download = 'frutisator_meme.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
 
@@ -2815,7 +2815,7 @@ function exportGif() {{
   }}, (obj) => {{
     if (!obj.error) {{
       const link = document.createElement('a');
-      link.download = 'muradiator_meme.gif';
+      link.download = 'frutisator_meme.gif';
       link.href = obj.image;
       link.click();
     }}
@@ -2869,5 +2869,5 @@ window.onload = () => {{
 </html>
 """
 
-# Render embedded Muradiator Studio
+# Render embedded Frutisator Studio
 components.html(html_app, height=1000, scrolling=False)
