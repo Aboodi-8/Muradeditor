@@ -15,10 +15,20 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# Custom minimal styles to remove extra padding, remove black bars, and lock page scroll
+# Custom styles: completely kill Streamlit headers, decoration, toolbars, and top black bars
 st.markdown("""
 <style>
-    #MainMenu, header, footer { display: none !important; visibility: hidden !important; }
+    /* Kill all Streamlit Cloud and local headers */
+    header, [data-testid="stHeader"], .stAppHeader, [data-testid="stDecoration"], [data-testid="stToolbar"], #MainMenu, footer {
+        display: none !important;
+        height: 0px !important;
+        min-height: 0px !important;
+        max-height: 0px !important;
+        visibility: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+    }
     html, body {
         margin: 0 !important;
         padding: 0 !important;
@@ -32,10 +42,12 @@ st.markdown("""
         overflow: hidden !important;
         height: 100vh !important;
         max-height: 100vh !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
     .block-container {
-        padding: 0 !important;
-        margin: 0 !important;
+        padding: 0rem !important;
+        margin: 0rem !important;
         max-width: 100% !important;
         height: 100vh !important;
         overflow: hidden !important;
@@ -43,13 +55,15 @@ st.markdown("""
     div[data-testid="stAppViewContainer"],
     div[data-testid="stMain"],
     div[data-testid="stCustomComponentV1"],
-    div[data-testid="element-container"] {
+    div[data-testid="element-container"],
+    div[data-testid="stVerticalBlock"] {
         width: 100% !important;
         height: 100vh !important;
         max-height: 100vh !important;
         overflow: hidden !important;
         padding: 0 !important;
         margin: 0 !important;
+        gap: 0 !important;
     }
     iframe {
         width: 100% !important;
@@ -58,6 +72,8 @@ st.markdown("""
         border: none !important;
         display: block !important;
         overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -215,6 +231,26 @@ html_app = f"""
     -webkit-user-select: none;
   }}
 
+  /* RTL Support for Arabic */
+  [dir="rtl"] {{
+    direction: rtl;
+    text-align: right;
+  }}
+  [dir="rtl"] .ps-sidebar-left {{
+    border-right: none;
+    border-left: 1px solid var(--ps-border);
+  }}
+  [dir="rtl"] .ps-sidebar-right {{
+    border-left: none;
+    border-right: 1px solid var(--ps-border);
+  }}
+  [dir="rtl"] .ps-opt-group {{
+    border-left: none;
+    border-right: 1px solid var(--ps-border);
+    padding-left: 0;
+    padding-right: 10px;
+  }}
+
   /* MAIN APP LAYOUT */
   .ps-app {{
     display: flex;
@@ -350,9 +386,9 @@ html_app = f"""
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid var(--ps-border);
     color: var(--ps-text-bright);
-    padding: 6px 14px;
+    padding: 6px 13px;
     border-radius: 6px;
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 800;
     cursor: pointer;
     display: inline-flex;
@@ -415,13 +451,13 @@ html_app = f"""
     border-radius: 3px;
   }}
 
-  /* PANEL SECTIONS - COMPACT & VISIBLE */
+  /* PANEL SECTIONS */
   .ps-panel-section {{
     border-bottom: 1px solid var(--ps-border);
-    padding: 12px 14px;
+    padding: 11px 13px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 9px;
   }}
   .ps-panel-section:last-child {{
     border-bottom: none;
@@ -436,7 +472,7 @@ html_app = f"""
     background: #12141c;
     border: 1px solid #202330;
     border-radius: 6px;
-    padding: 6px 12px;
+    padding: 5px 11px;
   }}
   .panel-section-title {{
     font-weight: 800;
@@ -477,7 +513,7 @@ html_app = f"""
     transform: scale(1.08);
   }}
 
-  /* DROP ZONES */
+  /* DROP ZONES WITH UPLOAD SVG ICON */
   .ps-dropzone {{
     border: 2px dashed var(--ps-blue);
     background: rgba(0, 132, 255, 0.08);
@@ -498,17 +534,24 @@ html_app = f"""
   }}
   .ps-dropzone input {{ display: none; }}
 
-  /* GRID CARDS (FACES, TEMPLATES) */
+  .upload-icon {{
+    display: inline-block;
+    vertical-align: middle;
+    stroke: currentColor;
+    flex-shrink: 0;
+  }}
+
+  /* GRID CARDS (FACES) */
   .grid-cards-faces {{
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 9px;
   }}
   .grid-card {{
     background: var(--ps-card);
     border: 1px solid var(--ps-border);
     border-radius: 8px;
-    padding: 7px;
+    padding: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -528,14 +571,14 @@ html_app = f"""
   }}
   .grid-card img {{
     width: 100%;
-    height: 110px;
+    height: 105px;
     border-radius: 6px;
     object-fit: cover;
     margin-bottom: 5px;
     background: #000;
   }}
   .grid-card span {{
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 700;
     color: var(--ps-text-bright);
     text-align: center;
@@ -545,7 +588,48 @@ html_app = f"""
     width: 100%;
   }}
 
-  /* COMPACT BUTTON GROUPS USING EXACT GRID (NO WEIRD WRAPPING) */
+  /* COMPACT SHORTER POPULAR TEMPLATES */
+  .grid-card-template {{
+    background: var(--ps-card);
+    border: 1px solid var(--ps-border);
+    border-radius: 7px;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.14s ease;
+  }}
+  .grid-card-template:hover {{
+    border-color: var(--ps-border-light);
+    transform: translateY(-2px);
+    background: var(--ps-card-hover);
+  }}
+  .grid-card-template.active {{
+    border-color: var(--ps-blue);
+    background: rgba(0, 132, 255, 0.22);
+    box-shadow: 0 0 0 2px var(--ps-blue);
+  }}
+  .grid-card-template img {{
+    width: 100%;
+    height: 58px; /* SHORTER: saves space! */
+    border-radius: 5px;
+    object-fit: cover;
+    margin-bottom: 4px;
+    background: #000;
+  }}
+  .grid-card-template span {{
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ps-text-bright);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }}
+
+  /* BUTTON GROUPS GRID */
   .btn-group-grid {{
     display: grid;
     background: var(--ps-card);
@@ -557,11 +641,11 @@ html_app = f"""
   .btn-group-4 {{
     grid-template-columns: repeat(4, 1fr);
   }}
-  .btn-group-5 {{
-    grid-template-columns: repeat(5, 1fr);
+  .btn-group-6 {{
+    grid-template-columns: repeat(6, 1fr);
   }}
-  .btn-group-3 {{
-    grid-template-columns: repeat(3, 1fr);
+  .btn-group-2 {{
+    grid-template-columns: repeat(2, 1fr);
   }}
 
   .btn-toggle {{
@@ -570,7 +654,7 @@ html_app = f"""
     color: var(--ps-text-muted);
     font-size: 11px;
     font-weight: 700;
-    padding: 7px 3px;
+    padding: 6px 2px;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.12s ease;
@@ -620,7 +704,7 @@ html_app = f"""
     border: 1px solid var(--ps-border);
     color: #fff;
     font-size: 13px;
-    padding: 9px 12px;
+    padding: 8px 12px;
     border-radius: 6px;
     outline: none;
     transition: border-color 0.15s ease;
@@ -630,7 +714,7 @@ html_app = f"""
     box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.3);
   }}
 
-  /* COMPACT DISCORD GIF EFFECTS CHIPS (6+ FIT NICELY) */
+  /* DISCORD ANIMATION CHIPS */
   .grid-anim-chips {{
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -646,7 +730,7 @@ html_app = f"""
     justify-content: center;
     gap: 5px;
     cursor: pointer;
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
     color: #e2e4ea;
     transition: all 0.12s ease;
@@ -664,7 +748,7 @@ html_app = f"""
     font-size: 14px;
   }}
 
-  /* ACTIVE LAYERS LIST (WITH THUMBNAILS & REORDER BUTTONS) */
+  /* ACTIVE LAYERS LIST */
   .layers-list {{
     display: flex;
     flex-direction: column;
@@ -674,7 +758,7 @@ html_app = f"""
     background: var(--ps-card);
     border: 1px solid var(--ps-border);
     border-radius: 6px;
-    padding: 7px 10px;
+    padding: 6px 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -699,8 +783,8 @@ html_app = f"""
     flex: 1;
   }}
   .layer-thumb {{
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 4px;
     object-fit: cover;
     border: 1px solid #292d3e;
@@ -708,8 +792,8 @@ html_app = f"""
     background: #000;
   }}
   .layer-text-badge {{
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     border-radius: 4px;
     background: #171924;
     color: var(--ps-blue);
@@ -723,7 +807,7 @@ html_app = f"""
   }}
   .layer-title-text {{
     font-weight: 700;
-    font-size: 12.5px;
+    font-size: 12px;
     color: #fff;
     white-space: nowrap;
     overflow: hidden;
@@ -897,20 +981,20 @@ html_app = f"""
 </head>
 <body>
 
-<div class="ps-app">
+<div class="ps-app" id="psApp">
 
   <!-- TOP OPTIONS BAR -->
   <header class="ps-topbar">
     <div class="ps-brand">
       <span class="ps-logo">Mu</span>
-      <span class="ps-title">Muradiator</span>
+      <span class="ps-title" id="appTitle">Muradiator</span>
       <span class="ps-doc-badge" id="docSizeBadge">800 × 800 px</span>
     </div>
 
     <!-- CONTEXT TOOL OPTIONS -->
     <div class="ps-tool-options" id="toolOptions">
       <button id="fitScreenBtn" class="ps-opt-btn" title="Auto Fit Canvas to Viewport">🔍 Fit Screen</button>
-      <span class="ps-opt-label">Transform:</span>
+      <span class="ps-opt-label" id="lblTransform">Transform:</span>
       <span class="ps-opt-badge" id="optLayerName">No layer selected</span>
       <div class="ps-opt-group" id="optActionGroup" style="display:none;">
         <span class="ps-opt-label" id="optScaleVal">100%</span>
@@ -919,14 +1003,15 @@ html_app = f"""
         <button id="optCenterBtn" class="ps-opt-btn" title="Center on Canvas">🎯 Center</button>
         <button id="optDeleteBtn" class="ps-opt-btn danger" title="Delete Layer">🗑️ Delete</button>
       </div>
-      <span style="font-size:11px; color:#60c5ff; margin-left:6px; font-weight:600;">💡 Hold Shift while dragging corners to Stretch!</span>
+      <span style="font-size:11px; color:#60c5ff; margin-left:6px; font-weight:600;" id="txtShiftTip">💡 Hold Shift while dragging corners to Stretch!</span>
     </div>
 
-    <!-- EXPORT ACTIONS -->
+    <!-- EXPORT ACTIONS + ARABIC LANGUAGE SWITCHER -->
     <div class="ps-actions">
-      <button id="btnExportGif" class="ps-btn ps-btn-primary" title="Export High-Fidelity Animated Discord GIF">⬇️ Export GIF</button>
+      <button id="btnExportGif" class="ps-btn ps-btn-primary" title="Export Animated Discord GIF">⬇️ Export GIF</button>
       <button id="btnExportPng" class="ps-btn" title="Export High-Res PNG">⬇️ PNG</button>
       <button id="btnCopyDiscord" class="ps-btn" title="Copy to clipboard for instant Discord paste">📋 Copy</button>
+      <button id="btnLangToggle" class="ps-btn" style="background:#161824; border-color:#2a2e42;" title="Toggle Arabic / English">🌐 العربية</button>
     </div>
   </header>
 
@@ -936,61 +1021,77 @@ html_app = f"""
     <!-- LEFT SIDEBAR: BACKDROP FIRST, THEN FRUITS FACES -->
     <aside class="ps-sidebar ps-sidebar-left" id="sidebarLeft">
 
-      <!-- 1. SECTION: BACKDROP & TEMPLATES (SWAPPED FIRST) -->
+      <!-- 1. SECTION: BACKDROP & TEMPLATES -->
       <div class="ps-panel-section" id="section-bg">
         <div class="panel-section-header">
-          <span class="panel-section-title">🖼️ Backdrop & Templates</span>
+          <span class="panel-section-title" id="secTitleBackdrop">🖼️ Backdrop & Templates</span>
         </div>
 
+        <!-- UPLOAD BACKDROP DROPZONE WITH SVG UPLOAD ICON -->
         <label class="ps-dropzone">
-          <span>📁 Upload Image, Meme or Animated GIF</span>
+          <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+            <svg class="upload-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span id="txtUploadBg">Upload Image, Meme or Animated GIF</span>
+          </div>
           <input type="file" id="bgFileInput" accept="image/*,.gif">
         </label>
 
         <div style="display:flex; flex-direction:column; gap:5px;">
-          <span class="section-label">Canvas Format:</span>
+          <span class="section-label" id="lblCanvasFormat">Canvas Format:</span>
           <div class="btn-group-grid btn-group-4" id="canvasSizeGroup">
-            <button class="btn-toggle active" data-size="true_size">📐 True Size</button>
+            <button class="btn-toggle active" data-size="true_size" id="btnTrueSize">📐 True Size</button>
             <button class="btn-toggle" data-size="square">⏹️ 1:1</button>
             <button class="btn-toggle" data-size="landscape">🖼️ 16:9</button>
             <button class="btn-toggle" data-size="portrait">📱 9:16</button>
           </div>
         </div>
 
-        <span class="section-label">Popular Meme Templates:</span>
-        <div class="grid-cards-faces" id="bgPresetsRow" style="max-height:220px; overflow-y:auto;"></div>
+        <span class="section-label" id="lblPopularTemplates">Popular Meme Templates:</span>
+        <div class="grid-cards-faces" id="bgPresetsRow" style="max-height:160px; overflow-y:auto;"></div>
       </div>
 
-      <!-- 2. SECTION: FRUITS FACES (SWAPPED SECOND, SCALE SLIDER REMOVED) -->
+      <!-- 2. SECTION: FRUITS FACES -->
       <div class="ps-panel-section" id="section-faces">
         <div class="panel-section-header">
-          <span class="panel-section-title">🍉 Fruits Faces</span>
+          <span class="panel-section-title" id="secTitleFaces">🍉 Fruits Faces</span>
           <!-- DISCRETE CORNER ADMIN LOCK BUTTON -->
           <button id="adminLockBtn" class="admin-lock-btn" title="Admin Fruits Catalog Settings">🔒</button>
         </div>
 
+        <!-- UPLOAD FRUIT DROPZONE WITH SVG UPLOAD ICON -->
         <label class="ps-dropzone">
-          <span>📸 Upload Custom Fruit / Photo</span>
+          <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+            <svg class="upload-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span id="txtUploadFace">Upload Custom Fruit / Photo</span>
+          </div>
           <input type="file" id="faceFileInput" accept="image/*">
         </label>
 
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span class="section-label">Default Fruits Faces:</span>
+          <span class="section-label" id="lblDefaultFaces">Default Fruits Faces:</span>
           <button id="addFaceBtn" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff; padding:4px 10px;">➕ Add Face</button>
         </div>
         <div class="grid-cards-faces" id="facesGrid" style="max-height:240px; overflow-y:auto;"></div>
 
         <div style="display:flex; flex-direction:column; gap:5px; margin-top:2px;">
-          <span class="section-label">Cutout Shape:</span>
-          <div class="btn-group-grid btn-group-3" id="maskGroup">
-            <button class="btn-toggle active" data-mask="square">Full Frame</button>
-            <button class="btn-toggle" data-mask="circle">Sticker Circle</button>
-            <button class="btn-toggle" data-mask="oval">Oval</button>
+          <span class="section-label" id="lblCutoutShape">Cutout Shape:</span>
+          <!-- STICKER CIRCLE REMOVED, EXACT 2 COLUMNS -->
+          <div class="btn-group-grid btn-group-2" id="maskGroup">
+            <button class="btn-toggle active" data-mask="square" id="btnFullFrame">Full Frame</button>
+            <button class="btn-toggle" data-mask="oval" id="btnOval">Oval</button>
           </div>
         </div>
 
         <div class="slider-row">
-          <label>Face Opacity: <b id="faceOpacityVal">100%</b></label>
+          <label><span id="lblFaceOpacity">Face Opacity:</span> <b id="faceOpacityVal">100%</b></label>
           <input type="range" id="faceOpacitySlider" min="0.1" max="1.0" step="0.05" value="1.0">
         </div>
       </div>
@@ -1010,7 +1111,7 @@ html_app = f"""
       <!-- 3. SECTION: MEME TEXT -->
       <div class="ps-panel-section" id="section-text">
         <div class="panel-section-header">
-          <span class="panel-section-title">✍️ Meme Text</span>
+          <span class="panel-section-title" id="secTitleText">✍️ Meme Text</span>
         </div>
 
         <div style="display:flex; gap:6px;">
@@ -1019,23 +1120,40 @@ html_app = f"""
           <button id="addCustomTextBtn" class="ps-opt-btn" style="flex:1; padding:7px; justify-content:center; background:var(--ps-blue); color:#fff; border-color:var(--ps-blue);">➕ Custom</button>
         </div>
 
-        <div id="textEditorBox" style="display:flex; flex-direction:column; gap:10px;">
+        <div id="textEditorBox" style="display:flex; flex-direction:column; gap:9px;">
           <input type="text" id="activeTextInput" class="ps-input" placeholder="Click + Top/Bottom or type meme text...">
 
+          <!-- FONT SELECTION DROPDOWN -->
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <span class="section-label" id="lblFont">Font:</span>
+            <select id="fontFamilySelect" class="ps-input" style="padding: 7px 10px; font-weight: 700; cursor: pointer;">
+              <option value="Impact, sans-serif">Impact (Classic Meme)</option>
+              <option value="'Arial Black', Gadget, sans-serif">Arial Black (Heavy Bold)</option>
+              <option value="'Comic Sans MS', cursive, sans-serif">Comic Sans (Doge / Fun)</option>
+              <option value="Tahoma, 'Segoe UI', sans-serif">Tahoma (Arabic & Clean)</option>
+              <option value="'Courier New', monospace">Courier (Typewriter / Hacker)</option>
+              <option value="'Trebuchet MS', sans-serif">Trebuchet MS (Modern)</option>
+              <option value="Georgia, serif">Georgia (Classy Serif)</option>
+            </select>
+          </div>
+
           <div class="slider-row">
-            <label>Font Size: <b id="textSizeVal">48px</b></label>
+            <label><span id="lblFontSize">Font Size:</span> <b id="textSizeVal">48px</b></label>
             <input type="range" id="textSizeSlider" min="16" max="130" step="2" value="48">
           </div>
 
-          <div style="display:flex; flex-direction:column; gap:5px;">
-            <span class="section-label">Text Color:</span>
-            <div class="btn-group-grid btn-group-5" id="textColorGroup">
+          <!-- 6 COLOR OPTIONS INCLUDING COLOR WHEEL -->
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <span class="section-label" id="lblTextColor">Text Color:</span>
+            <div class="btn-group-grid btn-group-6" id="textColorGroup">
               <button class="btn-toggle active" data-color="#ffffff">White</button>
               <button class="btn-toggle" data-color="#facc15" style="color:#facc15;">Yellow</button>
               <button class="btn-toggle" data-color="#ef4444" style="color:#ef4444;">Red</button>
               <button class="btn-toggle" data-color="#22d3ee" style="color:#22d3ee;">Cyan</button>
               <button class="btn-toggle" data-color="#4ade80" style="color:#4ade80;">Green</button>
+              <button class="btn-toggle" id="colorWheelBtn" data-color="wheel" title="Choose any custom color">🎨 Wheel</button>
             </div>
+            <input type="color" id="nativeColorPicker" value="#ffffff" style="display:none;">
           </div>
         </div>
       </div>
@@ -1043,17 +1161,25 @@ html_app = f"""
       <!-- 4. SECTION: CUSTOM STICKERS -->
       <div class="ps-panel-section" id="section-stickers">
         <div class="panel-section-header">
-          <span class="panel-section-title">🎀 Custom Stickers</span>
+          <span class="panel-section-title" id="secTitleStickers">🎀 Custom Stickers</span>
         </div>
 
+        <!-- UPLOAD STICKER DROPZONE WITH SVG UPLOAD ICON -->
         <label class="ps-dropzone">
-          <span>📁 Upload Custom PNG / Sticker</span>
+          <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
+            <svg class="upload-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+            <span id="txtUploadSticker">Upload Custom PNG / Sticker</span>
+          </div>
           <input type="file" id="accFileInput" accept="image/*,.gif">
         </label>
 
         <div id="accEditorBox" style="display:none; flex-direction:column; gap:8px;">
           <div class="slider-row">
-            <label>Opacity: <b id="accOpacityVal">100%</b></label>
+            <label><span id="lblStickerOpacity">Opacity:</span> <b id="accOpacityVal">100%</b></label>
             <input type="range" id="accOpacitySlider" min="0.1" max="1.0" step="0.05" value="1.0">
           </div>
         </div>
@@ -1062,26 +1188,26 @@ html_app = f"""
       <!-- 5. SECTION: COMPACT DISCORD GIF EFFECTS -->
       <div class="ps-panel-section" id="section-anim">
         <div class="panel-section-header">
-          <span class="panel-section-title">✨ Discord GIF Effects</span>
+          <span class="panel-section-title" id="secTitleAnim">✨ Discord GIF Effects</span>
         </div>
 
         <div class="grid-anim-chips" id="animGrid">
-          <div class="anim-chip active" data-anim="none"><span class="emoji">🖼️</span><span>Still</span></div>
-          <div class="anim-chip" data-anim="bob"><span class="emoji">🕺</span><span>Bob</span></div>
-          <div class="anim-chip" data-anim="shake"><span class="emoji">💢</span><span>Shake</span></div>
-          <div class="anim-chip" data-anim="spin"><span class="emoji">🌀</span><span>Spin</span></div>
-          <div class="anim-chip" data-anim="petpet"><span class="emoji">👋</span><span>Petpet</span></div>
-          <div class="anim-chip" data-anim="zoom"><span class="emoji">💥</span><span>Pulse</span></div>
-          <div class="anim-chip" data-anim="pulse"><span class="emoji">💓</span><span>Heart</span></div>
-          <div class="anim-chip" data-anim="wobble"><span class="emoji">🌊</span><span>Wobble</span></div>
-          <div class="anim-chip" data-anim="disco"><span class="emoji">🪩</span><span>Disco</span></div>
+          <div class="anim-chip active" data-anim="none"><span class="emoji">🖼️</span><span id="animStill">Still</span></div>
+          <div class="anim-chip" data-anim="bob"><span class="emoji">🕺</span><span id="animBob">Bob</span></div>
+          <div class="anim-chip" data-anim="shake"><span class="emoji">💢</span><span id="animShake">Shake</span></div>
+          <div class="anim-chip" data-anim="spin"><span class="emoji">🌀</span><span id="animSpin">Spin</span></div>
+          <div class="anim-chip" data-anim="petpet"><span class="emoji">👋</span><span id="animPetpet">Petpet</span></div>
+          <div class="anim-chip" data-anim="zoom"><span class="emoji">💥</span><span id="animPulse">Pulse</span></div>
+          <div class="anim-chip" data-anim="pulse"><span class="emoji">💓</span><span id="animHeart">Heart</span></div>
+          <div class="anim-chip" data-anim="wobble"><span class="emoji">🌊</span><span id="animWobble">Wobble</span></div>
+          <div class="anim-chip" data-anim="disco"><span class="emoji">🪩</span><span id="animDisco">Disco</span></div>
         </div>
       </div>
 
-      <!-- 6. SECTION: ACTIVE LAYERS (WITH ICONS & REARRANGE CONTROLS) -->
+      <!-- 6. SECTION: ACTIVE LAYERS -->
       <div class="ps-panel-section" id="section-layers">
         <div class="panel-section-header">
-          <span class="panel-section-title">📑 Active Layers</span>
+          <span class="panel-section-title" id="secTitleLayers">📑 Active Layers</span>
         </div>
         <div class="layers-list" id="layersList"></div>
       </div>
@@ -1128,7 +1254,14 @@ html_app = f"""
           <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
             <input type="text" id="adminNewFaceName" class="ps-input" placeholder="Fruit Name & Emoji (e.g. Watermelon 🍉)">
             <input type="file" id="adminNewFaceFile" accept="image/*" class="ps-input" style="padding:6px;">
-            <button id="adminUploadBtn" class="ps-btn ps-btn-primary" style="justify-content:center;">🚀 Push to Catalog</button>
+            <button id="adminUploadBtn" class="ps-btn ps-btn-primary" style="justify-content:center; gap:8px;">
+              <svg class="upload-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span>Push to Catalog</span>
+            </button>
             <div id="adminUploadStatus" style="font-size:11.5px; text-align:center;"></div>
           </div>
         </div>
@@ -1150,6 +1283,188 @@ const GITHUB_TOKEN = {gh_token_json};
 const EXPECTED_ADMIN_PWD = {admin_pwd_json};
 
 let layerZCounter = 1;
+let currentLang = 'en';
+
+// BILINGUAL ARABIC & ENGLISH TRANSLATIONS
+const i18n = {{
+  en: {{
+    langBtn: '🌐 العربية',
+    appTitle: 'Muradiator',
+    fitScreen: '🔍 Fit Screen',
+    lblTransform: 'Transform:',
+    noLayer: 'No layer selected',
+    flip: '↔️ Flip',
+    center: '🎯 Center',
+    delete: '🗑️ Delete',
+    shiftTip: '💡 Hold Shift while dragging corners to Stretch!',
+    exportGif: '⬇️ Export GIF',
+    exportPng: '⬇️ PNG',
+    copyDiscord: '📋 Copy',
+    copiedAlert: '🎉 Copied image to clipboard! You can paste directly into Discord with Ctrl+V!',
+    
+    secTitleBackdrop: '🖼️ Backdrop & Templates',
+    txtUploadBg: 'Upload Image, Meme or Animated GIF',
+    lblCanvasFormat: 'Canvas Format:',
+    btnTrueSize: '📐 True Size',
+    lblPopularTemplates: 'Popular Meme Templates:',
+
+    secTitleFaces: '🍉 Fruits Faces',
+    txtUploadFace: 'Upload Custom Fruit / Photo',
+    lblDefaultFaces: 'Default Fruits Faces:',
+    addFaceBtn: '➕ Add Face',
+    lblCutoutShape: 'Cutout Shape:',
+    btnFullFrame: 'Full Frame',
+    btnOval: 'Oval',
+    lblFaceOpacity: 'Face Opacity:',
+
+    secTitleText: '✍️ Meme Text',
+    addTopTextBtn: '➕ Top',
+    addBottomTextBtn: '➕ Bottom',
+    addCustomTextBtn: '➕ Custom',
+    textPlaceholder: 'Click + Top/Bottom or type meme text...',
+    lblFont: 'Font:',
+    lblFontSize: 'Font Size:',
+    lblTextColor: 'Text Color:',
+    wheelColor: '🎨 Wheel',
+
+    secTitleStickers: '🎀 Custom Stickers',
+    txtUploadSticker: 'Upload Custom PNG / Sticker',
+    lblStickerOpacity: 'Opacity:',
+
+    secTitleAnim: '✨ Discord GIF Effects',
+    animStill: 'Still',
+    animBob: 'Bob',
+    animShake: 'Shake',
+    animSpin: 'Spin',
+    animPetpet: 'Petpet',
+    animPulse: 'Pulse',
+    animHeart: 'Heart',
+    animWobble: 'Wobble',
+    animDisco: 'Disco',
+
+    secTitleLayers: '📑 Active Layers',
+    noLayers: 'No active layers on canvas'
+  }},
+  ar: {{
+    langBtn: '🌐 English',
+    appTitle: 'مورادياتور',
+    fitScreen: '🔍 ملاءمة الشاشة',
+    lblTransform: 'تحويل:',
+    noLayer: 'لم يتم تحديد طبقة',
+    flip: '↔️ قلب',
+    center: '🎯 توسيط',
+    delete: '🗑️ حذف',
+    shiftTip: '💡 اضغط Shift أثناء السحب لتمديد ومط الصورة!',
+    exportGif: '⬇️ تصدير GIF',
+    exportPng: '⬇️ حفظ PNG',
+    copyDiscord: '📋 نسخ',
+    copiedAlert: '🎉 تم نسخ الصورة إلى الحافظة! يمكنك لصقها مباشرة في ديسكورد عبر Ctrl+V!',
+    
+    secTitleBackdrop: '🖼️ الخلفيات والقوالب',
+    txtUploadBg: 'رفع صورة أو ميم أو GIF متحرك',
+    lblCanvasFormat: 'تنسيق الكانفاس:',
+    btnTrueSize: '📐 الحجم الأصلي',
+    lblPopularTemplates: 'قوالب الميمز الشائعة:',
+
+    secTitleFaces: '🍉 وجوه الفواكه',
+    txtUploadFace: 'رفع فاكهة / صورة مخصصة',
+    lblDefaultFaces: 'وجوه الفواكه الافتراضية:',
+    addFaceBtn: '➕ إضافة وجه',
+    lblCutoutShape: 'شكل القص:',
+    btnFullFrame: 'إطار كامل',
+    btnOval: 'بيضاوي',
+    lblFaceOpacity: 'شفافية الوجه:',
+
+    secTitleText: '✍️ نصوص الميم',
+    addTopTextBtn: '➕ أعلى',
+    addBottomTextBtn: '➕ أسفل',
+    addCustomTextBtn: '➕ مخصص',
+    textPlaceholder: 'اضغط + أعلى/أسفل أو اكتب النص...',
+    lblFont: 'نوع الخط:',
+    lblFontSize: 'حجم الخط:',
+    lblTextColor: 'لون النص:',
+    wheelColor: '🎨 عجلة',
+
+    secTitleStickers: '🎀 ملصقات مخصصة',
+    txtUploadSticker: 'رفع ملصق PNG مخصص',
+    lblStickerOpacity: 'الشفافية:',
+
+    secTitleAnim: '✨ تأثيرات ديسكورد المتحركة',
+    animStill: 'ثابت',
+    animBob: 'تمايل',
+    animShake: 'اهتزاز',
+    animSpin: 'دوران',
+    animPetpet: 'تربيت',
+    animPulse: 'نبض',
+    animHeart: 'قلب',
+    animWobble: 'تموج',
+    animDisco: 'ديسكو',
+
+    secTitleLayers: '📑 الطبقات النشطة',
+    noLayers: 'لا توجد طبقات نشطة على الكانفاس'
+  }}
+}};
+
+function applyLanguage(lang) {{
+  const t = i18n[lang];
+  currentLang = lang;
+  document.getElementById('psApp').setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
+  document.getElementById('btnLangToggle').innerText = t.langBtn;
+  document.getElementById('appTitle').innerText = t.appTitle;
+  document.getElementById('fitScreenBtn').innerText = t.fitScreen;
+  document.getElementById('lblTransform').innerText = t.lblTransform;
+  document.getElementById('txtShiftTip').innerText = t.shiftTip;
+  document.getElementById('btnExportGif').innerText = t.exportGif;
+  document.getElementById('btnExportPng').innerText = t.exportPng;
+  document.getElementById('btnCopyDiscord').innerText = t.copyDiscord;
+  document.getElementById('optFlipBtn').innerText = t.flip;
+  document.getElementById('optCenterBtn').innerText = t.center;
+  document.getElementById('optDeleteBtn').innerText = t.delete;
+
+  document.getElementById('secTitleBackdrop').innerText = t.secTitleBackdrop;
+  document.getElementById('txtUploadBg').innerText = t.txtUploadBg;
+  document.getElementById('lblCanvasFormat').innerText = t.lblCanvasFormat;
+  document.getElementById('btnTrueSize').innerText = t.trueSize;
+  document.getElementById('lblPopularTemplates').innerText = t.lblPopularTemplates;
+
+  document.getElementById('secTitleFaces').innerText = t.secTitleFaces;
+  document.getElementById('txtUploadFace').innerText = t.txtUploadFace;
+  document.getElementById('lblDefaultFaces').innerText = t.lblDefaultFaces;
+  document.getElementById('addFaceBtn').innerText = t.addFaceBtn;
+  document.getElementById('lblCutoutShape').innerText = t.lblCutoutShape;
+  document.getElementById('btnFullFrame').innerText = t.btnFullFrame;
+  document.getElementById('btnOval').innerText = t.btnOval;
+  document.getElementById('lblFaceOpacity').innerText = t.lblFaceOpacity;
+
+  document.getElementById('secTitleText').innerText = t.secTitleText;
+  document.getElementById('addTopTextBtn').innerText = t.addTopTextBtn;
+  document.getElementById('addBottomTextBtn').innerText = t.addBottomTextBtn;
+  document.getElementById('addCustomTextBtn').innerText = t.addCustomTextBtn;
+  document.getElementById('activeTextInput').placeholder = t.textPlaceholder;
+  document.getElementById('lblFont').innerText = t.lblFont;
+  document.getElementById('lblFontSize').innerText = t.lblFontSize;
+  document.getElementById('lblTextColor').innerText = t.lblTextColor;
+  document.getElementById('colorWheelBtn').innerText = t.wheelColor;
+
+  document.getElementById('secTitleStickers').innerText = t.secTitleStickers;
+  document.getElementById('txtUploadSticker').innerText = t.txtUploadSticker;
+  document.getElementById('lblStickerOpacity').innerText = t.lblStickerOpacity;
+
+  document.getElementById('secTitleAnim').innerText = t.secTitleAnim;
+  document.getElementById('animStill').innerText = t.animStill;
+  document.getElementById('animBob').innerText = t.animBob;
+  document.getElementById('animShake').innerText = t.animShake;
+  document.getElementById('animSpin').innerText = t.animSpin;
+  document.getElementById('animPetpet').innerText = t.animPetpet;
+  document.getElementById('animPulse').innerText = t.animPulse;
+  document.getElementById('animHeart').innerText = t.animHeart;
+  document.getElementById('animWobble').innerText = t.animWobble;
+  document.getElementById('animDisco').innerText = t.animDisco;
+
+  document.getElementById('secTitleLayers').innerText = t.secTitleLayers;
+  updateTopbarToolOptions();
+  syncLayersUI();
+}}
 
 function makeFaceLayer(faceIndex, x, y, scale, z) {{
   return {{
@@ -1169,7 +1484,7 @@ function makeFaceLayer(faceIndex, x, y, scale, z) {{
   }};
 }}
 
-// DEFAULT STATE: CLEAN CANVAS WITHOUT DEFAULT TEXT LAYERS
+// DEFAULT STATE
 const state = {{
   facesOnCanvas: [makeFaceLayer(0, 0, -50, 1.0, 1)],
   selectedFaceIdx: 0,
@@ -1297,7 +1612,8 @@ function getActiveLayerData() {{
   }}
   if (t.type === 'text' && state.texts[t.idx]) {{
     const txt = state.texts[t.idx];
-    ctx.font = '900 ' + txt.size + 'px Impact, sans-serif';
+    const fontFam = txt.font || 'Impact, sans-serif';
+    ctx.font = '900 ' + txt.size + 'px ' + fontFam;
     const metrics = ctx.measureText(txt.text || ' ');
     const sx = txt.scaleX !== undefined ? txt.scaleX : 1.0;
     const sy = txt.scaleY !== undefined ? txt.scaleY : 1.0;
@@ -1347,7 +1663,7 @@ function toLocal(mx, my, cx, cy, rotationDeg) {{
   }};
 }}
 
-// Hit test handles & bounding box (compact small handles)
+// Hit test handles & bounding box
 function testHandlesHit(mx, my, layerData) {{
   if (!layerData) return null;
   const {{ cx, cy, hw, hh, rotation }} = layerData;
@@ -1388,7 +1704,7 @@ function findLayerAt(mx, my) {{
     if (h) return {{ handle: h, layer: active }};
   }}
 
-  const all = getAllLayers(); // sorted top to bottom
+  const all = getAllLayers();
   for (let item of all) {{
     const {{ layerType, idx, obj }} = item;
     let hw = 50, hh = 50, cx = canvas.width / 2 + obj.x, cy = canvas.height / 2 + obj.y, rot = obj.rotation || 0;
@@ -1406,7 +1722,8 @@ function findLayerAt(mx, my) {{
       hw = (180 * sx) / 2;
       hh = (180 * aspect * sy) / 2;
     }} else if (layerType === 'text') {{
-      ctx.font = '900 ' + obj.size + 'px Impact, sans-serif';
+      const fontFam = obj.font || 'Impact, sans-serif';
+      ctx.font = '900 ' + obj.size + 'px ' + fontFam;
       const metrics = ctx.measureText(obj.text || ' ');
       const sx = obj.scaleX !== undefined ? obj.scaleX : 1.0;
       const sy = obj.scaleY !== undefined ? obj.scaleY : 1.0;
@@ -1433,7 +1750,7 @@ function getAllLayers() {{
   return all;
 }}
 
-// --- RENDER CANVAS (CRISP RESOLUTION & PRECISE SMALL HANDLES) ---
+// --- RENDER CANVAS ---
 function render(offsetObj) {{
   const animOff = offsetObj || {{ x: 0, y: 0, rot: 0, scale: 1.0 }};
 
@@ -1504,12 +1821,7 @@ function render(offsetObj) {{
       const w = baseW * sx * animOff.scale;
       const h = baseH * sy * animOff.scale;
 
-      if (obj.maskShape === 'circle') {{
-        ctx.beginPath();
-        ctx.arc(0, 0, Math.min(w, h) / 2, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-      }} else if (obj.maskShape === 'oval') {{
+      if (obj.maskShape === 'oval') {{
         ctx.beginPath();
         ctx.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2);
         ctx.closePath();
@@ -1548,7 +1860,8 @@ function render(offsetObj) {{
       const sy = obj.scaleY !== undefined ? obj.scaleY : 1.0;
       ctx.scale(sx, sy);
 
-      ctx.font = '900 ' + obj.size + 'px Impact, -apple-system, sans-serif';
+      const fontFam = obj.font || 'Impact, sans-serif';
+      ctx.font = '900 ' + obj.size + 'px ' + fontFam;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.lineWidth = Math.max(5, Math.round(obj.size / 6.5));
@@ -1582,7 +1895,7 @@ function render(offsetObj) {{
     ctx.lineTo(0, -hh - 18);
     ctx.stroke();
 
-    // Small circular rotation handle (radius 5)
+    // Small circular rotation handle
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#0084ff';
     ctx.lineWidth = 2;
@@ -1621,7 +1934,7 @@ function updateTopbarToolOptions() {{
   const rotVal = document.getElementById('optRotVal');
 
   if (!active) {{
-    nameBadge.innerText = 'No layer selected';
+    nameBadge.innerText = i18n[currentLang].noLayer;
     actionGroup.style.display = 'none';
     return;
   }}
@@ -1630,13 +1943,13 @@ function updateTopbarToolOptions() {{
   let title = 'Layer';
   if (active.type === 'face') {{
     const f = faces[active.obj.faceIndex];
-    title = f ? f.name : 'Custom Face';
+    title = f ? f.name : (currentLang === 'ar' ? 'فاكهة مخصصة' : 'Custom Face');
     const sx = Math.round((active.obj.scaleX || active.obj.scale || 1.0) * 100);
     const sy = Math.round((active.obj.scaleY || active.obj.scale || 1.0) * 100);
     scaleVal.innerText = sx === sy ? (sx + '%') : (sx + '% × ' + sy + '%');
     rotVal.innerText = Math.round(active.obj.rotation || 0) + '°';
   }} else if (active.type === 'acc') {{
-    title = 'Sticker / Acc';
+    title = currentLang === 'ar' ? 'ملصق' : 'Sticker / Acc';
     const sx = Math.round((active.obj.scaleX || active.obj.scale || 1.0) * 100);
     const sy = Math.round((active.obj.scaleY || active.obj.scale || 1.0) * 100);
     scaleVal.innerText = sx === sy ? (sx + '%') : (sx + '% × ' + sy + '%');
@@ -1682,6 +1995,7 @@ function initCanvasEvents() {{
         const obj = state.texts[hit.layer.idx];
         origObjState = {{ x: obj.x, y: obj.y, size: obj.size, scaleX: obj.scaleX || 1.0, scaleY: obj.scaleY || 1.0, rotation: obj.rotation || 0 }};
         document.getElementById('activeTextInput').value = obj.text;
+        document.getElementById('fontFamilySelect').value = obj.font || 'Impact, sans-serif';
       }}
 
       render();
@@ -1809,15 +2123,15 @@ function initCanvasEvents() {{
 
 // --- POPULATE SIDEBARS & EVENTS ---
 function initUIEvents() {{
-  // 1. Templates Grid
+  // 1. Templates Grid (SHORTER COMPACT 60px CARDS)
   const bgGrid = document.getElementById('bgPresetsRow');
   bgGrid.innerHTML = '';
   templates.forEach(t => {{
     const card = document.createElement('div');
-    card.className = 'grid-card' + (t.id === 'suit' ? ' active' : '');
+    card.className = 'grid-card-template' + (t.id === 'suit' ? ' active' : '');
     card.innerHTML = `<img src="${{t.src}}" alt="${{t.name}}"><span>${{t.name}}</span>`;
     card.onclick = () => {{
-      document.querySelectorAll('#bgPresetsRow .grid-card').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('#bgPresetsRow .grid-card-template').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
       state.bgType = 'template';
       state.bgTemplateId = t.id;
@@ -1950,7 +2264,7 @@ function initUIEvents() {{
     reader.readAsDataURL(file);
   }};
 
-  // Mask Shape Toggles
+  // Mask Shape Toggles (Sticker circle removed)
   document.querySelectorAll('#maskGroup .btn-toggle').forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll('#maskGroup .btn-toggle').forEach(b => b.classList.remove('active'));
@@ -1963,7 +2277,7 @@ function initUIEvents() {{
     }};
   }});
 
-  // Face Opacity Slider (Scale slider removed)
+  // Face Opacity Slider
   document.getElementById('faceOpacitySlider').oninput = (e) => {{
     const val = parseFloat(e.target.value);
     document.getElementById('faceOpacityVal').innerText = Math.round(val * 100) + '%';
@@ -1976,7 +2290,7 @@ function initUIEvents() {{
 
   // 3. Text Controls (Top, Bottom, Custom)
   document.getElementById('addTopTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'TOP TEXT', x: 0, y: -Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', rotation: 0, z: ++layerZCounter }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'TOP TEXT', x: 0, y: -Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, z: ++layerZCounter }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
     state.selectedTextIdx = state.texts.length - 1;
     document.getElementById('activeTextInput').value = 'TOP TEXT';
@@ -1984,7 +2298,7 @@ function initUIEvents() {{
     syncLayersUI();
   }};
   document.getElementById('addBottomTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', rotation: 0, z: ++layerZCounter }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, z: ++layerZCounter }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
     state.selectedTextIdx = state.texts.length - 1;
     document.getElementById('activeTextInput').value = 'BOTTOM TEXT';
@@ -1992,7 +2306,7 @@ function initUIEvents() {{
     syncLayersUI();
   }};
   document.getElementById('addCustomTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'YOUR TEXT', x: 0, y: 0, size: 52, color: '#ffffff', rotation: 0, z: ++layerZCounter }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'YOUR TEXT', x: 0, y: 0, size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, z: ++layerZCounter }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
     state.selectedTextIdx = state.texts.length - 1;
     document.getElementById('activeTextInput').value = 'YOUR TEXT';
@@ -2012,6 +2326,7 @@ function initUIEvents() {{
           y: 0,
           size: 52,
           color: '#ffffff',
+          font: document.getElementById('fontFamilySelect').value,
           rotation: 0,
           z: ++layerZCounter
         }});
@@ -2027,6 +2342,15 @@ function initUIEvents() {{
     syncLayersUI();
   }};
 
+  // Font Selection Change
+  document.getElementById('fontFamilySelect').onchange = (e) => {{
+    const active = getActiveLayerData();
+    if (active && active.type === 'text') {{
+      active.obj.font = e.target.value;
+      render();
+    }}
+  }};
+
   document.getElementById('textSizeSlider').oninput = (e) => {{
     const val = parseInt(e.target.value);
     document.getElementById('textSizeVal').innerText = val + 'px';
@@ -2037,8 +2361,13 @@ function initUIEvents() {{
     }}
   }};
 
+  // Text Colors (including Color Wheel)
   document.querySelectorAll('#textColorGroup .btn-toggle').forEach(btn => {{
     btn.onclick = () => {{
+      if (btn.id === 'colorWheelBtn') {{
+        document.getElementById('nativeColorPicker').click();
+        return;
+      }}
       document.querySelectorAll('#textColorGroup .btn-toggle').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const active = getActiveLayerData();
@@ -2048,6 +2377,22 @@ function initUIEvents() {{
       }}
     }};
   }});
+
+  // Native Color Picker Wheel Input
+  document.getElementById('nativeColorPicker').oninput = (e) => {{
+    const color = e.target.value;
+    const wheelBtn = document.getElementById('colorWheelBtn');
+    document.querySelectorAll('#textColorGroup .btn-toggle').forEach(b => b.classList.remove('active'));
+    wheelBtn.classList.add('active');
+    wheelBtn.style.color = color;
+    wheelBtn.style.borderColor = color;
+
+    const active = getActiveLayerData();
+    if (active && active.type === 'text') {{
+      active.obj.color = color;
+      render();
+    }}
+  }};
 
   // 4. Custom Sticker Upload
   document.getElementById('accFileInput').onchange = (e) => {{
@@ -2123,10 +2468,15 @@ function initUIEvents() {{
     syncLayersUI();
   }};
 
-  // 7. Topbar Export Buttons
+  // 7. Topbar Export Buttons & Language Switcher
   document.getElementById('btnExportPng').onclick = exportPng;
   document.getElementById('btnExportGif').onclick = exportGif;
   document.getElementById('btnCopyDiscord').onclick = copyToClipboard;
+
+  document.getElementById('btnLangToggle').onclick = () => {{
+    const nextLang = currentLang === 'en' ? 'ar' : 'en';
+    applyLanguage(nextLang);
+  }};
 
   // 8. Admin Modal
   const adminModal = document.getElementById('adminModal');
@@ -2282,9 +2632,9 @@ async function syncFaceToGitHub(faceName, filename, base64Data) {{
   }});
 }}
 
-// Reorder layer in stack: dir === -1 moves UP (higher visual layer), dir === 1 moves DOWN
+// Reorder layer in stack
 window.moveLayerZ = function(layerType, idx, dir) {{
-  const all = getAllLayers(); // sorted top to bottom
+  const all = getAllLayers();
   const currentPos = all.findIndex(item => item.layerType === layerType && item.idx === idx);
   if (currentPos === -1) return;
   const targetPos = currentPos + dir;
@@ -2312,10 +2662,10 @@ function syncLayersUI() {{
   list.innerHTML = '';
 
   const active = getActiveLayerData();
-  const all = getAllLayers(); // sorted top of stack to bottom
+  const all = getAllLayers();
 
   if (all.length === 0) {{
-    list.innerHTML = '<div style="color:var(--ps-text-muted); font-size:12px; text-align:center; padding:10px 0;">No active layers on canvas</div>';
+    list.innerHTML = `<div style="color:var(--ps-text-muted); font-size:12px; text-align:center; padding:10px 0;">${{i18n[currentLang].noLayers}}</div>`;
     return;
   }}
 
@@ -2332,11 +2682,11 @@ function syncLayersUI() {{
       const faceImg = obj.customImg ? obj.customImg.src : (faces[obj.faceIndex] ? faces[obj.faceIndex].src : '');
       thumbHtml = `<img src="${{faceImg}}" class="layer-thumb" alt="Face">`;
       const fObj = faces[obj.faceIndex];
-      titleStr = fObj ? fObj.name : 'Custom Fruit';
+      titleStr = fObj ? fObj.name : (currentLang === 'ar' ? 'فاكهة مخصصة' : 'Custom Fruit');
     }} else if (layerType === 'acc') {{
       const accImg = obj.img ? obj.img.src : '';
       thumbHtml = `<img src="${{accImg}}" class="layer-thumb" alt="Sticker">`;
-      titleStr = 'Sticker #' + (idx + 1);
+      titleStr = (currentLang === 'ar' ? 'ملصق #' : 'Sticker #') + (idx + 1);
     }} else if (layerType === 'text') {{
       thumbHtml = `<span class="layer-text-badge">T</span>`;
       titleStr = '"' + (obj.text || 'Text').substring(0, 14) + '"';
@@ -2364,6 +2714,7 @@ function syncLayersUI() {{
       if (layerType === 'text') {{
         state.selectedTextIdx = idx;
         document.getElementById('activeTextInput').value = obj.text;
+        document.getElementById('fontFamilySelect').value = obj.font || 'Impact, sans-serif';
       }}
       render();
       syncLayersUI();
@@ -2412,7 +2763,7 @@ function copyToClipboard() {{
     try {{
       const item = new ClipboardItem({{ 'image/png': blob }});
       navigator.clipboard.write([item]).then(() => {{
-        alert('🎉 Copied image to clipboard! You can paste directly into Discord with Ctrl+V!');
+        alert(i18n[currentLang].copiedAlert);
       }}).catch(() => {{
         alert('⚠️ Clipboard copy blocked by browser. Use Download PNG instead.');
       }});
@@ -2425,7 +2776,7 @@ function copyToClipboard() {{
   render();
 }}
 
-// FIXED: 16:9 Aspect Ratio & High Color Fidelity
+// FIXED: Exact Aspect Ratio & High Color Fidelity
 function exportGif() {{
   if (!window.gifshot) {{
     alert('GIF library is still loading, please wait a moment.');
@@ -2443,7 +2794,6 @@ function exportGif() {{
   const prevTarget = state.activeTransformTarget;
   state.activeTransformTarget = null;
 
-  // Exact aspect ratio preserving dimensions
   const aspect = canvas.width / canvas.height;
   let gifW = 480;
   let gifH = Math.round(gifW / aspect);
@@ -2451,7 +2801,6 @@ function exportGif() {{
     gifH = 480;
     gifW = Math.round(gifH * aspect);
   }}
-  // Ensure even dimensions
   gifW = Math.round(gifW / 2) * 2;
   gifH = Math.round(gifH / 2) * 2;
 
@@ -2478,7 +2827,7 @@ function exportGif() {{
     gifHeight: gifH,
     interval: 0.06,
     numWorkers: 4,
-    sampleInterval: 2, // High color fidelity sampling
+    sampleInterval: 2,
     progressCallback: (captureProgress) => {{
       progBar.style.width = Math.round(captureProgress * 100) + '%';
       progText.innerText = 'Encoding GIF: ' + Math.round(captureProgress * 100) + '%';
