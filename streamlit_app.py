@@ -1183,9 +1183,15 @@ html_app = f"""
           <button id="resetFiltersBtn" class="ps-opt-btn" style="padding:2px 7px; font-size:10.5px;" title="Reset Filters">🔄 Reset</button>
         </div>
 
+        <!-- CURRENT SELECTED LAYER TARGET BADGE -->
+        <div id="filterActiveTargetBadge" style="display:flex; align-items:center; justify-content:space-between; background:var(--ps-card); border:1px solid var(--ps-border); border-radius:6px; padding:6px 10px; font-size:11.5px; font-weight:700; color:#fff;">
+          <span id="lblFilterTargetText">Selected Layer:</span>
+          <span id="valFilterTargetName" style="color:var(--ps-blue); font-weight:800;">🖼️ Backdrop</span>
+        </div>
+
         <!-- TARGET SELECTOR: BACKDROP, FACE, STICKER -->
         <div style="display:flex; flex-direction:column; gap:4px;">
-          <span class="section-label" id="lblFilterTarget">Apply Filter To:</span>
+          <span class="section-label" id="lblFilterTarget">Switch Target:</span>
           <div class="btn-group-grid btn-group-3" id="filterTargetGroup">
             <button class="btn-toggle active" data-target="bg" id="btnFilterBg">🖼️ Backdrop</button>
             <button class="btn-toggle" data-target="face" id="btnFilterFace">🍉 Face</button>
@@ -1489,7 +1495,8 @@ const i18n = {{
 
     secTitleFilters: '🎨 Color & Filters',
     resetFilters: '🔄 Reset',
-    lblFilterTarget: 'Apply Filter To:',
+    lblFilterTargetText: 'Selected Layer:',
+    lblFilterTarget: 'Switch Target:',
     btnFilterBg: '🖼️ Backdrop',
     btnFilterFace: '🍉 Face',
     btnFilterAcc: '🎀 Sticker',
@@ -1568,7 +1575,8 @@ const i18n = {{
 
     secTitleFilters: '🎨 فلاتر وتعديل الألوان',
     resetFilters: '🔄 إعادة ضبط',
-    lblFilterTarget: 'تطبيق الفلتر على:',
+    lblFilterTargetText: 'الطبقة المحددة:',
+    lblFilterTarget: 'تبديل الهدف:',
     btnFilterBg: '🖼️ الخلفية',
     btnFilterFace: '🍉 الوجه',
     btnFilterAcc: '🎀 الملصق',
@@ -1661,6 +1669,7 @@ function applyLanguage(lang) {{
   if (document.getElementById('secTitleFilters')) {{
     document.getElementById('secTitleFilters').innerText = t.secTitleFilters;
     document.getElementById('resetFiltersBtn').innerText = t.resetFilters;
+    document.getElementById('lblFilterTargetText').innerText = t.lblFilterTargetText;
     document.getElementById('lblFilterTarget').innerText = t.lblFilterTarget;
     document.getElementById('btnFilterBg').innerText = t.btnFilterBg;
     document.getElementById('btnFilterFace').innerText = t.btnFilterFace;
@@ -1807,6 +1816,14 @@ window.addEventListener('resize', fitCanvasToScreen);
 function getActiveLayerData() {{
   const t = state.activeTransformTarget;
   if (!t) return null;
+  if (t.type === 'bg') {{
+    return {{
+      type: 'bg',
+      idx: 0,
+      obj: {{ filters: state.bgFilters }},
+      name: currentLang === 'ar' ? 'الخلفية 🖼️' : 'Backdrop 🖼️'
+    }};
+  }}
   if (t.type === 'face' && state.facesOnCanvas[t.idx]) {{
     const face = state.facesOnCanvas[t.idx];
     let img = face.customImg || loadedFaces[face.faceIndex];
@@ -2127,7 +2144,7 @@ function render(offsetObj) {{
 
   // 3. Draw Refined Compact Free Transform Bounding Box & Handles
   const active = getActiveLayerData();
-  if (active) {{
+  if (active && active.type !== 'bg') {{
     const {{ cx, cy, hw, hh, rotation }} = active;
     ctx.save();
     ctx.translate(cx, cy);
@@ -2191,6 +2208,19 @@ function updateTopbarToolOptions() {{
   }}
 
   actionGroup.style.display = 'inline-flex';
+  document.getElementById('optDeleteBtn').style.display = 'inline-block';
+  document.getElementById('optCenterBtn').style.display = 'inline-block';
+  document.getElementById('optFlipBtn').style.display = 'inline-block';
+
+  if (active.type === 'bg') {{
+    nameBadge.innerText = currentLang === 'ar' ? '🖼️ الخلفية (مثبتة)' : '🖼️ Backdrop (Locked)';
+    document.getElementById('optDeleteBtn').style.display = 'none';
+    document.getElementById('optCenterBtn').style.display = 'none';
+    scaleVal.innerText = '100%';
+    rotVal.innerText = '0°';
+    return;
+  }}
+
   let title = 'Layer';
   if (active.type === 'face') {{
     const f = faces[active.obj.faceIndex];
@@ -2251,10 +2281,12 @@ function initCanvasEvents() {{
 
       render();
       syncLayersUI();
+      syncFilterUI();
     }} else {{
       state.activeTransformTarget = null;
       render();
       syncLayersUI();
+      syncFilterUI();
     }}
   }}
 
@@ -2661,16 +2693,28 @@ function initUIEvents() {{
   let currentFilterTarget = 'bg';
 
   window.getActiveFilterTargetObj = function() {{
+    const active = getActiveLayerData();
+    if (active) {{
+      if (active.type === 'bg') {{
+        if (!state.bgFilters) state.bgFilters = makeDefaultFilters();
+        return state.bgFilters;
+      }}
+      if (active.type === 'face') {{
+        if (!active.obj.filters) active.obj.filters = makeDefaultFilters();
+        return active.obj.filters;
+      }}
+      if (active.type === 'acc') {{
+        if (!active.obj.filters) active.obj.filters = makeDefaultFilters();
+        return active.obj.filters;
+      }}
+    }}
+
+    // If explicit target pill was chosen
     if (currentFilterTarget === 'bg') {{
       if (!state.bgFilters) state.bgFilters = makeDefaultFilters();
       return state.bgFilters;
     }}
     if (currentFilterTarget === 'face') {{
-      const active = getActiveLayerData();
-      if (active && active.type === 'face') {{
-        if (!active.obj.filters) active.obj.filters = makeDefaultFilters();
-        return active.obj.filters;
-      }}
       if (state.facesOnCanvas.length > 0) {{
         const f0 = state.facesOnCanvas[0];
         if (!f0.filters) f0.filters = makeDefaultFilters();
@@ -2679,11 +2723,6 @@ function initUIEvents() {{
       return null;
     }}
     if (currentFilterTarget === 'acc') {{
-      const active = getActiveLayerData();
-      if (active && active.type === 'acc') {{
-        if (!active.obj.filters) active.obj.filters = makeDefaultFilters();
-        return active.obj.filters;
-      }}
       if (state.accessoriesOnCanvas.length > 0) {{
         const a0 = state.accessoriesOnCanvas[0];
         if (!a0.filters) a0.filters = makeDefaultFilters();
@@ -2691,10 +2730,37 @@ function initUIEvents() {{
       }}
       return null;
     }}
-    return null;
+    if (!state.bgFilters) state.bgFilters = makeDefaultFilters();
+    return state.bgFilters;
   }};
 
   window.syncFilterUI = function() {{
+    const active = getActiveLayerData();
+    const effectiveType = active ? active.type : currentFilterTarget;
+    currentFilterTarget = effectiveType;
+
+    // Update target switcher pills active state
+    document.querySelectorAll('#filterTargetGroup .btn-toggle').forEach(b => {{
+      b.classList.toggle('active', b.getAttribute('data-target') === effectiveType);
+    }});
+
+    // Update Selected Layer Target Badge in Filter section
+    const badgeName = document.getElementById('valFilterTargetName');
+    if (badgeName) {{
+      if (effectiveType === 'face') {{
+        const fObj = active ? faces[active.obj.faceIndex] : null;
+        badgeName.innerText = '🍉 ' + (fObj ? fObj.name : (currentLang === 'ar' ? 'فاكهة مخصصة' : 'Custom Face'));
+        badgeName.style.color = '#ff6b8b';
+      }} else if (effectiveType === 'acc') {{
+        const idx = active ? (active.idx + 1) : 1;
+        badgeName.innerText = '🎀 ' + (currentLang === 'ar' ? 'ملصق #' + idx : 'Sticker #' + idx);
+        badgeName.style.color = '#a78bfa';
+      }} else {{
+        badgeName.innerText = '🖼️ ' + (currentLang === 'ar' ? 'الخلفية' : 'Backdrop');
+        badgeName.style.color = 'var(--ps-blue)';
+      }}
+    }}
+
     const f = getActiveFilterTargetObj();
     const box = document.getElementById('filterSlidersBox');
     const notice = document.getElementById('filterNoTargetNotice');
@@ -2756,8 +2822,15 @@ function initUIEvents() {{
     if (btn) {{
       btn.onclick = () => {{
         currentFilterTarget = tgt;
-        document.querySelectorAll('#filterTargetGroup .btn-toggle').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
+        if (tgt === 'bg') {{
+          state.activeTransformTarget = {{ type: 'bg' }};
+        }} else if (tgt === 'face' && state.facesOnCanvas.length > 0) {{
+          state.activeTransformTarget = {{ type: 'face', idx: 0 }};
+        }} else if (tgt === 'acc' && state.accessoriesOnCanvas.length > 0) {{
+          state.activeTransformTarget = {{ type: 'acc', idx: 0 }};
+        }}
+        render();
+        syncLayersUI();
         syncFilterUI();
       }};
     }}
@@ -3092,8 +3165,10 @@ function syncLayersUI() {{
   const all = getAllLayers();
 
   if (all.length === 0) {{
-    list.innerHTML = `<div style="color:var(--ps-text-muted); font-size:12px; text-align:center; padding:10px 0;">${{i18n[currentLang].noLayers}}</div>`;
-    return;
+    const emptyNotice = document.createElement('div');
+    emptyNotice.style.cssText = 'color:var(--ps-text-muted); font-size:12px; text-align:center; padding:10px 0;';
+    emptyNotice.innerText = i18n[currentLang].noLayers;
+    list.appendChild(emptyNotice);
   }}
 
   all.forEach((item, pos) => {{
@@ -3145,10 +3220,43 @@ function syncLayersUI() {{
       }}
       render();
       syncLayersUI();
+      syncFilterUI();
     }};
 
     list.appendChild(row);
   }});
+
+  // ALWAYS APPEND BACKGROUND LAYER AT BOTTOM OF LAYERS LIST (CANNOT BE REMOVED OR REORDERED)
+  const isBgAct = active && active.type === 'bg';
+  const bgRow = document.createElement('div');
+  bgRow.className = 'layer-item' + (isBgAct ? ' active' : '');
+  bgRow.style.cssText = 'border-top: 1px solid rgba(255,255,255,0.06); background: ' + (isBgAct ? 'var(--ps-card-hover)' : 'rgba(0,0,0,0.25)') + ';';
+
+  let bgImg = null;
+  if (state.bgType === 'custom' && state.bgCustomImg) bgImg = state.bgCustomImg;
+  else if (state.bgType === 'template' && loadedTemplates[state.bgTemplateId]) bgImg = loadedTemplates[state.bgTemplateId];
+
+  let bgThumbHtml = bgImg && bgImg.src ? `<img src="${{bgImg.src}}" class="layer-thumb" alt="Backdrop">` : `<span style="font-size:16px; margin:0 4px;">🖼️</span>`;
+  let bgTitle = currentLang === 'ar' ? 'الخلفية والقوالب' : 'Backdrop & Template';
+
+  bgRow.innerHTML = `
+    <div class="layer-left">
+      ${{bgThumbHtml}}
+      <span class="layer-title-text">${{bgTitle}}</span>
+    </div>
+    <div class="layer-actions">
+      <span style="font-size:11px; color:var(--ps-text-muted); padding:3px 6px;" title="${{currentLang === 'ar' ? 'الخلفية مثبتة ولا يمكن حذفها' : 'Backdrop is permanent and locked'}}">🔒</span>
+    </div>
+  `;
+
+  bgRow.onclick = () => {{
+    state.activeTransformTarget = {{ type: 'bg' }};
+    render();
+    syncLayersUI();
+    syncFilterUI();
+  }};
+
+  list.appendChild(bgRow);
 }}
 
 window.deleteSpecificLayer = function(layerType, idx) {{
