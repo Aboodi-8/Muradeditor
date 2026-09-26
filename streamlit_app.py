@@ -231,25 +231,6 @@ html_app = f"""
     -webkit-user-select: none;
   }}
 
-  /* RTL Support for Arabic */
-  [dir="rtl"] {{
-    direction: rtl;
-    text-align: right;
-  }}
-  [dir="rtl"] .ps-sidebar-left {{
-    border-right: none;
-    border-left: 1px solid var(--ps-border);
-  }}
-  [dir="rtl"] .ps-sidebar-right {{
-    border-left: none;
-    border-right: 1px solid var(--ps-border);
-  }}
-  [dir="rtl"] .ps-opt-group {{
-    border-left: none;
-    border-right: 1px solid var(--ps-border);
-    padding-left: 0;
-    padding-right: 10px;
-  }}
 
   /* MAIN APP LAYOUT */
   .ps-app {{
@@ -1408,7 +1389,6 @@ const i18n = {{
 function applyLanguage(lang) {{
   const t = i18n[lang];
   currentLang = lang;
-  document.getElementById('psApp').setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
   document.getElementById('btnLangToggle').innerText = t.langBtn;
   document.getElementById('appTitle').innerText = t.appTitle;
   document.getElementById('fitScreenBtn').innerText = t.fitScreen;
