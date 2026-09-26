@@ -9,30 +9,54 @@ import streamlit.components.v1 as components
 
 # Configure Streamlit page for full width
 st.set_page_config(
-    page_title="Murad Photoshop Studio | Discord Meme & GIF Maker",
-    page_icon="🎭",
+    page_title="Muradiator | Meme Editor & GIF Maker",
+    page_icon="🍉",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-# Custom minimal styles to remove extra padding and make iframe fill the entire viewport
+# Custom minimal styles to remove extra padding, remove black bars, and lock page scroll
 st.markdown("""
 <style>
-    #MainMenu, header, footer { visibility: hidden; }
+    #MainMenu, header, footer { display: none !important; visibility: hidden !important; }
+    html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+        height: 100vh !important;
+        width: 100vw !important;
+        background-color: #000000 !important;
+    }
+    .stApp {
+        background-color: #000000 !important;
+        overflow: hidden !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+    }
     .block-container {
         padding: 0 !important;
+        margin: 0 !important;
         max-width: 100% !important;
+        height: 100vh !important;
+        overflow: hidden !important;
+    }
+    div[data-testid="stAppViewContainer"],
+    div[data-testid="stMain"],
+    div[data-testid="stCustomComponentV1"],
+    div[data-testid="element-container"] {
+        width: 100% !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
+        overflow: hidden !important;
+        padding: 0 !important;
         margin: 0 !important;
     }
     iframe {
         width: 100% !important;
-        min-height: 98vh !important;
-        height: 98vh !important;
+        height: 100vh !important;
+        max-height: 100vh !important;
         border: none !important;
         display: block !important;
-    }
-    .stApp {
-        background-color: #000000 !important;
         overflow: hidden !important;
     }
 </style>
@@ -79,7 +103,7 @@ def load_faces_catalog():
         for p in ASSETS_DIR.glob("*.png"):
             faces_list.append({
                 "id": p.stem,
-                "name": p.stem.replace("murad_", "").replace("_", " ").title() + " 📸",
+                "name": p.stem.replace("murad_", "").replace("_", " ").title() + " 🍉",
                 "file": p.name,
                 "src": get_base64_data_uri(p)
             })
@@ -143,31 +167,31 @@ if not expected_pwd:
 gh_token_json = json.dumps(token_secret)
 admin_pwd_json = json.dumps(expected_pwd)
 
-# --- EMBEDDED PHOTOSHOP WEB STUDIO (WIDER MENUS, HIGH VISIBILITY & SCREEN-FITTING CANVAS) ---
+# --- EMBEDDED MURADIATOR WEB STUDIO ---
 html_app = f"""
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Murad Photoshop Studio</title>
+<title>Muradiator</title>
 <style>
   :root {{
-    --ps-bg: #000000;             /* Pure Obsidian Black */
-    --ps-topbar: #070709;         /* Ultra dark sleek bar */
-    --ps-panel: #0b0c10;          /* Sleek dark sidebars with high contrast */
-    --ps-canvas-bg: #030304;      /* Deep black void behind canvas */
-    --ps-card: #12141c;           /* Rich card background */
+    --ps-bg: #000000;
+    --ps-topbar: #070709;
+    --ps-panel: #0b0c10;
+    --ps-canvas-bg: #030304;
+    --ps-card: #12141c;
     --ps-card-hover: #181b26;
-    --ps-input: #12141c;          /* Clean input background */
-    --ps-border: #1e212d;         /* High-visibility crisp border */
-    --ps-border-light: #2c3042;   /* Distinct hover border */
-    --ps-blue: #0084ff;           /* High-energy electric Photoshop blue */
+    --ps-input: #12141c;
+    --ps-border: #1e212d;
+    --ps-border-light: #2c3042;
+    --ps-blue: #0084ff;
     --ps-blue-hover: #1a94ff;
     --ps-blue-active: #0066cc;
-    --ps-text: #e2e4ea;           /* High contrast crisp white-gray */
+    --ps-text: #e2e4ea;
     --ps-text-bright: #ffffff;
-    --ps-text-muted: #959cb0;     /* Clear readable muted text */
+    --ps-text-muted: #959cb0;
     --ps-danger: #ff4d4f;
     --ps-green: #10b981;
     --ps-yellow: #fbbf24;
@@ -186,7 +210,7 @@ html_app = f"""
     background: var(--ps-bg);
     color: var(--ps-text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 14px;
+    font-size: 13.5px;
     user-select: none;
     -webkit-user-select: none;
   }}
@@ -201,16 +225,16 @@ html_app = f"""
     background: #000000;
   }}
 
-  /* TOP OPTIONS BAR (HIGH CONTRAST & CLEAN) */
+  /* TOP OPTIONS BAR */
   .ps-topbar {{
-    height: 52px;
+    height: 48px;
     background: var(--ps-topbar);
     border-bottom: 1px solid var(--ps-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 16px;
-    gap: 16px;
+    padding: 0 14px;
+    gap: 12px;
     z-index: 100;
     flex-shrink: 0;
   }}
@@ -218,7 +242,7 @@ html_app = f"""
   .ps-brand {{
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     flex-shrink: 0;
   }}
 
@@ -226,8 +250,8 @@ html_app = f"""
     background: var(--ps-blue);
     color: #fff;
     font-weight: 900;
-    font-size: 17px;
-    padding: 5px 12px;
+    font-size: 15px;
+    padding: 4px 10px;
     border-radius: 6px;
     letter-spacing: -0.5px;
     box-shadow: 0 2px 10px rgba(0, 132, 255, 0.45);
@@ -235,7 +259,7 @@ html_app = f"""
 
   .ps-title {{
     font-weight: 800;
-    font-size: 15px;
+    font-size: 14.5px;
     color: var(--ps-text-bright);
     white-space: nowrap;
     letter-spacing: 0.2px;
@@ -244,9 +268,9 @@ html_app = f"""
   .ps-doc-badge {{
     background: rgba(255, 255, 255, 0.06);
     border: 1px solid var(--ps-border);
-    font-size: 12.5px;
+    font-size: 11.5px;
     font-weight: 700;
-    padding: 4px 10px;
+    padding: 3px 8px;
     border-radius: 5px;
     color: #b0b7c9;
     white-space: nowrap;
@@ -256,15 +280,15 @@ html_app = f"""
   .ps-tool-options {{
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     flex: 1;
     overflow-x: auto;
-    padding: 0 8px;
+    padding: 0 6px;
   }}
 
   .ps-opt-label {{
     color: var(--ps-text-muted);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     white-space: nowrap;
   }}
@@ -273,35 +297,35 @@ html_app = f"""
     background: rgba(0, 132, 255, 0.18);
     border: 1px solid var(--ps-blue);
     color: #60c5ff;
-    padding: 5px 14px;
-    border-radius: 6px;
+    padding: 4px 10px;
+    border-radius: 5px;
     font-weight: 800;
-    font-size: 13px;
+    font-size: 12px;
     white-space: nowrap;
   }}
 
   .ps-opt-group {{
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     border-left: 1px solid var(--ps-border);
-    padding-left: 12px;
+    padding-left: 10px;
   }}
 
   .ps-opt-btn {{
     background: var(--ps-card);
     border: 1px solid var(--ps-border);
     color: var(--ps-text-bright);
-    padding: 6px 14px;
-    border-radius: 6px;
-    font-size: 13px;
+    padding: 5px 11px;
+    border-radius: 5px;
+    font-size: 12px;
     font-weight: 700;
     cursor: pointer;
     transition: all 0.12s ease;
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
   }}
   .ps-opt-btn:hover {{
     background: rgba(255, 255, 255, 0.14);
@@ -318,7 +342,7 @@ html_app = f"""
   .ps-actions {{
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     flex-shrink: 0;
   }}
 
@@ -326,14 +350,14 @@ html_app = f"""
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid var(--ps-border);
     color: var(--ps-text-bright);
-    padding: 8px 18px;
-    border-radius: 7px;
-    font-size: 13.5px;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
     font-weight: 800;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 7px;
+    gap: 6px;
     transition: all 0.15s ease;
     white-space: nowrap;
   }}
@@ -344,26 +368,26 @@ html_app = f"""
   .ps-btn-primary {{
     background: var(--ps-blue);
     border-color: var(--ps-blue);
-    box-shadow: 0 2px 12px rgba(0, 132, 255, 0.5);
+    box-shadow: 0 2px 10px rgba(0, 132, 255, 0.5);
   }}
   .ps-btn-primary:hover {{
     background: var(--ps-blue-hover);
     border-color: var(--ps-blue-hover);
   }}
 
-  /* WORKSPACE BODY (SPACIOUS WIDER SIDEBARS + DOMINANT CENTER CANVAS) */
+  /* WORKSPACE BODY */
   .ps-body {{
     display: flex;
     flex: 1;
-    height: calc(100vh - 52px);
+    height: calc(100vh - 48px);
     overflow: hidden;
     position: relative;
     background: #000000;
   }}
 
-  /* SIDEBAR PANELS (WIDER FOR MAXIMUM VISIBILITY & EASY SELECTION) */
+  /* SIDEBAR PANELS */
   .ps-sidebar {{
-    width: 340px;
+    width: 330px;
     background: var(--ps-panel);
     display: flex;
     flex-direction: column;
@@ -376,56 +400,56 @@ html_app = f"""
     box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
   }}
   .ps-sidebar-left {{
-    width: 340px;
+    width: 330px;
     border-right: 1px solid var(--ps-border);
   }}
   .ps-sidebar-right {{
-    width: 350px;
+    width: 340px;
     border-left: 1px solid var(--ps-border);
   }}
   .ps-sidebar::-webkit-scrollbar {{
-    width: 7px;
+    width: 6px;
   }}
   .ps-sidebar::-webkit-scrollbar-thumb {{
     background: var(--ps-border-light);
-    border-radius: 4px;
+    border-radius: 3px;
   }}
 
-  /* PANEL SECTIONS - VISIBLE, SPACIOUS & HIGH CONTRAST */
+  /* PANEL SECTIONS - COMPACT & VISIBLE */
   .ps-panel-section {{
     border-bottom: 1px solid var(--ps-border);
-    padding: 16px;
+    padding: 12px 14px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 10px;
   }}
   .ps-panel-section:last-child {{
     border-bottom: none;
-    padding-bottom: 35px;
+    padding-bottom: 30px;
   }}
 
+  /* COMPACT SHORT SECTION HEADERS */
   .panel-section-header {{
     display: flex;
     align-items: center;
     justify-content: space-between;
     background: #12141c;
-    border: 1px solid #222533;
-    border-radius: 8px;
-    padding: 11px 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    border: 1px solid #202330;
+    border-radius: 6px;
+    padding: 6px 12px;
   }}
   .panel-section-title {{
     font-weight: 800;
-    font-size: 14.5px;
+    font-size: 13px;
     color: var(--ps-text-bright);
     display: flex;
     align-items: center;
-    gap: 9px;
-    letter-spacing: 0.2px;
+    gap: 7px;
+    letter-spacing: 0.1px;
   }}
 
   .section-label {{
-    font-size: 12px;
+    font-size: 11px;
     color: #a0a6b8;
     font-weight: 800;
     letter-spacing: 0.5px;
@@ -436,11 +460,11 @@ html_app = f"""
   .admin-lock-btn {{
     background: transparent;
     border: 1px solid #262938;
-    border-radius: 6px;
+    border-radius: 5px;
     color: var(--ps-text-muted);
     cursor: pointer;
-    padding: 4px 10px;
-    font-size: 14px;
+    padding: 3px 8px;
+    font-size: 13px;
     transition: all 0.15s ease;
     display: inline-flex;
     align-items: center;
@@ -457,34 +481,34 @@ html_app = f"""
   .ps-dropzone {{
     border: 2px dashed var(--ps-blue);
     background: rgba(0, 132, 255, 0.08);
-    border-radius: 9px;
-    padding: 16px;
+    border-radius: 8px;
+    padding: 12px;
     text-align: center;
     cursor: pointer;
     transition: all 0.15s ease;
     display: block;
     color: #fff;
     font-weight: 800;
-    font-size: 13.5px;
+    font-size: 12.5px;
   }}
   .ps-dropzone:hover {{
     background: rgba(0, 132, 255, 0.2);
     border-color: #fff;
-    box-shadow: 0 0 16px rgba(0, 132, 255, 0.35);
+    box-shadow: 0 0 14px rgba(0, 132, 255, 0.35);
   }}
   .ps-dropzone input {{ display: none; }}
 
-  /* GRID CARDS (FACES, TEMPLATES, EFFECTS) - WIDE & EASY TO SEE */
+  /* GRID CARDS (FACES, TEMPLATES) */
   .grid-cards-faces {{
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
+    gap: 10px;
   }}
   .grid-card {{
     background: var(--ps-card);
     border: 1px solid var(--ps-border);
-    border-radius: 9px;
-    padding: 9px;
+    border-radius: 8px;
+    padding: 7px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -495,23 +519,23 @@ html_app = f"""
     border-color: var(--ps-border-light);
     transform: translateY(-2px);
     background: var(--ps-card-hover);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
   }}
   .grid-card.active {{
     border-color: var(--ps-blue);
     background: rgba(0, 132, 255, 0.22);
-    box-shadow: 0 0 0 2px var(--ps-blue), 0 4px 15px rgba(0, 132, 255, 0.3);
+    box-shadow: 0 0 0 2px var(--ps-blue), 0 4px 12px rgba(0, 132, 255, 0.3);
   }}
   .grid-card img {{
     width: 100%;
-    height: 125px;
-    border-radius: 7px;
+    height: 110px;
+    border-radius: 6px;
     object-fit: cover;
-    margin-bottom: 7px;
+    margin-bottom: 5px;
     background: #000;
   }}
   .grid-card span {{
-    font-size: 12.5px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--ps-text-bright);
     text-align: center;
@@ -521,45 +545,55 @@ html_app = f"""
     width: 100%;
   }}
 
-  /* BUTTON GROUPS & TOGGLES */
-  .btn-group {{
-    display: flex;
+  /* COMPACT BUTTON GROUPS USING EXACT GRID (NO WEIRD WRAPPING) */
+  .btn-group-grid {{
+    display: grid;
     background: var(--ps-card);
-    border-radius: 7px;
-    padding: 4px;
+    border-radius: 6px;
+    padding: 3px;
     border: 1px solid var(--ps-border);
-    gap: 4px;
-    flex-wrap: wrap;
+    gap: 3px;
   }}
+  .btn-group-4 {{
+    grid-template-columns: repeat(4, 1fr);
+  }}
+  .btn-group-5 {{
+    grid-template-columns: repeat(5, 1fr);
+  }}
+  .btn-group-3 {{
+    grid-template-columns: repeat(3, 1fr);
+  }}
+
   .btn-toggle {{
-    flex: 1 1 auto;
     background: transparent;
     border: none;
     color: var(--ps-text-muted);
-    font-size: 12.5px;
+    font-size: 11px;
     font-weight: 700;
-    padding: 8px 12px;
-    border-radius: 6px;
+    padding: 7px 3px;
+    border-radius: 4px;
     cursor: pointer;
     transition: all 0.12s ease;
     text-align: center;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }}
   .btn-toggle:hover {{ color: #fff; }}
   .btn-toggle.active {{
     background: var(--ps-blue);
     color: #fff;
-    box-shadow: 0 2px 8px rgba(0, 132, 255, 0.4);
+    box-shadow: 0 2px 6px rgba(0, 132, 255, 0.4);
   }}
 
   /* SLIDERS */
   .slider-row {{
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 5px;
   }}
   .slider-row label {{
-    font-size: 12.5px;
+    font-size: 11.5px;
     color: var(--ps-text-muted);
     display: flex;
     justify-content: space-between;
@@ -568,7 +602,7 @@ html_app = f"""
   .slider-row label b {{
     color: var(--ps-text-bright);
     background: #171924;
-    padding: 2px 7px;
+    padding: 1px 6px;
     border-radius: 4px;
     border: 1px solid #232736;
   }}
@@ -576,7 +610,7 @@ html_app = f"""
     width: 100%;
     accent-color: var(--ps-blue);
     cursor: pointer;
-    height: 8px;
+    height: 7px;
   }}
 
   /* INPUTS */
@@ -585,9 +619,9 @@ html_app = f"""
     background: var(--ps-card);
     border: 1px solid var(--ps-border);
     color: #fff;
-    font-size: 14px;
-    padding: 11px 15px;
-    border-radius: 8px;
+    font-size: 13px;
+    padding: 9px 12px;
+    border-radius: 6px;
     outline: none;
     transition: border-color 0.15s ease;
   }}
@@ -596,22 +630,57 @@ html_app = f"""
     box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.3);
   }}
 
-  /* LAYERS LIST */
+  /* COMPACT DISCORD GIF EFFECTS CHIPS (6+ FIT NICELY) */
+  .grid-anim-chips {{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+  }}
+  .anim-chip {{
+    background: var(--ps-card);
+    border: 1px solid var(--ps-border);
+    border-radius: 6px;
+    padding: 6px 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    cursor: pointer;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: #e2e4ea;
+    transition: all 0.12s ease;
+  }}
+  .anim-chip:hover {{
+    background: var(--ps-card-hover);
+    border-color: var(--ps-border-light);
+  }}
+  .anim-chip.active {{
+    background: rgba(0, 132, 255, 0.22);
+    border-color: var(--ps-blue);
+    box-shadow: 0 0 0 1.5px var(--ps-blue);
+  }}
+  .anim-chip span.emoji {{
+    font-size: 14px;
+  }}
+
+  /* ACTIVE LAYERS LIST (WITH THUMBNAILS & REORDER BUTTONS) */
   .layers-list {{
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
   }}
   .layer-item {{
     background: var(--ps-card);
     border: 1px solid var(--ps-border);
-    border-radius: 8px;
-    padding: 11px 15px;
+    border-radius: 6px;
+    padding: 7px 10px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     cursor: pointer;
     transition: all 0.12s ease;
+    gap: 8px;
   }}
   .layer-item:hover {{
     border-color: var(--ps-border-light);
@@ -619,33 +688,71 @@ html_app = f"""
   }}
   .layer-item.active {{
     border-color: var(--ps-blue);
-    background: rgba(0, 132, 255, 0.22);
+    background: rgba(0, 132, 255, 0.2);
     box-shadow: 0 0 0 1.5px var(--ps-blue);
   }}
-  .layer-title {{
-    font-weight: 700;
-    font-size: 13.5px;
-    color: #fff;
+  .layer-left {{
     display: flex;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
+    min-width: 0;
+    flex: 1;
   }}
-  .layer-controls {{
+  .layer-thumb {{
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    object-fit: cover;
+    border: 1px solid #292d3e;
+    flex-shrink: 0;
+    background: #000;
+  }}
+  .layer-text-badge {{
+    width: 28px;
+    height: 28px;
+    border-radius: 4px;
+    background: #171924;
+    color: var(--ps-blue);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 13px;
+    border: 1px solid #292d3e;
+    flex-shrink: 0;
+  }}
+  .layer-title-text {{
+    font-weight: 700;
+    font-size: 12.5px;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }}
+  .layer-actions {{
     display: flex;
-    gap: 6px;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
   }}
-  .layer-btn {{
+  .layer-action-btn {{
     background: transparent;
     border: none;
     color: var(--ps-text-muted);
     cursor: pointer;
-    font-size: 16px;
-    padding: 4px 7px;
-    border-radius: 4px;
+    font-size: 13px;
+    padding: 3px 5px;
+    border-radius: 3px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }}
-  .layer-btn:hover {{ color: #fff; background: rgba(255, 255, 255, 0.14); }}
+  .layer-action-btn:hover {{
+    color: #fff;
+    background: rgba(255, 255, 255, 0.14);
+  }}
 
-  /* CENTER CANVAS VIEWPORT (DOMINANT & AUTO-FITS SCREEN) */
+  /* CENTER CANVAS VIEWPORT */
   .ps-canvas-viewport {{
     flex: 1;
     background-color: #030304;
@@ -656,7 +763,7 @@ html_app = f"""
     justify-content: center;
     position: relative;
     overflow: hidden;
-    padding: 14px;
+    padding: 12px;
     height: 100%;
   }}
 
@@ -680,20 +787,20 @@ html_app = f"""
   /* FLOATING PROGRESS BAR */
   .progress-wrap {{
     position: absolute;
-    bottom: 24px;
+    bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(14, 15, 20, 0.96);
     backdrop-filter: blur(20px);
     border: 1px solid var(--ps-border-light);
     border-radius: 8px;
-    padding: 16px 24px;
-    width: 380px;
+    padding: 14px 22px;
+    width: 360px;
     box-shadow: 0 25px 60px rgba(0,0,0,0.9);
     z-index: 1000;
   }}
   .progress-track {{
-    height: 8px;
+    height: 7px;
     background: var(--ps-input);
     border-radius: 4px;
     overflow: hidden;
@@ -705,10 +812,10 @@ html_app = f"""
     transition: width 0.1s linear;
   }}
   .progress-text {{
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--ps-text-bright);
     text-align: center;
-    margin-top: 8px;
+    margin-top: 7px;
     font-weight: 700;
   }}
 
@@ -727,7 +834,7 @@ html_app = f"""
     z-index: 2000;
   }}
   .admin-modal {{
-    width: 440px;
+    width: 420px;
     max-width: 92vw;
     background: var(--ps-panel);
     border: 1px solid var(--ps-border-light);
@@ -740,14 +847,14 @@ html_app = f"""
   .admin-modal-header {{
     background: var(--ps-topbar);
     border-bottom: 1px solid var(--ps-border);
-    padding: 14px 18px;
+    padding: 12px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }}
   .admin-modal-title {{
     font-weight: 800;
-    font-size: 15px;
+    font-size: 14px;
     color: #fff;
     display: flex;
     align-items: center;
@@ -757,40 +864,28 @@ html_app = f"""
     background: transparent;
     border: none;
     color: var(--ps-text-muted);
-    font-size: 18px;
+    font-size: 17px;
     cursor: pointer;
   }}
   .admin-modal-close:hover {{ color: #fff; }}
   .admin-modal-body {{
-    padding: 18px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
     max-height: 70vh;
     overflow-y: auto;
   }}
 
   /* RESPONSIVE SCALING */
-  @media (max-width: 1250px) {{
-    .ps-sidebar-left {{
-      width: 290px;
-    }}
-    .ps-sidebar-right {{
-      width: 300px;
-    }}
+  @media (max-width: 1200px) {{
+    .ps-sidebar-left {{ width: 280px; }}
+    .ps-sidebar-right {{ width: 290px; }}
   }}
   @media (max-width: 860px) {{
-    .ps-title, .ps-doc-badge {{
-      display: none;
-    }}
-    .ps-body {{
-      flex-direction: column;
-      overflow-y: auto;
-    }}
-    .ps-sidebar {{
-      width: 100% !important;
-      height: auto;
-    }}
+    .ps-title, .ps-doc-badge {{ display: none; }}
+    .ps-body {{ flex-direction: column; overflow-y: auto; }}
+    .ps-sidebar {{ width: 100% !important; height: auto; }}
   }}
 </style>
 <script>
@@ -807,8 +902,8 @@ html_app = f"""
   <!-- TOP OPTIONS BAR -->
   <header class="ps-topbar">
     <div class="ps-brand">
-      <span class="ps-logo">Ps</span>
-      <span class="ps-title">Murad Photoshop Studio</span>
+      <span class="ps-logo">Mu</span>
+      <span class="ps-title">Muradiator</span>
       <span class="ps-doc-badge" id="docSizeBadge">800 × 800 px</span>
     </div>
 
@@ -824,11 +919,12 @@ html_app = f"""
         <button id="optCenterBtn" class="ps-opt-btn" title="Center on Canvas">🎯 Center</button>
         <button id="optDeleteBtn" class="ps-opt-btn danger" title="Delete Layer">🗑️ Delete</button>
       </div>
+      <span style="font-size:11px; color:#60c5ff; margin-left:6px; font-weight:600;">💡 Hold Shift while dragging corners to Stretch!</span>
     </div>
 
     <!-- EXPORT ACTIONS -->
     <div class="ps-actions">
-      <button id="btnExportGif" class="ps-btn ps-btn-primary" title="Export Animated Discord GIF">⬇️ Export GIF</button>
+      <button id="btnExportGif" class="ps-btn ps-btn-primary" title="Export High-Fidelity Animated Discord GIF">⬇️ Export GIF</button>
       <button id="btnExportPng" class="ps-btn" title="Export High-Res PNG">⬇️ PNG</button>
       <button id="btnCopyDiscord" class="ps-btn" title="Copy to clipboard for instant Discord paste">📋 Copy</button>
     </div>
@@ -837,48 +933,10 @@ html_app = f"""
   <!-- BODY (LEFT MENUS + DOMINANT CENTER CANVAS + RIGHT MENUS) -->
   <div class="ps-body">
 
-    <!-- LEFT SIDEBAR: FACES & BACKDROP (OPEN BY DEFAULT) -->
+    <!-- LEFT SIDEBAR: BACKDROP FIRST, THEN FRUITS FACES -->
     <aside class="ps-sidebar ps-sidebar-left" id="sidebarLeft">
 
-      <!-- 1. SECTION: MURAD FACES -->
-      <div class="ps-panel-section" id="section-faces">
-        <div class="panel-section-header">
-          <span class="panel-section-title">🎭 Murad Faces</span>
-          <!-- DISCRETE CORNER ADMIN LOCK BUTTON -->
-          <button id="adminLockBtn" class="admin-lock-btn" title="Admin Face Catalog Settings">🔒</button>
-        </div>
-
-        <label class="ps-dropzone">
-          <span>📸 Upload Real Photo / Custom Face</span>
-          <input type="file" id="faceFileInput" accept="image/*">
-        </label>
-
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span class="section-label">Default Faces:</span>
-          <button id="addFaceBtn" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff; padding:5px 12px;">➕ Add Face</button>
-        </div>
-        <div class="grid-cards-faces" id="facesGrid" style="max-height:270px; overflow-y:auto;"></div>
-
-        <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
-          <span class="section-label">Cutout Shape:</span>
-          <div class="btn-group" id="maskGroup">
-            <button class="btn-toggle active" data-mask="square">Full Frame</button>
-            <button class="btn-toggle" data-mask="circle">Sticker Circle</button>
-            <button class="btn-toggle" data-mask="oval">Oval</button>
-          </div>
-        </div>
-
-        <div class="slider-row">
-          <label>Face Scale: <b id="faceScaleVal">100%</b></label>
-          <input type="range" id="faceScaleSlider" min="0.1" max="3.0" step="0.05" value="1.0">
-        </div>
-        <div class="slider-row">
-          <label>Face Opacity: <b id="faceOpacityVal">100%</b></label>
-          <input type="range" id="faceOpacitySlider" min="0.1" max="1.0" step="0.05" value="1.0">
-        </div>
-      </div>
-
-      <!-- 2. SECTION: BACKDROP & TEMPLATES -->
+      <!-- 1. SECTION: BACKDROP & TEMPLATES (SWAPPED FIRST) -->
       <div class="ps-panel-section" id="section-bg">
         <div class="panel-section-header">
           <span class="panel-section-title">🖼️ Backdrop & Templates</span>
@@ -889,9 +947,9 @@ html_app = f"""
           <input type="file" id="bgFileInput" accept="image/*,.gif">
         </label>
 
-        <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; flex-direction:column; gap:5px;">
           <span class="section-label">Canvas Format:</span>
-          <div class="btn-group" id="canvasSizeGroup">
+          <div class="btn-group-grid btn-group-4" id="canvasSizeGroup">
             <button class="btn-toggle active" data-size="true_size">📐 True Size</button>
             <button class="btn-toggle" data-size="square">⏹️ 1:1</button>
             <button class="btn-toggle" data-size="landscape">🖼️ 16:9</button>
@@ -900,19 +958,53 @@ html_app = f"""
         </div>
 
         <span class="section-label">Popular Meme Templates:</span>
-        <div class="grid-cards-faces" id="bgPresetsRow" style="max-height:230px; overflow-y:auto;"></div>
+        <div class="grid-cards-faces" id="bgPresetsRow" style="max-height:220px; overflow-y:auto;"></div>
+      </div>
+
+      <!-- 2. SECTION: FRUITS FACES (SWAPPED SECOND, SCALE SLIDER REMOVED) -->
+      <div class="ps-panel-section" id="section-faces">
+        <div class="panel-section-header">
+          <span class="panel-section-title">🍉 Fruits Faces</span>
+          <!-- DISCRETE CORNER ADMIN LOCK BUTTON -->
+          <button id="adminLockBtn" class="admin-lock-btn" title="Admin Fruits Catalog Settings">🔒</button>
+        </div>
+
+        <label class="ps-dropzone">
+          <span>📸 Upload Custom Fruit / Photo</span>
+          <input type="file" id="faceFileInput" accept="image/*">
+        </label>
+
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span class="section-label">Default Fruits Faces:</span>
+          <button id="addFaceBtn" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff; padding:4px 10px;">➕ Add Face</button>
+        </div>
+        <div class="grid-cards-faces" id="facesGrid" style="max-height:240px; overflow-y:auto;"></div>
+
+        <div style="display:flex; flex-direction:column; gap:5px; margin-top:2px;">
+          <span class="section-label">Cutout Shape:</span>
+          <div class="btn-group-grid btn-group-3" id="maskGroup">
+            <button class="btn-toggle active" data-mask="square">Full Frame</button>
+            <button class="btn-toggle" data-mask="circle">Sticker Circle</button>
+            <button class="btn-toggle" data-mask="oval">Oval</button>
+          </div>
+        </div>
+
+        <div class="slider-row">
+          <label>Face Opacity: <b id="faceOpacityVal">100%</b></label>
+          <input type="range" id="faceOpacitySlider" min="0.1" max="1.0" step="0.05" value="1.0">
+        </div>
       </div>
 
     </aside>
 
-    <!-- CENTER CANVAS VIEWPORT (MASSIVE & AUTO-FITS SCREEN) -->
+    <!-- CENTER CANVAS VIEWPORT -->
     <main class="ps-canvas-viewport" id="canvasViewport">
       <div class="canvas-stage">
         <canvas id="mainCanvas" width="800" height="800"></canvas>
       </div>
     </main>
 
-    <!-- RIGHT SIDEBAR: TEXT, STICKERS, FX & LAYERS (OPEN BY DEFAULT) -->
+    <!-- RIGHT SIDEBAR: TEXT, STICKERS, FX & ACTIVE LAYERS -->
     <aside class="ps-sidebar ps-sidebar-right" id="sidebarRight">
 
       <!-- 3. SECTION: MEME TEXT -->
@@ -921,13 +1013,13 @@ html_app = f"""
           <span class="panel-section-title">✍️ Meme Text</span>
         </div>
 
-        <div style="display:flex; gap:8px;">
-          <button id="addTopTextBtn" class="ps-opt-btn" style="flex:1; padding:9px; justify-content:center;">➕ Top</button>
-          <button id="addBottomTextBtn" class="ps-opt-btn" style="flex:1; padding:9px; justify-content:center;">➕ Bottom</button>
-          <button id="addCustomTextBtn" class="ps-opt-btn" style="flex:1; padding:9px; justify-content:center; background:var(--ps-blue); color:#fff; border-color:var(--ps-blue);">➕ Custom</button>
+        <div style="display:flex; gap:6px;">
+          <button id="addTopTextBtn" class="ps-opt-btn" style="flex:1; padding:7px; justify-content:center;">➕ Top</button>
+          <button id="addBottomTextBtn" class="ps-opt-btn" style="flex:1; padding:7px; justify-content:center;">➕ Bottom</button>
+          <button id="addCustomTextBtn" class="ps-opt-btn" style="flex:1; padding:7px; justify-content:center; background:var(--ps-blue); color:#fff; border-color:var(--ps-blue);">➕ Custom</button>
         </div>
 
-        <div id="textEditorBox" style="display:flex; flex-direction:column; gap:12px;">
+        <div id="textEditorBox" style="display:flex; flex-direction:column; gap:10px;">
           <input type="text" id="activeTextInput" class="ps-input" placeholder="Click + Top/Bottom or type meme text...">
 
           <div class="slider-row">
@@ -935,9 +1027,9 @@ html_app = f"""
             <input type="range" id="textSizeSlider" min="16" max="130" step="2" value="48">
           </div>
 
-          <div style="display:flex; flex-direction:column; gap:6px;">
+          <div style="display:flex; flex-direction:column; gap:5px;">
             <span class="section-label">Text Color:</span>
-            <div class="btn-group" id="textColorGroup">
+            <div class="btn-group-grid btn-group-5" id="textColorGroup">
               <button class="btn-toggle active" data-color="#ffffff">White</button>
               <button class="btn-toggle" data-color="#facc15" style="color:#facc15;">Yellow</button>
               <button class="btn-toggle" data-color="#ef4444" style="color:#ef4444;">Red</button>
@@ -959,11 +1051,7 @@ html_app = f"""
           <input type="file" id="accFileInput" accept="image/*,.gif">
         </label>
 
-        <div id="accEditorBox" style="display:none; flex-direction:column; gap:10px;">
-          <div class="slider-row">
-            <label>Sticker Size: <b id="accScaleVal">100%</b></label>
-            <input type="range" id="accScaleSlider" min="0.1" max="3.0" step="0.05" value="1.0">
-          </div>
+        <div id="accEditorBox" style="display:none; flex-direction:column; gap:8px;">
           <div class="slider-row">
             <label>Opacity: <b id="accOpacityVal">100%</b></label>
             <input type="range" id="accOpacitySlider" min="0.1" max="1.0" step="0.05" value="1.0">
@@ -971,26 +1059,26 @@ html_app = f"""
         </div>
       </div>
 
-      <!-- 5. SECTION: ANIMATION FX -->
+      <!-- 5. SECTION: COMPACT DISCORD GIF EFFECTS -->
       <div class="ps-panel-section" id="section-anim">
         <div class="panel-section-header">
           <span class="panel-section-title">✨ Discord GIF Effects</span>
         </div>
 
-        <div class="grid-cards-faces" id="animGrid" style="grid-template-columns:repeat(3, 1fr); gap:8px;">
-          <div class="grid-card active" data-anim="none"><span style="font-size:24px;">🖼️</span><span>Still</span></div>
-          <div class="grid-card" data-anim="bob"><span style="font-size:24px;">🕺</span><span>Bob</span></div>
-          <div class="grid-card" data-anim="shake"><span style="font-size:24px;">💢</span><span>Shake</span></div>
-          <div class="grid-card" data-anim="spin"><span style="font-size:24px;">🌀</span><span>Spin 360°</span></div>
-          <div class="grid-card" data-anim="petpet"><span style="font-size:24px;">👋</span><span>Petpet</span></div>
-          <div class="grid-card" data-anim="zoom"><span style="font-size:24px;">💥</span><span>Bass Pulse</span></div>
-          <div class="grid-card" data-anim="pulse"><span style="font-size:24px;">💓</span><span>Heartbeat</span></div>
-          <div class="grid-card" data-anim="wobble"><span style="font-size:24px;">🌊</span><span>Wobble</span></div>
-          <div class="grid-card" data-anim="disco"><span style="font-size:24px;">🪩</span><span>Disco</span></div>
+        <div class="grid-anim-chips" id="animGrid">
+          <div class="anim-chip active" data-anim="none"><span class="emoji">🖼️</span><span>Still</span></div>
+          <div class="anim-chip" data-anim="bob"><span class="emoji">🕺</span><span>Bob</span></div>
+          <div class="anim-chip" data-anim="shake"><span class="emoji">💢</span><span>Shake</span></div>
+          <div class="anim-chip" data-anim="spin"><span class="emoji">🌀</span><span>Spin</span></div>
+          <div class="anim-chip" data-anim="petpet"><span class="emoji">👋</span><span>Petpet</span></div>
+          <div class="anim-chip" data-anim="zoom"><span class="emoji">💥</span><span>Pulse</span></div>
+          <div class="anim-chip" data-anim="pulse"><span class="emoji">💓</span><span>Heart</span></div>
+          <div class="anim-chip" data-anim="wobble"><span class="emoji">🌊</span><span>Wobble</span></div>
+          <div class="anim-chip" data-anim="disco"><span class="emoji">🪩</span><span>Disco</span></div>
         </div>
       </div>
 
-      <!-- 6. SECTION: ACTIVE LAYERS -->
+      <!-- 6. SECTION: ACTIVE LAYERS (WITH ICONS & REARRANGE CONTROLS) -->
       <div class="ps-panel-section" id="section-layers">
         <div class="panel-section-header">
           <span class="panel-section-title">📑 Active Layers</span>
@@ -1012,33 +1100,33 @@ html_app = f"""
   <div class="admin-modal-backdrop" id="adminModal">
     <div class="admin-modal">
       <div class="admin-modal-header">
-        <span class="admin-modal-title">🔐 Face Catalog Admin</span>
+        <span class="admin-modal-title">🔐 Fruits Catalog Admin</span>
         <button class="admin-modal-close" id="adminModalClose">✕</button>
       </div>
       
       <!-- STEP 1: PASSWORD AUTH -->
       <div class="admin-modal-body" id="adminAuthBody">
-        <div style="text-align:center; padding: 14px 0;">
-          <div style="font-size:38px; margin-bottom:10px;">🔒</div>
-          <div style="font-weight:800; font-size:15px; color:#fff; margin-bottom:5px;">Enter Admin Password</div>
-          <div style="font-size:12.5px; color:var(--ps-text-muted); margin-bottom:14px;">Manage default catalog faces or push new ones to GitHub.</div>
-          <input type="password" id="adminPwdInput" class="ps-input" placeholder="Password..." style="margin-bottom:8px; text-align:center; width:240px; margin:0 auto 10px auto;">
-          <div id="adminAuthError" style="color:var(--ps-danger); font-size:12px; display:none; margin-bottom:8px;">❌ Incorrect Admin Password</div>
-          <button id="adminUnlockBtn" class="ps-btn ps-btn-primary" style="width:240px; margin:0 auto; justify-content:center;">Unlock</button>
+        <div style="text-align:center; padding: 12px 0;">
+          <div style="font-size:36px; margin-bottom:8px;">🔒</div>
+          <div style="font-weight:800; font-size:14px; color:#fff; margin-bottom:4px;">Enter Admin Password</div>
+          <div style="font-size:12px; color:var(--ps-text-muted); margin-bottom:12px;">Manage default fruit faces or push new ones to GitHub.</div>
+          <input type="password" id="adminPwdInput" class="ps-input" placeholder="Password..." style="margin-bottom:8px; text-align:center; width:220px; margin:0 auto 10px auto;">
+          <div id="adminAuthError" style="color:var(--ps-danger); font-size:11.5px; display:none; margin-bottom:8px;">❌ Incorrect Admin Password</div>
+          <button id="adminUnlockBtn" class="ps-btn ps-btn-primary" style="width:220px; margin:0 auto; justify-content:center;">Unlock</button>
         </div>
       </div>
 
       <!-- STEP 2: CATALOG MANAGEMENT -->
       <div class="admin-modal-body" id="adminManageBody" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="color:var(--ps-green); font-weight:800; font-size:12.5px;">✅ Admin Access Granted</span>
+          <span style="color:var(--ps-green); font-weight:800; font-size:12px;">✅ Admin Access Granted</span>
           <button id="adminLockOutBtn" class="ps-opt-btn" style="font-size:11px;">Lock</button>
         </div>
 
         <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
-          <span style="font-size:12px; font-weight:800; color:#fff;">➕ ADD NEW FACE TO CATALOG:</span>
-          <div style="display:flex; flex-direction:column; gap:7px; margin-top:7px;">
-            <input type="text" id="adminNewFaceName" class="ps-input" placeholder="Face Name & Emoji (e.g. Party Murad 🎉)">
+          <span style="font-size:12px; font-weight:800; color:#fff;">➕ ADD NEW FRUIT FACE TO CATALOG:</span>
+          <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+            <input type="text" id="adminNewFaceName" class="ps-input" placeholder="Fruit Name & Emoji (e.g. Watermelon 🍉)">
             <input type="file" id="adminNewFaceFile" accept="image/*" class="ps-input" style="padding:6px;">
             <button id="adminUploadBtn" class="ps-btn ps-btn-primary" style="justify-content:center;">🚀 Push to Catalog</button>
             <div id="adminUploadStatus" style="font-size:11.5px; text-align:center;"></div>
@@ -1046,8 +1134,8 @@ html_app = f"""
         </div>
 
         <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
-          <span style="font-size:12px; font-weight:800; color:#fff;">🗑️ MANAGE DEFAULT FACES:</span>
-          <div id="adminFacesCatalogList" style="display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-top:7px;"></div>
+          <span style="font-size:12px; font-weight:800; color:#fff;">🗑️ MANAGE DEFAULT FRUITS:</span>
+          <div id="adminFacesCatalogList" style="display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-top:6px;"></div>
         </div>
       </div>
     </div>
@@ -1061,24 +1149,29 @@ const templates = {templates_json};
 const GITHUB_TOKEN = {gh_token_json};
 const EXPECTED_ADMIN_PWD = {admin_pwd_json};
 
-function makeFaceLayer(faceIndex, x, y, scale) {{
+let layerZCounter = 1;
+
+function makeFaceLayer(faceIndex, x, y, scale, z) {{
   return {{
     id: 'layer_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
     faceIndex: faceIndex !== undefined ? faceIndex : 0,
     x: x !== undefined ? x : 0,
     y: y !== undefined ? y : -50,
     scale: scale !== undefined ? scale : 1.0,
+    scaleX: scale !== undefined ? scale : 1.0,
+    scaleY: scale !== undefined ? scale : 1.0,
     rotation: 0,
     flipH: 1,
     opacity: 1.0,
     maskShape: 'square',
-    customImg: null
+    customImg: null,
+    z: z !== undefined ? z : ++layerZCounter
   }};
 }}
 
-// DEFAULT STATE: CLEAN CANVAS WITHOUT DEFAULT "WHEN MURAD" / "APPROVES THE CODE" TEXT LAYERS
+// DEFAULT STATE: CLEAN CANVAS WITHOUT DEFAULT TEXT LAYERS
 const state = {{
-  facesOnCanvas: [makeFaceLayer(0, 0, -50, 1.0)],
+  facesOnCanvas: [makeFaceLayer(0, 0, -50, 1.0, 1)],
   selectedFaceIdx: 0,
 
   bgType: 'template',
@@ -1134,8 +1227,8 @@ function fitCanvasToScreen() {{
   const vp = document.getElementById('canvasViewport');
   if (!vp || !canvas) return;
   const pad = 24;
-  const availW = Math.max(280, vp.clientWidth - pad);
-  const availH = Math.max(280, vp.clientHeight - pad);
+  const availW = Math.max(260, vp.clientWidth - pad);
+  const availH = Math.max(260, vp.clientHeight - pad);
   const aspect = (canvas.width || 800) / (canvas.height || 800);
 
   let w = availW;
@@ -1149,7 +1242,7 @@ function fitCanvasToScreen() {{
 }}
 window.addEventListener('resize', fitCanvasToScreen);
 
-// --- ACTIVE LAYER GETTER ---
+// --- ACTIVE LAYER GETTER (WITH NON-UNIFORM STRETCH SUPPORT) ---
 function getActiveLayerData() {{
   const t = state.activeTransformTarget;
   if (!t) return null;
@@ -1157,10 +1250,12 @@ function getActiveLayerData() {{
     const face = state.facesOnCanvas[t.idx];
     let img = face.customImg || loadedFaces[face.faceIndex];
     const aspect = (img && img.naturalHeight) ? (img.naturalHeight / img.naturalWidth) : 1.0;
+    const sx = face.scaleX !== undefined ? face.scaleX : (face.scale || 1.0);
+    const sy = face.scaleY !== undefined ? face.scaleY : (face.scale || 1.0);
     const baseW = 200;
     const baseH = 200 * aspect;
-    const hw = (baseW * face.scale) / 2;
-    const hh = (baseH * face.scale) / 2;
+    const hw = (baseW * sx) / 2;
+    const hh = (baseH * sy) / 2;
     return {{
       type: 'face',
       idx: t.idx,
@@ -1169,17 +1264,22 @@ function getActiveLayerData() {{
       cy: canvas.height / 2 + face.y,
       hw: hw,
       hh: hh,
+      baseW: baseW,
+      baseH: baseH,
       rotation: face.rotation || 0,
-      scale: face.scale || 1.0
+      scaleX: sx,
+      scaleY: sy
     }};
   }}
   if (t.type === 'acc' && state.accessoriesOnCanvas[t.idx]) {{
     const acc = state.accessoriesOnCanvas[t.idx];
     const aspect = (acc.img && acc.img.naturalHeight) ? (acc.img.naturalHeight / acc.img.naturalWidth) : 1.0;
+    const sx = acc.scaleX !== undefined ? acc.scaleX : (acc.scale || 1.0);
+    const sy = acc.scaleY !== undefined ? acc.scaleY : (acc.scale || 1.0);
     const baseW = 180;
     const baseH = 180 * aspect;
-    const hw = (baseW * acc.scale) / 2;
-    const hh = (baseH * acc.scale) / 2;
+    const hw = (baseW * sx) / 2;
+    const hh = (baseH * sy) / 2;
     return {{
       type: 'acc',
       idx: t.idx,
@@ -1188,16 +1288,21 @@ function getActiveLayerData() {{
       cy: canvas.height / 2 + acc.y,
       hw: hw,
       hh: hh,
+      baseW: baseW,
+      baseH: baseH,
       rotation: acc.rotation || 0,
-      scale: acc.scale || 1.0
+      scaleX: sx,
+      scaleY: sy
     }};
   }}
   if (t.type === 'text' && state.texts[t.idx]) {{
     const txt = state.texts[t.idx];
     ctx.font = '900 ' + txt.size + 'px Impact, sans-serif';
     const metrics = ctx.measureText(txt.text || ' ');
-    const bw = metrics.width + 32;
-    const bh = txt.size + 20;
+    const sx = txt.scaleX !== undefined ? txt.scaleX : 1.0;
+    const sy = txt.scaleY !== undefined ? txt.scaleY : 1.0;
+    const bw = (metrics.width + 24) * sx;
+    const bh = (txt.size + 14) * sy;
     const hw = bw / 2;
     const hh = bh / 2;
     return {{
@@ -1208,8 +1313,11 @@ function getActiveLayerData() {{
       cy: canvas.height / 2 + txt.y,
       hw: hw,
       hh: hh,
+      bw: metrics.width + 24,
+      bh: txt.size + 14,
       rotation: txt.rotation || 0,
-      scale: 1.0
+      scaleX: sx,
+      scaleY: sy
     }};
   }}
   return null;
@@ -1239,15 +1347,15 @@ function toLocal(mx, my, cx, cy, rotationDeg) {{
   }};
 }}
 
-// Hit test handles & bounding box for an active layer
+// Hit test handles & bounding box (compact small handles)
 function testHandlesHit(mx, my, layerData) {{
   if (!layerData) return null;
   const {{ cx, cy, hw, hh, rotation }} = layerData;
   const {{ lx, ly }} = toLocal(mx, my, cx, cy, rotation);
 
-  // 1. Rotation handle: at (0, -hh - 32)
-  const rotDist = Math.hypot(lx - 0, ly - (-hh - 32));
-  if (rotDist <= 22) {{
+  // 1. Rotation handle: at (0, -hh - 18)
+  const rotDist = Math.hypot(lx - 0, ly - (-hh - 18));
+  if (rotDist <= 14) {{
     return 'rot';
   }}
 
@@ -1259,7 +1367,7 @@ function testHandlesHit(mx, my, layerData) {{
     {{ name: 'br', x: hw, y: hh }}
   ];
   for (let c of corners) {{
-    if (Math.abs(lx - c.x) <= 18 && Math.abs(ly - c.y) <= 18) {{
+    if (Math.abs(lx - c.x) <= 12 && Math.abs(ly - c.y) <= 12) {{
       return c.name;
     }}
   }}
@@ -1274,65 +1382,61 @@ function testHandlesHit(mx, my, layerData) {{
 
 // Find any layer under point
 function findLayerAt(mx, my) {{
-  // Test active layer handles first
   const active = getActiveLayerData();
   if (active) {{
     const h = testHandlesHit(mx, my, active);
     if (h) return {{ handle: h, layer: active }};
   }}
 
-  // Test faces from top to bottom
-  for (let i = state.facesOnCanvas.length - 1; i >= 0; i--) {{
-    const f = state.facesOnCanvas[i];
-    let img = f.customImg || loadedFaces[f.faceIndex];
-    const aspect = (img && img.naturalHeight) ? (img.naturalHeight / img.naturalWidth) : 1.0;
-    const hw = (200 * f.scale) / 2;
-    const hh = (200 * aspect * f.scale) / 2;
-    const cx = canvas.width / 2 + f.x;
-    const cy = canvas.height / 2 + f.y;
-    const {{ lx, ly }} = toLocal(mx, my, cx, cy, f.rotation || 0);
-    if (Math.abs(lx) <= hw && Math.abs(ly) <= hh) {{
-      return {{ handle: 'body', layer: {{ type: 'face', idx: i }} }};
+  const all = getAllLayers(); // sorted top to bottom
+  for (let item of all) {{
+    const {{ layerType, idx, obj }} = item;
+    let hw = 50, hh = 50, cx = canvas.width / 2 + obj.x, cy = canvas.height / 2 + obj.y, rot = obj.rotation || 0;
+    if (layerType === 'face') {{
+      let img = obj.customImg || loadedFaces[obj.faceIndex];
+      const aspect = (img && img.naturalHeight) ? (img.naturalHeight / img.naturalWidth) : 1.0;
+      const sx = obj.scaleX !== undefined ? obj.scaleX : (obj.scale || 1.0);
+      const sy = obj.scaleY !== undefined ? obj.scaleY : (obj.scale || 1.0);
+      hw = (200 * sx) / 2;
+      hh = (200 * aspect * sy) / 2;
+    }} else if (layerType === 'acc') {{
+      const aspect = (obj.img && obj.img.naturalHeight) ? (obj.img.naturalHeight / obj.img.naturalWidth) : 1.0;
+      const sx = obj.scaleX !== undefined ? obj.scaleX : (obj.scale || 1.0);
+      const sy = obj.scaleY !== undefined ? obj.scaleY : (obj.scale || 1.0);
+      hw = (180 * sx) / 2;
+      hh = (180 * aspect * sy) / 2;
+    }} else if (layerType === 'text') {{
+      ctx.font = '900 ' + obj.size + 'px Impact, sans-serif';
+      const metrics = ctx.measureText(obj.text || ' ');
+      const sx = obj.scaleX !== undefined ? obj.scaleX : 1.0;
+      const sy = obj.scaleY !== undefined ? obj.scaleY : 1.0;
+      hw = ((metrics.width + 24) * sx) / 2;
+      hh = ((obj.size + 14) * sy) / 2;
     }}
-  }}
 
-  // Test custom stickers
-  for (let i = state.accessoriesOnCanvas.length - 1; i >= 0; i--) {{
-    const a = state.accessoriesOnCanvas[i];
-    const aspect = (a.img && a.img.naturalHeight) ? (a.img.naturalHeight / a.img.naturalWidth) : 1.0;
-    const hw = (180 * a.scale) / 2;
-    const hh = (180 * aspect * a.scale) / 2;
-    const cx = canvas.width / 2 + a.x;
-    const cy = canvas.height / 2 + a.y;
-    const {{ lx, ly }} = toLocal(mx, my, cx, cy, a.rotation || 0);
+    const {{ lx, ly }} = toLocal(mx, my, cx, cy, rot);
     if (Math.abs(lx) <= hw && Math.abs(ly) <= hh) {{
-      return {{ handle: 'body', layer: {{ type: 'acc', idx: i }} }};
-    }}
-  }}
-
-  // Test text layers
-  for (let i = state.texts.length - 1; i >= 0; i--) {{
-    const t = state.texts[i];
-    ctx.font = '900 ' + t.size + 'px Impact, sans-serif';
-    const metrics = ctx.measureText(t.text || ' ');
-    const hw = (metrics.width + 32) / 2;
-    const hh = (t.size + 20) / 2;
-    const cx = canvas.width / 2 + t.x;
-    const cy = canvas.height / 2 + t.y;
-    const {{ lx, ly }} = toLocal(mx, my, cx, cy, t.rotation || 0);
-    if (Math.abs(lx) <= hw && Math.abs(ly) <= hh) {{
-      return {{ handle: 'body', layer: {{ type: 'text', idx: i }} }};
+      return {{ handle: 'body', layer: {{ type: layerType, idx: idx }} }};
     }}
   }}
 
   return null;
 }}
 
-// --- RENDER CANVAS (LARGE & CRISP RESOLUTION) ---
+// Get all layers unified and sorted by Z (top to bottom)
+function getAllLayers() {{
+  const all = [];
+  state.facesOnCanvas.forEach((f, i) => all.push({{ layerType: 'face', idx: i, obj: f, z: f.z || 1 }}));
+  state.accessoriesOnCanvas.forEach((a, i) => all.push({{ layerType: 'acc', idx: i, obj: a, z: a.z || 1 }}));
+  state.texts.forEach((t, i) => all.push({{ layerType: 'text', idx: i, obj: t, z: t.z || 1 }}));
+  all.sort((a, b) => (b.z || 1) - (a.z || 1));
+  return all;
+}}
+
+// --- RENDER CANVAS (CRISP RESOLUTION & PRECISE SMALL HANDLES) ---
 function render(offsetObj) {{
   const animOff = offsetObj || {{ x: 0, y: 0, rot: 0, scale: 1.0 }};
 
-  // Determine canvas size
   let bgImg = null;
   if (state.bgType === 'custom' && state.bgCustomImg) {{
     bgImg = state.bgCustomImg;
@@ -1342,7 +1446,6 @@ function render(offsetObj) {{
     bgImg = loadedTemplates[state.bgTemplateId];
   }}
 
-  // High-def canvas resolution
   let cw = 800, ch = 800;
   if (state.canvasSizeMode === 'square') {{
     cw = 800; ch = 800;
@@ -1376,83 +1479,89 @@ function render(offsetObj) {{
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }}
 
-  // 2. Draw Face Layers
-  state.facesOnCanvas.forEach((face, idx) => {{
-    let img = face.customImg || loadedFaces[face.faceIndex];
-    if (!img) return;
+  // 2. Render Layers in exact Z order (back to front)
+  const drawList = getAllLayers().reverse();
+  drawList.forEach(item => {{
+    const {{ layerType, obj }} = item;
 
-    ctx.save();
-    const cx = canvas.width / 2 + face.x + animOff.x;
-    const cy = canvas.height / 2 + face.y + animOff.y;
-    ctx.translate(cx, cy);
-    ctx.rotate(((face.rotation + animOff.rot) * Math.PI) / 180);
-    ctx.scale(face.flipH, 1);
-    ctx.globalAlpha = face.opacity !== undefined ? face.opacity : 1.0;
+    if (layerType === 'face') {{
+      let img = obj.customImg || loadedFaces[obj.faceIndex];
+      if (!img) return;
 
-    const aspect = (img.naturalHeight || 1) / (img.naturalWidth || 1);
-    const baseW = 200;
-    const baseH = 200 * aspect;
-    const w = baseW * face.scale * animOff.scale;
-    const h = baseH * face.scale * animOff.scale;
+      ctx.save();
+      const cx = canvas.width / 2 + obj.x + animOff.x;
+      const cy = canvas.height / 2 + obj.y + animOff.y;
+      ctx.translate(cx, cy);
+      ctx.rotate(((obj.rotation + animOff.rot) * Math.PI) / 180);
+      ctx.scale(obj.flipH || 1, 1);
+      ctx.globalAlpha = obj.opacity !== undefined ? obj.opacity : 1.0;
 
-    if (face.maskShape === 'circle') {{
-      ctx.beginPath();
-      ctx.arc(0, 0, Math.min(w, h) / 2, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.clip();
-    }} else if (face.maskShape === 'oval') {{
-      ctx.beginPath();
-      ctx.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.clip();
+      const aspect = (img.naturalHeight || 1) / (img.naturalWidth || 1);
+      const sx = obj.scaleX !== undefined ? obj.scaleX : (obj.scale || 1.0);
+      const sy = obj.scaleY !== undefined ? obj.scaleY : (obj.scale || 1.0);
+      const baseW = 200;
+      const baseH = 200 * aspect;
+      const w = baseW * sx * animOff.scale;
+      const h = baseH * sy * animOff.scale;
+
+      if (obj.maskShape === 'circle') {{
+        ctx.beginPath();
+        ctx.arc(0, 0, Math.min(w, h) / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+      }} else if (obj.maskShape === 'oval') {{
+        ctx.beginPath();
+        ctx.ellipse(0, 0, w / 2, h / 2, 0, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+      }}
+
+      ctx.drawImage(img, -w / 2, -h / 2, w, h);
+      ctx.restore();
+    }} else if (layerType === 'acc') {{
+      if (!obj.img) return;
+      ctx.save();
+      const cx = canvas.width / 2 + obj.x;
+      const cy = canvas.height / 2 + obj.y;
+      ctx.translate(cx, cy);
+      ctx.rotate((obj.rotation * Math.PI) / 180);
+      ctx.scale(obj.flipH || 1, 1);
+      ctx.globalAlpha = obj.opacity !== undefined ? obj.opacity : 1.0;
+
+      const aspect = (obj.img.naturalHeight || 1) / (obj.img.naturalWidth || 1);
+      const sx = obj.scaleX !== undefined ? obj.scaleX : (obj.scale || 1.0);
+      const sy = obj.scaleY !== undefined ? obj.scaleY : (obj.scale || 1.0);
+      const baseW = 180;
+      const baseH = 180 * aspect;
+      const w = baseW * sx;
+      const h = baseH * sy;
+
+      ctx.drawImage(obj.img, -w / 2, -h / 2, w, h);
+      ctx.restore();
+    }} else if (layerType === 'text') {{
+      ctx.save();
+      const cx = canvas.width / 2 + obj.x;
+      const cy = canvas.height / 2 + obj.y;
+      ctx.translate(cx, cy);
+      ctx.rotate((obj.rotation * Math.PI) / 180);
+      const sx = obj.scaleX !== undefined ? obj.scaleX : 1.0;
+      const sy = obj.scaleY !== undefined ? obj.scaleY : 1.0;
+      ctx.scale(sx, sy);
+
+      ctx.font = '900 ' + obj.size + 'px Impact, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = Math.max(5, Math.round(obj.size / 6.5));
+      ctx.strokeStyle = '#000000';
+      ctx.fillStyle = obj.color || '#ffffff';
+
+      ctx.strokeText(obj.text, 0, 0);
+      ctx.fillText(obj.text, 0, 0);
+      ctx.restore();
     }}
-
-    ctx.drawImage(img, -w / 2, -h / 2, w, h);
-    ctx.restore();
   }});
 
-  // 3. Draw Accessories / Stickers
-  state.accessoriesOnCanvas.forEach((acc, idx) => {{
-    if (!acc.img) return;
-    ctx.save();
-    const cx = canvas.width / 2 + acc.x;
-    const cy = canvas.height / 2 + acc.y;
-    ctx.translate(cx, cy);
-    ctx.rotate((acc.rotation * Math.PI) / 180);
-    ctx.scale(acc.flipH, 1);
-    ctx.globalAlpha = acc.opacity !== undefined ? acc.opacity : 1.0;
-
-    const aspect = (acc.img.naturalHeight || 1) / (acc.img.naturalWidth || 1);
-    const baseW = 180;
-    const baseH = 180 * aspect;
-    const w = baseW * acc.scale;
-    const h = baseH * acc.scale;
-
-    ctx.drawImage(acc.img, -w / 2, -h / 2, w, h);
-    ctx.restore();
-  }});
-
-  // 4. Draw Meme Text (if any)
-  state.texts.forEach((t, idx) => {{
-    ctx.save();
-    const cx = canvas.width / 2 + t.x;
-    const cy = canvas.height / 2 + t.y;
-    ctx.translate(cx, cy);
-    ctx.rotate((t.rotation * Math.PI) / 180);
-
-    ctx.font = '900 ' + t.size + 'px Impact, -apple-system, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.lineWidth = Math.max(5, Math.round(t.size / 6.5));
-    ctx.strokeStyle = '#000000';
-    ctx.fillStyle = t.color || '#ffffff';
-
-    ctx.strokeText(t.text, 0, 0);
-    ctx.fillText(t.text, 0, 0);
-    ctx.restore();
-  }});
-
-  // 5. Draw Photoshop Bounding Box & Free Transform Handles
+  // 3. Draw Refined Compact Free Transform Bounding Box & Handles
   const active = getActiveLayerData();
   if (active) {{
     const {{ cx, cy, hw, hh, rotation }} = active;
@@ -1460,29 +1569,29 @@ function render(offsetObj) {{
     ctx.translate(cx, cy);
     ctx.rotate((rotation * Math.PI) / 180);
 
-    // Blue dashed bounding rectangle
+    // Slim dashed bounding rectangle
     ctx.strokeStyle = '#0084ff';
-    ctx.lineWidth = 2.5;
-    ctx.setLineDash([7, 6]);
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
     ctx.strokeRect(-hw, -hh, hw * 2, hh * 2);
 
-    // Stem line to rotation handle
+    // Short stem line to rotation handle
     ctx.setLineDash([]);
     ctx.beginPath();
     ctx.moveTo(0, -hh);
-    ctx.lineTo(0, -hh - 32);
+    ctx.lineTo(0, -hh - 18);
     ctx.stroke();
 
-    // Top circular rotation handle
+    // Small circular rotation handle (radius 5)
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#0084ff';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(0, -hh - 32, 8, 0, Math.PI * 2);
+    ctx.arc(0, -hh - 18, 5, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
-    // 4 Corner square handles
+    // 4 Small corner square handles (8x8)
     const corners = [
       [-hw, -hh],
       [hw, -hh],
@@ -1492,9 +1601,9 @@ function render(offsetObj) {{
     corners.forEach(([kx, ky]) => {{
       ctx.fillStyle = '#ffffff';
       ctx.strokeStyle = '#0084ff';
-      ctx.lineWidth = 2.5;
-      ctx.fillRect(kx - 6, ky - 6, 12, 12);
-      ctx.strokeRect(kx - 6, ky - 6, 12, 12);
+      ctx.lineWidth = 1.5;
+      ctx.fillRect(kx - 4, ky - 4, 8, 8);
+      ctx.strokeRect(kx - 4, ky - 4, 8, 8);
     }});
 
     ctx.restore();
@@ -1522,21 +1631,25 @@ function updateTopbarToolOptions() {{
   if (active.type === 'face') {{
     const f = faces[active.obj.faceIndex];
     title = f ? f.name : 'Custom Face';
-    scaleVal.innerText = Math.round(active.obj.scale * 100) + '%';
-    rotVal.innerText = Math.round(active.obj.rotation) + '°';
+    const sx = Math.round((active.obj.scaleX || active.obj.scale || 1.0) * 100);
+    const sy = Math.round((active.obj.scaleY || active.obj.scale || 1.0) * 100);
+    scaleVal.innerText = sx === sy ? (sx + '%') : (sx + '% × ' + sy + '%');
+    rotVal.innerText = Math.round(active.obj.rotation || 0) + '°';
   }} else if (active.type === 'acc') {{
     title = 'Sticker / Acc';
-    scaleVal.innerText = Math.round(active.obj.scale * 100) + '%';
-    rotVal.innerText = Math.round(active.obj.rotation) + '°';
+    const sx = Math.round((active.obj.scaleX || active.obj.scale || 1.0) * 100);
+    const sy = Math.round((active.obj.scaleY || active.obj.scale || 1.0) * 100);
+    scaleVal.innerText = sx === sy ? (sx + '%') : (sx + '% × ' + sy + '%');
+    rotVal.innerText = Math.round(active.obj.rotation || 0) + '°';
   }} else if (active.type === 'text') {{
-    title = '"' + active.obj.text.substring(0, 16) + '"';
+    title = '"' + active.obj.text.substring(0, 14) + '"';
     scaleVal.innerText = active.obj.size + 'px';
-    rotVal.innerText = Math.round(active.obj.rotation) + '°';
+    rotVal.innerText = Math.round(active.obj.rotation || 0) + '°';
   }}
   nameBadge.innerText = title;
 }}
 
-// --- INTERACTIVE DRAG & FREE TRANSFORM EVENTS ---
+// --- INTERACTIVE DRAG & FREE TRANSFORM EVENTS (WITH SHIFT-STRETCH) ---
 function initCanvasEvents() {{
   let isDragging = false;
   let dragHandle = null;
@@ -1557,17 +1670,17 @@ function initCanvasEvents() {{
         state.activeTransformTarget = {{ type: 'face', idx: hit.layer.idx }};
         state.selectedFaceIdx = hit.layer.idx;
         const obj = state.facesOnCanvas[hit.layer.idx];
-        origObjState = {{ x: obj.x, y: obj.y, scale: obj.scale, rotation: obj.rotation }};
+        origObjState = {{ x: obj.x, y: obj.y, scale: obj.scale || 1.0, scaleX: obj.scaleX || obj.scale || 1.0, scaleY: obj.scaleY || obj.scale || 1.0, rotation: obj.rotation || 0 }};
       }} else if (hit.layer.type === 'acc') {{
         state.activeTransformTarget = {{ type: 'acc', idx: hit.layer.idx }};
         state.selectedAccIdx = hit.layer.idx;
         const obj = state.accessoriesOnCanvas[hit.layer.idx];
-        origObjState = {{ x: obj.x, y: obj.y, scale: obj.scale, rotation: obj.rotation }};
+        origObjState = {{ x: obj.x, y: obj.y, scale: obj.scale || 1.0, scaleX: obj.scaleX || obj.scale || 1.0, scaleY: obj.scaleY || obj.scale || 1.0, rotation: obj.rotation || 0 }};
       }} else if (hit.layer.type === 'text') {{
         state.activeTransformTarget = {{ type: 'text', idx: hit.layer.idx }};
         state.selectedTextIdx = hit.layer.idx;
         const obj = state.texts[hit.layer.idx];
-        origObjState = {{ x: obj.x, y: obj.y, size: obj.size, rotation: obj.rotation }};
+        origObjState = {{ x: obj.x, y: obj.y, size: obj.size, scaleX: obj.scaleX || 1.0, scaleY: obj.scaleY || 1.0, rotation: obj.rotation || 0 }};
         document.getElementById('activeTextInput').value = obj.text;
       }}
 
@@ -1616,16 +1729,45 @@ function initCanvasEvents() {{
       active.obj.rotation = Math.round(deg);
       render();
     }} else if (dragHandle) {{
-      const initialDist = Math.hypot(startX - active.cx, startY - active.cy);
-      const currentDist = Math.hypot(mx - active.cx, my - active.cy);
-      const factor = currentDist / Math.max(initialDist, 1);
-      
-      if (active.type === 'text') {{
-        active.obj.size = Math.max(16, Math.min(130, Math.round(origObjState.size * factor)));
+      // CORNER SCALE OR SHIFT-STRETCH
+      if (e.shiftKey) {{
+        // Non-uniform STRETCH
+        const {{ lx, ly }} = toLocal(mx, my, active.cx, active.cy, active.rotation);
+        let newHw = Math.max(12, Math.abs(lx));
+        let newHh = Math.max(12, Math.abs(ly));
+
+        if (active.type === 'face') {{
+          let img = active.obj.customImg || loadedFaces[active.obj.faceIndex];
+          const aspect = (img && img.naturalHeight) ? (img.naturalHeight / img.naturalWidth) : 1.0;
+          active.obj.scaleX = Number((newHw / 100).toFixed(2));
+          active.obj.scaleY = Number((newHh / (100 * aspect)).toFixed(2));
+          active.obj.scale = (active.obj.scaleX + active.obj.scaleY) / 2;
+        }} else if (active.type === 'acc') {{
+          const aspect = (active.obj.img && active.obj.img.naturalHeight) ? (active.obj.img.naturalHeight / active.obj.img.naturalWidth) : 1.0;
+          active.obj.scaleX = Number((newHw / 90).toFixed(2));
+          active.obj.scaleY = Number((newHh / (90 * aspect)).toFixed(2));
+          active.obj.scale = (active.obj.scaleX + active.obj.scaleY) / 2;
+        }} else if (active.type === 'text') {{
+          active.obj.scaleX = Number((newHw / (active.bw / 2)).toFixed(2));
+          active.obj.scaleY = Number((newHh / (active.bh / 2)).toFixed(2));
+        }}
+        render();
       }} else {{
-        active.obj.scale = Math.max(0.15, Math.min(3.5, Number((origObjState.scale * factor).toFixed(2))));
+        // Uniform proportional scale
+        const initialDist = Math.hypot(startX - active.cx, startY - active.cy);
+        const currentDist = Math.hypot(mx - active.cx, my - active.cy);
+        const factor = currentDist / Math.max(initialDist, 1);
+        
+        if (active.type === 'text') {{
+          active.obj.size = Math.max(16, Math.min(130, Math.round(origObjState.size * factor)));
+        }} else {{
+          const s = Math.max(0.15, Math.min(3.5, Number((origObjState.scale * factor).toFixed(2))));
+          active.obj.scale = s;
+          active.obj.scaleX = s;
+          active.obj.scaleY = s;
+        }}
+        render();
       }}
-      render();
     }}
   }}
 
@@ -1656,7 +1798,10 @@ function initCanvasEvents() {{
     if (active.type === 'text') {{
       active.obj.size = Math.max(16, Math.min(130, active.obj.size + (delta > 0 ? 3 : -3)));
     }} else {{
-      active.obj.scale = Math.max(0.2, Math.min(3.5, Number((active.obj.scale + delta).toFixed(2))));
+      const s = Math.max(0.2, Math.min(3.5, Number(((active.obj.scale || 1.0) + delta).toFixed(2))));
+      active.obj.scale = s;
+      active.obj.scaleX = s;
+      active.obj.scaleY = s;
     }}
     render();
   }}, {{ passive: false }});
@@ -1664,92 +1809,7 @@ function initCanvasEvents() {{
 
 // --- POPULATE SIDEBARS & EVENTS ---
 function initUIEvents() {{
-  // 1. Populate Faces Grid
-  const facesGrid = document.getElementById('facesGrid');
-  facesGrid.innerHTML = '';
-  faces.forEach((f, idx) => {{
-    const card = document.createElement('div');
-    card.className = 'grid-card' + (idx === 0 ? ' active' : '');
-    card.innerHTML = `<img src="${{f.src}}" alt="${{f.name}}"><span>${{f.name}}</span>`;
-    card.onclick = () => {{
-      document.querySelectorAll('#facesGrid .grid-card').forEach(c => c.classList.remove('active'));
-      card.classList.add('active');
-      const active = getActiveLayerData();
-      if (active && active.type === 'face') {{
-        active.obj.faceIndex = idx;
-        active.obj.customImg = null;
-      }} else {{
-        state.facesOnCanvas.push(makeFaceLayer(idx, 0, 0, 1.0));
-        state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
-      }}
-      render();
-      syncLayersUI();
-    }};
-    facesGrid.appendChild(card);
-  }});
-
-  // Add Face Button
-  document.getElementById('addFaceBtn').onclick = () => {{
-    state.facesOnCanvas.push(makeFaceLayer(0, Math.floor((Math.random() - 0.5) * 80), Math.floor((Math.random() - 0.5) * 80), 1.0));
-    state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
-    render();
-    syncLayersUI();
-  }};
-
-  // Custom Face Upload
-  document.getElementById('faceFileInput').onchange = (e) => {{
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {{
-      const img = new Image();
-      img.src = ev.target.result;
-      img.onload = () => {{
-        const newLayer = makeFaceLayer(0, 0, 0, 1.0);
-        newLayer.customImg = img;
-        state.facesOnCanvas.push(newLayer);
-        state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
-        render();
-        syncLayersUI();
-      }};
-    }};
-    reader.readAsDataURL(file);
-  }};
-
-  // Mask Shape Toggles
-  document.querySelectorAll('#maskGroup .btn-toggle').forEach(btn => {{
-    btn.onclick = () => {{
-      document.querySelectorAll('#maskGroup .btn-toggle').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const active = getActiveLayerData();
-      if (active && active.type === 'face') {{
-        active.obj.maskShape = btn.dataset.mask;
-        render();
-      }}
-    }};
-  }});
-
-  // Face Sliders
-  document.getElementById('faceScaleSlider').oninput = (e) => {{
-    const val = parseFloat(e.target.value);
-    document.getElementById('faceScaleVal').innerText = Math.round(val * 100) + '%';
-    const active = getActiveLayerData();
-    if (active && active.type === 'face') {{
-      active.obj.scale = val;
-      render();
-    }}
-  }};
-  document.getElementById('faceOpacitySlider').oninput = (e) => {{
-    const val = parseFloat(e.target.value);
-    document.getElementById('faceOpacityVal').innerText = Math.round(val * 100) + '%';
-    const active = getActiveLayerData();
-    if (active && active.type === 'face') {{
-      active.obj.opacity = val;
-      render();
-    }}
-  }};
-
-  // 2. Populate Templates Grid
+  // 1. Templates Grid
   const bgGrid = document.getElementById('bgPresetsRow');
   bgGrid.innerHTML = '';
   templates.forEach(t => {{
@@ -1838,9 +1898,85 @@ function initUIEvents() {{
     fitCanvasToScreen();
   }};
 
+  // 2. Populate Fruits Faces Grid
+  const facesGrid = document.getElementById('facesGrid');
+  facesGrid.innerHTML = '';
+  faces.forEach((f, idx) => {{
+    const card = document.createElement('div');
+    card.className = 'grid-card' + (idx === 0 ? ' active' : '');
+    card.innerHTML = `<img src="${{f.src}}" alt="${{f.name}}"><span>${{f.name}}</span>`;
+    card.onclick = () => {{
+      document.querySelectorAll('#facesGrid .grid-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      const active = getActiveLayerData();
+      if (active && active.type === 'face') {{
+        active.obj.faceIndex = idx;
+        active.obj.customImg = null;
+      }} else {{
+        state.facesOnCanvas.push(makeFaceLayer(idx, 0, 0, 1.0));
+        state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
+      }}
+      render();
+      syncLayersUI();
+    }};
+    facesGrid.appendChild(card);
+  }});
+
+  // Add Face Button
+  document.getElementById('addFaceBtn').onclick = () => {{
+    state.facesOnCanvas.push(makeFaceLayer(0, Math.floor((Math.random() - 0.5) * 80), Math.floor((Math.random() - 0.5) * 80), 1.0));
+    state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
+    render();
+    syncLayersUI();
+  }};
+
+  // Custom Face Upload
+  document.getElementById('faceFileInput').onchange = (e) => {{
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {{
+      const img = new Image();
+      img.src = ev.target.result;
+      img.onload = () => {{
+        const newLayer = makeFaceLayer(0, 0, 0, 1.0);
+        newLayer.customImg = img;
+        state.facesOnCanvas.push(newLayer);
+        state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
+        render();
+        syncLayersUI();
+      }};
+    }};
+    reader.readAsDataURL(file);
+  }};
+
+  // Mask Shape Toggles
+  document.querySelectorAll('#maskGroup .btn-toggle').forEach(btn => {{
+    btn.onclick = () => {{
+      document.querySelectorAll('#maskGroup .btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const active = getActiveLayerData();
+      if (active && active.type === 'face') {{
+        active.obj.maskShape = btn.dataset.mask;
+        render();
+      }}
+    }};
+  }});
+
+  // Face Opacity Slider (Scale slider removed)
+  document.getElementById('faceOpacitySlider').oninput = (e) => {{
+    const val = parseFloat(e.target.value);
+    document.getElementById('faceOpacityVal').innerText = Math.round(val * 100) + '%';
+    const active = getActiveLayerData();
+    if (active && active.type === 'face') {{
+      active.obj.opacity = val;
+      render();
+    }}
+  }};
+
   // 3. Text Controls (Top, Bottom, Custom)
   document.getElementById('addTopTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'TOP TEXT', x: 0, y: -Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', rotation: 0 }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'TOP TEXT', x: 0, y: -Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', rotation: 0, z: ++layerZCounter }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
     state.selectedTextIdx = state.texts.length - 1;
     document.getElementById('activeTextInput').value = 'TOP TEXT';
@@ -1848,7 +1984,7 @@ function initUIEvents() {{
     syncLayersUI();
   }};
   document.getElementById('addBottomTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', rotation: 0 }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', rotation: 0, z: ++layerZCounter }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
     state.selectedTextIdx = state.texts.length - 1;
     document.getElementById('activeTextInput').value = 'BOTTOM TEXT';
@@ -1856,7 +1992,7 @@ function initUIEvents() {{
     syncLayersUI();
   }};
   document.getElementById('addCustomTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'YOUR TEXT', x: 0, y: 0, size: 52, color: '#ffffff', rotation: 0 }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'YOUR TEXT', x: 0, y: 0, size: 52, color: '#ffffff', rotation: 0, z: ++layerZCounter }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
     state.selectedTextIdx = state.texts.length - 1;
     document.getElementById('activeTextInput').value = 'YOUR TEXT';
@@ -1876,7 +2012,8 @@ function initUIEvents() {{
           y: 0,
           size: 52,
           color: '#ffffff',
-          rotation: 0
+          rotation: 0,
+          z: ++layerZCounter
         }});
         state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
         state.selectedTextIdx = state.texts.length - 1;
@@ -1927,9 +2064,12 @@ function initUIEvents() {{
           x: 0,
           y: 0,
           scale: 1.0,
+          scaleX: 1.0,
+          scaleY: 1.0,
           rotation: 0,
           flipH: 1,
-          opacity: 1.0
+          opacity: 1.0,
+          z: ++layerZCounter
         }});
         state.activeTransformTarget = {{ type: 'acc', idx: state.accessoriesOnCanvas.length - 1 }};
         render();
@@ -1939,10 +2079,10 @@ function initUIEvents() {{
     reader.readAsDataURL(file);
   }};
 
-  // 5. Animation Grid
-  document.querySelectorAll('#animGrid .grid-card').forEach(card => {{
+  // 5. Discord Animation Grid Chips
+  document.querySelectorAll('#animGrid .anim-chip').forEach(card => {{
     card.onclick = () => {{
-      document.querySelectorAll('#animGrid .grid-card').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('#animGrid .anim-chip').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
       state.animation = card.dataset.anim;
       render();
@@ -2040,7 +2180,7 @@ function initUIEvents() {{
 
     if (!name || !file) {{
       status.style.color = 'var(--ps-danger)';
-      status.innerText = '⚠️ Please enter a face name and select an image.';
+      status.innerText = '⚠️ Please enter a fruit name and select an image.';
       return;
     }}
 
@@ -2069,7 +2209,7 @@ function initUIEvents() {{
       renderAdminCatalog();
 
       status.style.color = 'var(--ps-green)';
-      status.innerText = '✅ Face added locally!';
+      status.innerText = '✅ Fruit face added locally!';
 
       if (GITHUB_TOKEN) {{
         status.innerText = '🚀 Syncing to GitHub repo...';
@@ -2097,13 +2237,13 @@ function renderAdminCatalog() {{
   list.innerHTML = '';
   faces.forEach((f, idx) => {{
     const row = document.createElement('div');
-    row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:8px 12px; border-radius:6px; border:1px solid #1f2028;';
+    row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:7px 10px; border-radius:6px; border:1px solid #1f2028;';
     row.innerHTML = `
-      <div style="display:flex; align-items:center; gap:10px;">
-        <img src="${{f.src}}" style="width:34px; height:34px; border-radius:5px; object-fit:cover;">
-        <span style="font-size:13px; font-weight:700; color:#fff;">${{f.name}}</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img src="${{f.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
+        <span style="font-size:12.5px; font-weight:700; color:#fff;">${{f.name}}</span>
       </div>
-      <button class="ps-opt-btn danger" style="padding:4px 10px; font-size:11.5px;" onclick="deleteAdminFace(${{idx}})">Remove</button>
+      <button class="ps-opt-btn danger" style="padding:4px 8px; font-size:11px;" onclick="deleteAdminFace(${{idx}})">Remove</button>
     `;
     list.appendChild(row);
   }});
@@ -2125,7 +2265,6 @@ async function syncFaceToGitHub(faceName, filename, base64Data) {{
   const repo = '3bood011/Muradeditor';
   const branch = 'main';
 
-  // 1. Upload image file
   const filePath = 'assets/' + filename;
   const putUrl = `https://api.github.com/repos/${{repo}}/contents/${{filePath}}`;
   
@@ -2136,105 +2275,114 @@ async function syncFaceToGitHub(faceName, filename, base64Data) {{
       'Content-Type': 'application/json',
     }},
     body: JSON.stringify({{
-      message: 'Add face: ' + faceName,
+      message: 'Add fruit face: ' + faceName,
       content: cleanB64,
       branch: branch
     }})
   }});
 }}
 
-// Sync active layers inspector in right sidebar
+// Reorder layer in stack: dir === -1 moves UP (higher visual layer), dir === 1 moves DOWN
+window.moveLayerZ = function(layerType, idx, dir) {{
+  const all = getAllLayers(); // sorted top to bottom
+  const currentPos = all.findIndex(item => item.layerType === layerType && item.idx === idx);
+  if (currentPos === -1) return;
+  const targetPos = currentPos + dir;
+  if (targetPos < 0 || targetPos >= all.length) return;
+
+  const currentObj = all[currentPos].obj;
+  const targetObj = all[targetPos].obj;
+
+  const tempZ = currentObj.z || 1;
+  currentObj.z = targetObj.z || 1;
+  targetObj.z = tempZ;
+
+  if (currentObj.z === targetObj.z) {{
+    currentObj.z += (dir < 0 ? 1 : -1);
+  }}
+
+  render();
+  syncLayersUI();
+}};
+
+// Sync active layers inspector in right sidebar with thumbnails & reorder controls
 function syncLayersUI() {{
   const list = document.getElementById('layersList');
+  if (!list) return;
   list.innerHTML = '';
 
   const active = getActiveLayerData();
+  const all = getAllLayers(); // sorted top of stack to bottom
 
-  // Face layers
-  state.facesOnCanvas.forEach((f, idx) => {{
-    const item = document.createElement('div');
-    const isAct = active && active.type === 'face' && active.idx === idx;
-    item.className = 'layer-item' + (isAct ? ' active' : '');
-    const faceObj = faces[f.faceIndex];
-    item.innerHTML = `
-      <div class="layer-title">
-        <span>🎭</span>
-        <span>${{faceObj ? faceObj.name : 'Custom Face'}}</span>
+  if (all.length === 0) {{
+    list.innerHTML = '<div style="color:var(--ps-text-muted); font-size:12px; text-align:center; padding:10px 0;">No active layers on canvas</div>';
+    return;
+  }}
+
+  all.forEach((item, pos) => {{
+    const {{ layerType, idx, obj }} = item;
+    const isAct = active && active.type === layerType && active.idx === idx;
+    const row = document.createElement('div');
+    row.className = 'layer-item' + (isAct ? ' active' : '');
+
+    let thumbHtml = '';
+    let titleStr = '';
+
+    if (layerType === 'face') {{
+      const faceImg = obj.customImg ? obj.customImg.src : (faces[obj.faceIndex] ? faces[obj.faceIndex].src : '');
+      thumbHtml = `<img src="${{faceImg}}" class="layer-thumb" alt="Face">`;
+      const fObj = faces[obj.faceIndex];
+      titleStr = fObj ? fObj.name : 'Custom Fruit';
+    }} else if (layerType === 'acc') {{
+      const accImg = obj.img ? obj.img.src : '';
+      thumbHtml = `<img src="${{accImg}}" class="layer-thumb" alt="Sticker">`;
+      titleStr = 'Sticker #' + (idx + 1);
+    }} else if (layerType === 'text') {{
+      thumbHtml = `<span class="layer-text-badge">T</span>`;
+      titleStr = '"' + (obj.text || 'Text').substring(0, 14) + '"';
+    }}
+
+    const canMoveUp = pos > 0;
+    const canMoveDown = pos < all.length - 1;
+
+    row.innerHTML = `
+      <div class="layer-left">
+        ${{thumbHtml}}
+        <span class="layer-title-text">${{titleStr}}</span>
       </div>
-      <div class="layer-controls">
-        <button class="layer-btn" title="Delete Layer" onclick="event.stopPropagation(); deleteFaceLayer(${{idx}})">🗑️</button>
+      <div class="layer-actions">
+        <button class="layer-action-btn" title="Move Up" style="${{canMoveUp ? '' : 'opacity:0.3; pointer-events:none;'}}" onclick="event.stopPropagation(); moveLayerZ('${{layerType}}', ${{idx}}, -1)">▲</button>
+        <button class="layer-action-btn" title="Move Down" style="${{canMoveDown ? '' : 'opacity:0.3; pointer-events:none;'}}" onclick="event.stopPropagation(); moveLayerZ('${{layerType}}', ${{idx}}, 1)">▼</button>
+        <button class="layer-action-btn" title="Delete Layer" onclick="event.stopPropagation(); deleteSpecificLayer('${{layerType}}', ${{idx}})">🗑️</button>
       </div>
     `;
-    item.onclick = () => {{
-      state.activeTransformTarget = {{ type: 'face', idx: idx }};
+
+    row.onclick = () => {{
+      state.activeTransformTarget = {{ type: layerType, idx: idx }};
+      if (layerType === 'face') state.selectedFaceIdx = idx;
+      if (layerType === 'acc') state.selectedAccIdx = idx;
+      if (layerType === 'text') {{
+        state.selectedTextIdx = idx;
+        document.getElementById('activeTextInput').value = obj.text;
+      }}
       render();
       syncLayersUI();
     }};
-    list.appendChild(item);
-  }});
 
-  // Accessory layers
-  state.accessoriesOnCanvas.forEach((a, idx) => {{
-    const item = document.createElement('div');
-    const isAct = active && active.type === 'acc' && active.idx === idx;
-    item.className = 'layer-item' + (isAct ? ' active' : '');
-    item.innerHTML = `
-      <div class="layer-title">
-        <span>🎀</span>
-        <span>Sticker #${{idx + 1}}</span>
-      </div>
-      <div class="layer-controls">
-        <button class="layer-btn" title="Delete Layer" onclick="event.stopPropagation(); deleteAccLayer(${{idx}})">🗑️</button>
-      </div>
-    `;
-    item.onclick = () => {{
-      state.activeTransformTarget = {{ type: 'acc', idx: idx }};
-      render();
-      syncLayersUI();
-    }};
-    list.appendChild(item);
-  }});
-
-  // Text layers
-  state.texts.forEach((t, idx) => {{
-    const item = document.createElement('div');
-    const isAct = active && active.type === 'text' && active.idx === idx;
-    item.className = 'layer-item' + (isAct ? ' active' : '');
-    item.innerHTML = `
-      <div class="layer-title">
-        <span>✍️</span>
-        <span>"${{t.text.substring(0, 16)}}"</span>
-      </div>
-      <div class="layer-controls">
-        <button class="layer-btn" title="Delete Layer" onclick="event.stopPropagation(); deleteTextLayer(${{idx}})">🗑️</button>
-      </div>
-    `;
-    item.onclick = () => {{
-      state.activeTransformTarget = {{ type: 'text', idx: idx }};
-      document.getElementById('activeTextInput').value = t.text;
-      render();
-      syncLayersUI();
-    }};
-    list.appendChild(item);
+    list.appendChild(row);
   }});
 }}
 
-window.deleteFaceLayer = function(idx) {{
-  state.facesOnCanvas.splice(idx, 1);
+window.deleteSpecificLayer = function(layerType, idx) {{
+  if (layerType === 'face') {{
+    state.facesOnCanvas.splice(idx, 1);
+  }} else if (layerType === 'acc') {{
+    state.accessoriesOnCanvas.splice(idx, 1);
+  }} else if (layerType === 'text') {{
+    state.texts.splice(idx, 1);
+    document.getElementById('activeTextInput').value = '';
+  }}
   state.activeTransformTarget = null;
-  render();
-  syncLayersUI();
-}};
-window.deleteAccLayer = function(idx) {{
-  state.accessoriesOnCanvas.splice(idx, 1);
-  state.activeTransformTarget = null;
-  render();
-  syncLayersUI();
-}};
-window.deleteTextLayer = function(idx) {{
-  state.texts.splice(idx, 1);
-  state.activeTransformTarget = null;
-  document.getElementById('activeTextInput').value = '';
   render();
   syncLayersUI();
 }};
@@ -2246,7 +2394,7 @@ function exportPng() {{
   render();
 
   const link = document.createElement('a');
-  link.download = 'murad_photoshop_meme.png';
+  link.download = 'muradiator_meme.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
 
@@ -2277,6 +2425,7 @@ function copyToClipboard() {{
   render();
 }}
 
+// FIXED: 16:9 Aspect Ratio & High Color Fidelity
 function exportGif() {{
   if (!window.gifshot) {{
     alert('GIF library is still loading, please wait a moment.');
@@ -2294,6 +2443,18 @@ function exportGif() {{
   const prevTarget = state.activeTransformTarget;
   state.activeTransformTarget = null;
 
+  // Exact aspect ratio preserving dimensions
+  const aspect = canvas.width / canvas.height;
+  let gifW = 480;
+  let gifH = Math.round(gifW / aspect);
+  if (gifH > 480) {{
+    gifH = 480;
+    gifW = Math.round(gifH * aspect);
+  }}
+  // Ensure even dimensions
+  gifW = Math.round(gifW / 2) * 2;
+  gifH = Math.round(gifH / 2) * 2;
+
   const totalFrames = 18;
   const frameImages = [];
 
@@ -2310,13 +2471,14 @@ function exportGif() {{
   state.activeTransformTarget = prevTarget;
   render();
 
-  progText.innerText = 'Encoding Discord GIF...';
+  progText.innerText = 'Encoding Discord GIF (High Quality)...';
   window.gifshot.createGIF({{
     images: frameImages,
-    gifWidth: Math.min(canvas.width, 500),
-    gifHeight: Math.min(canvas.height, 500),
+    gifWidth: gifW,
+    gifHeight: gifH,
     interval: 0.06,
-    numWorkers: 2,
+    numWorkers: 4,
+    sampleInterval: 2, // High color fidelity sampling
     progressCallback: (captureProgress) => {{
       progBar.style.width = Math.round(captureProgress * 100) + '%';
       progText.innerText = 'Encoding GIF: ' + Math.round(captureProgress * 100) + '%';
@@ -2324,7 +2486,7 @@ function exportGif() {{
   }}, (obj) => {{
     if (!obj.error) {{
       const link = document.createElement('a');
-      link.download = 'murad_animation.gif';
+      link.download = 'muradiator_meme.gif';
       link.href = obj.image;
       link.click();
     }}
@@ -2378,5 +2540,5 @@ window.onload = () => {{
 </html>
 """
 
-# Render embedded Photoshop Web Studio
-components.html(html_app, height=980, scrolling=False)
+# Render embedded Muradiator Studio
+components.html(html_app, height=1000, scrolling=False)
