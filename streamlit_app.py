@@ -9,7 +9,7 @@ import streamlit.components.v1 as components
 
 # Configure Streamlit page for full width
 st.set_page_config(
-    page_title="Murad Face Slapper | Discord Meme & GIF Maker",
+    page_title="Meme Editor & GIF Maker",
     page_icon="🎭",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -552,28 +552,58 @@ html_app = f"""
     accent-color: var(--blurple);
     cursor: pointer;
   }}
-  .accessories-row {{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }}
-  .acc-btn {{
+  .acc-layer-pill, .text-layer-pill {{
     background: var(--bg-input);
     border: 1px solid var(--border);
-    color: var(--text-muted);
-    padding: 4px 8px;
+    color: var(--text-main);
+    padding: 3px 8px;
     border-radius: 6px;
     font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
+    transition: all 0.15s ease;
+    max-width: 150px;
+    white-space: nowrap;
   }}
-  .acc-btn.active {{
-    background: rgba(88,101,242,0.25);
+  .acc-layer-pill.active, .text-layer-pill.active {{
     border-color: var(--blurple);
+    background: rgba(88, 101, 242, 0.2);
     color: #fff;
+  }}
+  .acc-layer-pill img {{
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+  }}
+  .pill-del-btn {{
+    color: var(--text-muted);
+    font-weight: bold;
+    border-radius: 50%;
+    width: 15px;
+    height: 15px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+  }}
+  .pill-del-btn:hover {{
+    background: #da373c;
+    color: #fff;
+  }}
+  .item-box {{
+    background: rgba(0,0,0,0.25);
+    border-radius: 6px;
+    padding: 8px;
+    border: 1px solid rgba(255,255,255,0.05);
   }}
   .anim-grid {{
     display: grid;
@@ -764,23 +794,7 @@ html_app = f"""
     text-align: center;
     margin-top: 6px;
   }}
-  .discord-mockup {{
-    width: 100%;
-    max-width: 440px;
-    background: #313338;
-    border: 1px solid #232428;
-    border-radius: 8px;
-    padding: 10px 12px;
-    margin-top: 12px;
-    display: flex;
-    gap: 10px;
-  }}
-  .mockup-avatar {{
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    object-fit: cover;
-  }}
+
 </style>
 <script>
 {gifshot_script}
@@ -858,22 +872,47 @@ html_app = f"""
           </div>
         </div>
 
-        <!-- 3. Meme Accessories -->
+        <!-- 3. Custom Accessories & Stickers -->
         <div class="card">
           <div class="card-title">
             <span class="step-badge">3</span>
-            <span>Meme Accessories & Stickers</span>
+            <span>Custom Accessories & Stickers</span>
           </div>
-          <div class="hint">Toggle funny accessories on Murad's head:</div>
-          <div class="accessories-row" id="accRow">
-            <button class="acc-btn" data-acc="shades">🕶️ Thug Shades</button>
-            <button class="acc-btn" data-acc="laser">🔴 Laser Eyes</button>
-            <button class="acc-btn" data-acc="crown">👑 Gold Crown</button>
-            <button class="acc-btn" data-acc="bubble">💬 Speech Bubble</button>
-            <button class="acc-btn" data-acc="party">🥳 Party Hat</button>
-            <button class="acc-btn" data-acc="halo">😇 Angel Halo</button>
-            <button class="acc-btn" data-acc="horns">😈 Devil Horns</button>
-            <button class="acc-btn" data-acc="stache">🥸 Mustache</button>
+          <div class="hint">Upload any stickers or images and drag them freely:</div>
+
+          <label class="btn-upload" style="margin-bottom:8px; padding:6px 10px; font-size:11px;">
+            <span>📁 Upload Custom Accessory / Sticker</span>
+            <input type="file" id="accFileInput" accept="image/*,.gif">
+          </label>
+
+          <div id="accLayersContainer" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px;">
+            <!-- Dynamically populated accessory pills -->
+          </div>
+
+          <div id="accControlsBox" class="item-box" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+              <span id="selectedAccTitle" style="font-size:11px; font-weight:700; color:#5865F2;">Accessory #1</span>
+              <button id="deleteAccBtn" type="button" style="background:#da373c; color:#fff; border:none; border-radius:4px; padding:2px 7px; font-size:10px; font-weight:700; cursor:pointer;">🗑️ Remove</button>
+            </div>
+            <div class="slider-control">
+              <label>Size: <span id="accScaleVal">100%</span></label>
+              <input type="range" id="accScale" min="0.1" max="3.0" step="0.05" value="1.0">
+            </div>
+            <div class="slider-control">
+              <label>Rotation: <span id="accRotVal">0°</span></label>
+              <input type="range" id="accRot" min="-180" max="180" step="5" value="0">
+            </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+              <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Flip:</span>
+              <div class="btn-group" style="display:flex; gap:3px;">
+                <button class="btn-toggle" id="accFlipHBtn" title="Flip horizontally">↔️ Flip H</button>
+                <button class="btn-toggle" id="accFlipVBtn" title="Flip vertically">↕️ Flip V</button>
+              </div>
+            </div>
+            <div class="slider-control" style="margin-top:6px;">
+              <label>Opacity: <span id="accOpacityVal">100%</span></label>
+              <input type="range" id="accOpacity" min="0.1" max="1.0" step="0.05" value="1.0">
+            </div>
           </div>
         </div>
       </div>
@@ -984,18 +1023,48 @@ html_app = f"""
 
         <div style="display:flex; flex-direction:column; justify-content:space-between;">
           <div>
-            <span style="font-size:11px; color:var(--text-muted); font-weight:600; display:block; margin-bottom:4px;">Meme Text & Captions:</span>
-            <input type="text" id="memeCaptionTop" class="caption-input" placeholder="TOP TEXT (e.g. WHEN MURAD...)" maxlength="45" style="margin-top:0; margin-bottom:6px;">
-            <input type="text" id="memeCaptionBottom" class="caption-input" placeholder="BOTTOM TEXT (e.g. BOTTOM TEXT)" maxlength="45" style="margin-top:0;">
-          </div>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+              <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Custom Movable Text:</span>
+              <button id="addMovableTextBtn" type="button" class="btn-add-face" title="Add a movable text box anywhere on the canvas">➕ Add Text</button>
+            </div>
 
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:8px;">
-            <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Text Color:</span>
-            <div class="btn-group" id="captionColorGroup" style="display:flex; gap:3px;">
-              <button class="btn-toggle active" data-color="#ffffff" style="color:#ffffff;">White</button>
-              <button class="btn-toggle" data-color="#facc15" style="color:#facc15;">Yellow</button>
-              <button class="btn-toggle" data-color="#ef4444" style="color:#ef4444;">Red</button>
-              <button class="btn-toggle" data-color="#22d3ee" style="color:#22d3ee;">Cyan</button>
+            <div style="display:flex; gap:4px; margin-bottom:6px;">
+              <button id="addTopPresetTextBtn" type="button" style="flex:1; background:var(--bg-input); border:1px solid var(--border); color:var(--text-muted); padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; font-weight:600;">➕ Top Text</button>
+              <button id="addBottomPresetTextBtn" type="button" style="flex:1; background:var(--bg-input); border:1px solid var(--border); color:var(--text-muted); padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; font-weight:600;">➕ Bottom Text</button>
+            </div>
+
+            <div id="textLayersContainer" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:6px;">
+              <!-- Dynamically populated text pills -->
+            </div>
+
+            <div id="textControlsBox" class="item-box" style="display:none;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <span id="selectedTextTitle" style="font-size:10px; font-weight:700; color:#5865F2;">Text #1</span>
+                <button id="deleteTextBtn" type="button" style="background:#da373c; color:#fff; border:none; border-radius:4px; padding:2px 6px; font-size:10px; font-weight:700; cursor:pointer;">🗑️ Remove</button>
+              </div>
+              <input type="text" id="activeTextInput" class="caption-input" placeholder="Type text here..." style="margin-top:0; margin-bottom:6px; font-size:12px; padding:6px 8px;">
+              
+              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:6px;">
+                <div>
+                  <span style="font-size:10px; color:var(--text-muted);">Size: <b id="textSizeVal" style="color:#fff;">36px</b></span>
+                  <input type="range" id="textSizeSlider" min="14" max="90" step="2" value="36" style="width:100%;">
+                </div>
+                <div>
+                  <span style="font-size:10px; color:var(--text-muted);">Rotate: <b id="textRotVal" style="color:#fff;">0°</b></span>
+                  <input type="range" id="textRotSlider" min="-180" max="180" step="5" value="0" style="width:100%;">
+                </div>
+              </div>
+
+              <div style="display:flex; align-items:center; justify-content:space-between;">
+                <span style="font-size:10px; color:var(--text-muted); font-weight:600;">Color:</span>
+                <div class="btn-group" id="textColorGroup" style="display:flex; gap:3px;">
+                  <button class="btn-toggle active" data-color="#ffffff" style="color:#ffffff; font-size:10px; padding:2px 5px;">White</button>
+                  <button class="btn-toggle" data-color="#facc15" style="color:#facc15; font-size:10px; padding:2px 5px;">Yellow</button>
+                  <button class="btn-toggle" data-color="#ef4444" style="color:#ef4444; font-size:10px; padding:2px 5px;">Red</button>
+                  <button class="btn-toggle" data-color="#22d3ee" style="color:#22d3ee; font-size:10px; padding:2px 5px;">Cyan</button>
+                  <button class="btn-toggle" data-color="#4ade80" style="color:#4ade80; font-size:10px; padding:2px 5px;">Green</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1008,7 +1077,7 @@ html_app = f"""
   <div class="canvas-stage">
     <div class="canvas-header">
       <div style="display:flex; align-items:center; gap:8px;">
-        <div class="drag-badge">🖱️ CLICK & DRAG MURAD'S FACE WITH MOUSE!</div>
+        <div class="drag-badge">🖱️ CLICK & DRAG TO MOVE ANY FACE, STICKER OR TEXT!</div>
         <span style="font-size: 11px; color: var(--text-muted);">Scroll wheel = Zoom</span>
       </div>
       <div style="display:flex; align-items:center; gap:6px;">
@@ -1052,18 +1121,7 @@ html_app = f"""
       <div class="progress-text" id="progressText">Encoding Discord GIF...</div>
     </div>
 
-    <!-- Discord Preview -->
-    <div class="discord-mockup">
-      <img src="" id="discordAvatar" class="mockup-avatar">
-      <div>
-        <div style="display:flex; align-items:baseline; gap:6px; margin-bottom:2px;">
-          <strong style="font-size:13px; color:#fff;">Murad</strong>
-          <span style="background:#5865F2; font-size:9px; font-weight:700; padding:1px 4px; border-radius:3px; color:#fff;">APP</span>
-          <span style="font-size:10px; color:#949ba4;">Today at 10:30 PM</span>
-        </div>
-        <div style="font-size:12px; color:#dbdee1;" id="discordMsgText">Check out this new meme sticker! 💀</div>
-      </div>
-    </div>
+
 
   </div>
 </div>
@@ -1071,6 +1129,7 @@ html_app = f"""
 <script>
 const faces = {faces_json};
 const templates = {templates_json};
+
 function makeFaceLayer(faceIndex, x, y, scale) {{
   return {{
     id: 'layer_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
@@ -1083,15 +1142,7 @@ function makeFaceLayer(faceIndex, x, y, scale) {{
     flipV: false,
     opacity: 1.0,
     filter: 'none',
-    mask: 'square',
-    accShades: false,
-    accLaser: false,
-    accCrown: false,
-    accBubble: false,
-    accParty: false,
-    accHalo: false,
-    accHorns: false,
-    accStache: false
+    mask: 'square'
   }};
 }}
 
@@ -1100,6 +1151,24 @@ const state = {{
     makeFaceLayer(0, 0, -65, 1.0)
   ],
   selectedFaceIdx: 0,
+
+  // Custom User Accessories & Stickers
+  accessoriesOnCanvas: [],
+  selectedAccIdx: -1,
+
+  // Custom Movable Text Layers
+  textsOnCanvas: [],
+  selectedTextIdx: -1,
+
+  // Active Drag
+  isDragging: false,
+  dragTarget: null, // { type: 'face'|'acc'|'text', idx: number }
+  dragStartX: 0,
+  dragStartY: 0,
+  initialTargetX: 0,
+  initialTargetY: 0,
+
+  // Background
   bgType: 'preset',
   presetBg: templates.length > 0 ? templates[0].id : 'suit',
   customBgImg: null,
@@ -1113,19 +1182,71 @@ const state = {{
   gifBgFrameIndex: 0,
   lastNatW: 500,
   lastNatH: 500,
+
+  // Animation
   anim: 'none',
-  topCaption: '',
-  bottomCaption: '',
-  captionColor: '#ffffff',
   frame: 0,
   totalFrames: 12,
-  fps: 12,
-  isDragging: false,
-  dragStartX: 0,
-  dragStartY: 0,
-  initialFaceX: 0,
-  initialFaceY: 0
+  fps: 12
 }};
+
+// Preload Images
+const loadedFaces = [];
+faces.forEach((f) => {{
+  const img = new Image();
+  img.src = f.src;
+  loadedFaces.push(img);
+}});
+
+const loadedTemplates = {{}};
+templates.forEach((t) => {{
+  const img = new Image();
+  img.src = t.src;
+  loadedTemplates[t.id] = img;
+}});
+
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+
+function updateCanvasDimensions(natW, natH) {{
+  if (natW && natH) {{
+    state.lastNatW = natW;
+    state.lastNatH = natH;
+  }} else {{
+    natW = state.lastNatW || 500;
+    natH = state.lastNatH || 500;
+  }}
+
+  let w = 500;
+  let h = 500;
+  const ratio = state.canvasSizeRatio;
+
+  if (ratio === 'true_size') {{
+    const aspect = natW / natH;
+    if (aspect >= 1) {{
+      w = 640;
+      h = Math.round(640 / aspect);
+    }} else {{
+      h = 640;
+      w = Math.round(640 * aspect);
+    }}
+  }} else if (ratio === 'square') {{
+    w = 540;
+    h = 540;
+  }} else if (ratio === 'landscape') {{
+    w = 640;
+    h = 360;
+  }} else if (ratio === 'portrait') {{
+    w = 360;
+    h = 640;
+  }}
+
+  canvas.width = w;
+  canvas.height = h;
+
+  const badge = document.getElementById('canvasDimsBadge');
+  if (badge) badge.innerText = `${{w}}x${{h}}`;
+}}
 
 function getSelectedFace() {{
   if (!state.facesOnCanvas || state.facesOnCanvas.length === 0) return null;
@@ -1143,10 +1264,6 @@ function syncControlsToSelectedFace() {{
   document.querySelectorAll('.face-btn').forEach((b, idx) => {{
     b.classList.toggle('active', idx === cur.faceIndex);
   }});
-  if (faces[cur.faceIndex]) {{
-    const avatarEl = document.getElementById('discordAvatar');
-    if (avatarEl) avatarEl.src = faces[cur.faceIndex].src;
-  }}
 
   // Cutout Mask
   document.querySelectorAll('#maskGroup .btn-toggle').forEach(b => {{
@@ -1180,21 +1297,6 @@ function syncControlsToSelectedFace() {{
   document.querySelectorAll('#faceFilterGroup .btn-toggle').forEach(b => {{
     b.classList.toggle('active', b.dataset.filter === (cur.filter || 'none'));
   }});
-
-  // Accessories
-  document.querySelectorAll('#accRow .acc-btn').forEach(btn => {{
-    const acc = btn.dataset.acc;
-    let isActive = false;
-    if (acc === 'shades') isActive = !!cur.accShades;
-    else if (acc === 'laser') isActive = !!cur.accLaser;
-    else if (acc === 'crown') isActive = !!cur.accCrown;
-    else if (acc === 'bubble') isActive = !!cur.accBubble;
-    else if (acc === 'party') isActive = !!cur.accParty;
-    else if (acc === 'halo') isActive = !!cur.accHalo;
-    else if (acc === 'horns') isActive = !!cur.accHorns;
-    else if (acc === 'stache') isActive = !!cur.accStache;
-    btn.classList.toggle('active', isActive);
-  }});
 }}
 
 function renderFaceLayersUI() {{
@@ -1202,36 +1304,37 @@ function renderFaceLayersUI() {{
   const countEl = document.getElementById('faceLayersCount');
   if (!container) return;
   container.innerHTML = '';
-  
   if (countEl) {{
-    countEl.innerText = `${{state.facesOnCanvas.length}} face${{state.facesOnCanvas.length > 1 ? 's' : ''}}`;
+    countEl.innerText = state.facesOnCanvas.length + (state.facesOnCanvas.length === 1 ? ' face' : ' faces');
   }}
 
-  state.facesOnCanvas.forEach((layer, idx) => {{
-    const fObj = faces[layer.faceIndex] || {{ name: 'Face ' + (idx + 1), src: '' }};
+  state.facesOnCanvas.forEach((fLayer, idx) => {{
     const pill = document.createElement('div');
-    pill.className = 'face-layer-pill' + (idx === state.selectedFaceIdx ? ' active' : '');
-    pill.title = `Click to select and edit ${{fObj.name}}`;
+    const isAct = (idx === state.selectedFaceIdx && state.selectedAccIdx === -1 && state.selectedTextIdx === -1);
+    pill.className = 'face-layer-pill' + (isAct ? ' active' : '');
+    const faceObj = faces[fLayer.faceIndex] || {{ name: 'Murad', src: '' }};
+    const cleanName = faceObj.name.replace(/[^a-zA-Z0-9 ]/g, '').trim().split(' ')[0] || ('Face #' + (idx+1));
+    const thumbHtml = faceObj.src ? `<img src="${{faceObj.src}}">` : `<span>🎭</span>`;
     
-    let html = `<span style="font-weight:700; opacity:0.8; font-size:10px;">#${{idx + 1}}</span>`;
-    if (fObj.src) {{
-      html += `<img src="${{fObj.src}}">`;
-    }}
-    html += `<span>${{fObj.name.length > 11 ? fObj.name.substring(0, 11) + '…' : fObj.name}}</span>`;
-    
-    if (state.facesOnCanvas.length > 1) {{
-      html += `<button type="button" class="pill-del" title="Remove this face layer">✕</button>`;
-    }}
-    pill.innerHTML = html;
+    pill.innerHTML = `
+      ${{thumbHtml}}
+      <span>${{cleanName}}</span>
+      ${{state.facesOnCanvas.length > 1 ? '<button class="pill-del-btn" title="Remove this face" type="button">✕</button>' : ''}}
+    `;
 
     pill.onclick = (e) => {{
-      if (e.target.classList.contains('pill-del')) {{
-        removeFaceLayer(idx, e);
+      if (e.target.classList.contains('pill-del-btn')) {{
+        e.stopPropagation();
+        deleteFaceLayer(idx);
         return;
       }}
       state.selectedFaceIdx = idx;
+      state.selectedAccIdx = -1;
+      state.selectedTextIdx = -1;
       syncControlsToSelectedFace();
       renderFaceLayersUI();
+      renderAccLayersUI();
+      renderTextLayersUI();
       draw();
     }};
 
@@ -1239,22 +1342,7 @@ function renderFaceLayersUI() {{
   }});
 }}
 
-function addFaceLayer() {{
-  const count = state.facesOnCanvas.length;
-  const nextIdx = count < faces.length ? count : (state.selectedFaceIdx + 1) % faces.length;
-  const offsetSign = count % 2 === 1 ? 1 : -1;
-  const offsetX = offsetSign * (35 + (count * 20));
-  const offsetY = -65 + ((count % 3) * 20);
-  const newLayer = makeFaceLayer(nextIdx, offsetX, offsetY, 0.9);
-  state.facesOnCanvas.push(newLayer);
-  state.selectedFaceIdx = state.facesOnCanvas.length - 1;
-  syncControlsToSelectedFace();
-  renderFaceLayersUI();
-  draw();
-}}
-
-function removeFaceLayer(idx, e) {{
-  if (e) e.stopPropagation();
+function deleteFaceLayer(idx) {{
   if (state.facesOnCanvas.length <= 1) return;
   state.facesOnCanvas.splice(idx, 1);
   if (state.selectedFaceIdx >= state.facesOnCanvas.length) {{
@@ -1265,86 +1353,224 @@ function removeFaceLayer(idx, e) {{
   draw();
 }}
 
-// Preload face images
-const loadedFaces = [];
-faces.forEach((f, idx) => {{
-  const img = new Image();
-  img.src = f.src;
-  loadedFaces.push(img);
-}});
+// -------------------------------------------------------------
+// CUSTOM USER ACCESSORIES / STICKERS HELPERS
+// -------------------------------------------------------------
+function getSelectedAcc() {{
+  if (!state.accessoriesOnCanvas || state.accessoriesOnCanvas.length === 0) return null;
+  if (state.selectedAccIdx < 0 || state.selectedAccIdx >= state.accessoriesOnCanvas.length) {{
+    return null;
+  }}
+  return state.accessoriesOnCanvas[state.selectedAccIdx];
+}}
 
-// Preload template images
-const loadedTemplates = {{}};
-templates.forEach(t => {{
-  const img = new Image();
-  img.src = t.src;
-  loadedTemplates[t.id] = img;
-}});
+function syncControlsToSelectedAcc() {{
+  const box = document.getElementById('accControlsBox');
+  const cur = getSelectedAcc();
+  if (!cur || !box) {{
+    if (box) box.style.display = 'none';
+    return;
+  }}
+  box.style.display = 'block';
+  const title = document.getElementById('selectedAccTitle');
+  if (title) title.innerText = cur.name || 'Accessory';
 
-const canvas = document.getElementById('mainCanvas');
-const ctx = canvas.getContext('2d');
+  const scaleInput = document.getElementById('accScale');
+  if (scaleInput) scaleInput.value = cur.scale;
+  const scaleVal = document.getElementById('accScaleVal');
+  if (scaleVal) scaleVal.innerText = Math.round(cur.scale * 100) + '%';
 
-function init() {{
-  buildTemplatesUI();
-  buildFacesUI();
+  const rotInput = document.getElementById('accRot');
+  if (rotInput) rotInput.value = cur.rot;
+  const rotVal = document.getElementById('accRotVal');
+  if (rotVal) rotVal.innerText = cur.rot + '°';
+
+  const flipHBtn = document.getElementById('accFlipHBtn');
+  if (flipHBtn) flipHBtn.classList.toggle('active', !!cur.flipH);
+  const flipVBtn = document.getElementById('accFlipVBtn');
+  if (flipVBtn) flipVBtn.classList.toggle('active', !!cur.flipV);
+
+  const opInput = document.getElementById('accOpacity');
+  if (opInput) opInput.value = cur.opacity !== undefined ? cur.opacity : 1.0;
+  const opVal = document.getElementById('accOpacityVal');
+  if (opVal) opVal.innerText = Math.round((cur.opacity !== undefined ? cur.opacity : 1.0) * 100) + '%';
+}}
+
+function renderAccLayersUI() {{
+  const container = document.getElementById('accLayersContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  state.accessoriesOnCanvas.forEach((acc, idx) => {{
+    const pill = document.createElement('div');
+    const isAct = (idx === state.selectedAccIdx);
+    pill.className = 'acc-layer-pill' + (isAct ? ' active' : '');
+    const imgEl = acc.img && acc.img.src ? `<img src="${{acc.img.src}}">` : `<span>🎀</span>`;
+    pill.innerHTML = `
+      ${{imgEl}}
+      <span style="overflow:hidden; text-overflow:ellipsis; max-width:80px;">${{acc.name || ('Sticker #' + (idx+1))}}</span>
+      <button class="pill-del-btn" title="Remove accessory" type="button">✕</button>
+    `;
+
+    pill.onclick = (e) => {{
+      if (e.target.classList.contains('pill-del-btn')) {{
+        e.stopPropagation();
+        deleteAcc(idx);
+        return;
+      }}
+      state.selectedAccIdx = idx;
+      state.selectedFaceIdx = -1;
+      state.selectedTextIdx = -1;
+      renderAccLayersUI();
+      syncControlsToSelectedAcc();
+      renderFaceLayersUI();
+      renderTextLayersUI();
+      draw();
+    }};
+
+    container.appendChild(pill);
+  }});
+  syncControlsToSelectedAcc();
+}}
+
+function deleteAcc(idx) {{
+  state.accessoriesOnCanvas.splice(idx, 1);
+  if (state.selectedAccIdx === idx) {{
+    state.selectedAccIdx = state.accessoriesOnCanvas.length - 1;
+  }} else if (state.selectedAccIdx > idx) {{
+    state.selectedAccIdx--;
+  }}
+  renderAccLayersUI();
+  syncControlsToSelectedAcc();
+  draw();
+}}
+
+// -------------------------------------------------------------
+// CUSTOM MOVABLE TEXT HELPERS
+// -------------------------------------------------------------
+function getSelectedText() {{
+  if (!state.textsOnCanvas || state.textsOnCanvas.length === 0) return null;
+  if (state.selectedTextIdx < 0 || state.selectedTextIdx >= state.textsOnCanvas.length) {{
+    return null;
+  }}
+  return state.textsOnCanvas[state.selectedTextIdx];
+}}
+
+function syncControlsToSelectedText() {{
+  const box = document.getElementById('textControlsBox');
+  const cur = getSelectedText();
+  if (!cur || !box) {{
+    if (box) box.style.display = 'none';
+    return;
+  }}
+  box.style.display = 'block';
+
+  const title = document.getElementById('selectedTextTitle');
+  if (title) title.innerText = cur.text ? `"${{cur.text.slice(0, 10)}}${{cur.text.length > 10 ? '...' : ''}}"` : 'Text';
+
+  const textInput = document.getElementById('activeTextInput');
+  if (textInput && textInput !== document.activeElement) textInput.value = cur.text;
+
+  const sizeInput = document.getElementById('textSizeSlider');
+  if (sizeInput) sizeInput.value = cur.size;
+  const sizeVal = document.getElementById('textSizeVal');
+  if (sizeVal) sizeVal.innerText = cur.size + 'px';
+
+  const rotInput = document.getElementById('textRotSlider');
+  if (rotInput) rotInput.value = cur.rot;
+  const rotVal = document.getElementById('textRotVal');
+  if (rotVal) rotVal.innerText = cur.rot + '°';
+
+  document.querySelectorAll('#textColorGroup .btn-toggle').forEach(btn => {{
+    btn.classList.toggle('active', btn.dataset.color === cur.color);
+  }});
+}}
+
+function renderTextLayersUI() {{
+  const container = document.getElementById('textLayersContainer');
+  if (!container) return;
+  container.innerHTML = '';
+
+  state.textsOnCanvas.forEach((txt, idx) => {{
+    const pill = document.createElement('div');
+    const isAct = (idx === state.selectedTextIdx);
+    pill.className = 'text-layer-pill' + (isAct ? ' active' : '');
+    const displayText = txt.text || ('Text #' + (idx+1));
+    pill.innerHTML = `
+      <span>💬</span>
+      <span style="overflow:hidden; text-overflow:ellipsis; max-width:85px;">${{displayText}}</span>
+      <button class="pill-del-btn" title="Remove text" type="button">✕</button>
+    `;
+
+    pill.onclick = (e) => {{
+      if (e.target.classList.contains('pill-del-btn')) {{
+        e.stopPropagation();
+        deleteText(idx);
+        return;
+      }}
+      state.selectedTextIdx = idx;
+      state.selectedAccIdx = -1;
+      state.selectedFaceIdx = -1;
+      renderTextLayersUI();
+      syncControlsToSelectedText();
+      renderFaceLayersUI();
+      renderAccLayersUI();
+      draw();
+    }};
+
+    container.appendChild(pill);
+  }});
+  syncControlsToSelectedText();
+}}
+
+function addMovableText(defaultText, defaultY) {{
+  const id = 'txt_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+  const newTxt = {{
+    id: id,
+    text: defaultText || 'MEME TEXT',
+    x: 0,
+    y: defaultY !== undefined ? defaultY : 0,
+    size: 38,
+    color: '#ffffff',
+    strokeColor: '#000000',
+    rot: 0
+  }};
+  state.textsOnCanvas.push(newTxt);
+  state.selectedTextIdx = state.textsOnCanvas.length - 1;
+  state.selectedAccIdx = -1;
+  state.selectedFaceIdx = -1;
+  renderTextLayersUI();
+  syncControlsToSelectedText();
   renderFaceLayersUI();
-  syncControlsToSelectedFace();
-  setupEvents();
-  setupDragging();
-  startAnim();
-  if (templates.length > 0 && loadedTemplates[templates[0].id]) {{
-    const firstImg = loadedTemplates[templates[0].id];
-    if (firstImg.complete && firstImg.naturalWidth) {{
-      updateCanvasDimensions(firstImg.naturalWidth, firstImg.naturalHeight);
-    }} else {{
-      firstImg.onload = () => updateCanvasDimensions(firstImg.naturalWidth, firstImg.naturalHeight);
-    }}
-  }} else {{
-    updateCanvasDimensions(500, 500);
+  renderAccLayersUI();
+  draw();
+  const input = document.getElementById('activeTextInput');
+  if (input) {{
+    input.focus();
+    input.select();
   }}
+}}
+
+function deleteText(idx) {{
+  state.textsOnCanvas.splice(idx, 1);
+  if (state.selectedTextIdx === idx) {{
+    state.selectedTextIdx = state.textsOnCanvas.length - 1;
+  }} else if (state.selectedTextIdx > idx) {{
+    state.selectedTextIdx--;
+  }}
+  renderTextLayersUI();
+  syncControlsToSelectedText();
   draw();
 }}
 
-function updateCanvasDimensions(natW, natH) {{
-  if (natW && natH) {{
-    state.lastNatW = natW;
-    state.lastNatH = natH;
+// Decode Animated GIF Background
+async function parseAndLoadGif(arrayBuffer) {{
+  if (typeof window.GIF === 'undefined') {{
+    console.error('gifuct-js is not loaded');
+    return false;
   }}
-  const nw = state.lastNatW || 500;
-  const nh = state.lastNatH || 500;
-
-  if (state.canvasSizeRatio === 'true_size') {{
-    const maxSide = 900;
-    const aspect = nw / nh;
-    let tw, th;
-    if (aspect >= 1) {{
-      tw = Math.min(Math.max(nw, 640), maxSide);
-      th = Math.round(tw / aspect);
-    }} else {{
-      th = Math.min(Math.max(nh, 640), maxSide);
-      tw = Math.round(th * aspect);
-    }}
-    canvas.width = Math.max(360, tw);
-    canvas.height = Math.max(360, th);
-  }} else if (state.canvasSizeRatio === 'square') {{
-    canvas.width = 720;
-    canvas.height = 720;
-  }} else if (state.canvasSizeRatio === 'landscape') {{
-    canvas.width = 800;
-    canvas.height = 450;
-  }} else if (state.canvasSizeRatio === 'portrait') {{
-    canvas.width = 450;
-    canvas.height = 800;
-  }}
-  const badge = document.getElementById('canvasDimsBadge');
-  if (badge) badge.innerText = `${{canvas.width}}x${{canvas.height}}`;
-  draw();
-}}
-
-function processGifBuffer(buffer) {{
   try {{
-    if (!window.GIF) return false;
-    const gif = new window.GIF(buffer);
+    const gif = new window.GIF(arrayBuffer);
     const rawFrames = gif.decompressFrames(true);
     if (!rawFrames || rawFrames.length === 0) return false;
 
@@ -1448,9 +1674,9 @@ function buildFacesUI() {{
     btn.className = 'face-btn' + (isAct ? ' active' : '');
     btn.innerHTML = `<img src="${{f.src}}"><span>${{f.name}}</span>`;
     btn.onclick = () => {{
-      const curFace = getSelectedFace();
-      if (curFace) {{
-        curFace.faceIndex = idx;
+      const cFace = getSelectedFace();
+      if (cFace) {{
+        cFace.faceIndex = idx;
         syncControlsToSelectedFace();
         renderFaceLayersUI();
         draw();
@@ -1458,71 +1684,81 @@ function buildFacesUI() {{
     }};
     container.appendChild(btn);
   }});
-  const curFace = getSelectedFace();
-  if (curFace && faces[curFace.faceIndex]) {{
-    const avatarEl = document.getElementById('discordAvatar');
-    if (avatarEl) avatarEl.src = faces[curFace.faceIndex].src;
-  }}
 }}
 
 function setupEvents() {{
+  buildTemplatesUI();
+  buildFacesUI();
+  renderFaceLayersUI();
+  syncControlsToSelectedFace();
+  renderAccLayersUI();
+  renderTextLayersUI();
+
+  // Multi-face add layer
   const addFaceBtn = document.getElementById('addFaceLayerBtn');
   if (addFaceBtn) {{
-    addFaceBtn.onclick = () => addFaceLayer();
+    addFaceBtn.onclick = () => {{
+      const newLayer = makeFaceLayer(0, 20, -50, 0.9);
+      state.facesOnCanvas.push(newLayer);
+      state.selectedFaceIdx = state.facesOnCanvas.length - 1;
+      state.selectedAccIdx = -1;
+      state.selectedTextIdx = -1;
+      syncControlsToSelectedFace();
+      renderFaceLayersUI();
+      renderAccLayersUI();
+      renderTextLayersUI();
+      draw();
+    }};
   }}
 
-  document.getElementById('bgFileInput').onchange = (e) => {{
-    if (e.target.files && e.target.files[0]) {{
-      const file = e.target.files[0];
-      const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
+  // Background file input
+  const bgFileInput = document.getElementById('bgFileInput');
+  if (bgFileInput) {{
+    bgFileInput.onchange = async (e) => {{
+      if (e.target.files && e.target.files[0]) {{
+        const file = e.target.files[0];
+        const isGif = file.type === 'image/gif' || file.name.toLowerCase().endsWith('.gif');
+        document.querySelectorAll('#bgPresetsRow .preset-btn').forEach(b => b.classList.remove('active'));
 
-      if (isGif && window.GIF) {{
+        if (isGif) {{
+          const buffer = await file.arrayBuffer();
+          const ok = await parseAndLoadGif(buffer);
+          if (ok) {{
+            draw();
+            return;
+          }}
+        }}
+
         const reader = new FileReader();
         reader.onload = (evt) => {{
-          const ok = processGifBuffer(evt.target.result);
-          if (!ok) {{
-            loadAsStaticImage(file);
-          }} else {{
-            document.querySelectorAll('#bgPresetsRow .preset-btn').forEach(b => b.classList.remove('active'));
+          const img = new Image();
+          img.onload = () => {{
+            state.isBgGif = false;
+            state.bgGifFrames = [];
+            state.bgType = 'custom';
+            state.customBgImg = img;
+            updateCanvasDimensions(img.naturalWidth, img.naturalHeight);
             draw();
-          }}
+          }};
+          img.src = evt.target.result;
         }};
-        reader.readAsArrayBuffer(file);
-      }} else {{
-        loadAsStaticImage(file);
+        reader.readAsDataURL(file);
       }}
-    }}
-  }};
-
-  function loadAsStaticImage(file) {{
-    const reader = new FileReader();
-    reader.onload = (evt) => {{
-      const img = new Image();
-      img.onload = () => {{
-        state.isBgGif = false;
-        state.bgGifFrames = [];
-        state.customBgImg = img;
-        state.bgType = 'custom';
-        document.querySelectorAll('#bgPresetsRow .preset-btn').forEach(b => b.classList.remove('active'));
-        updateCanvasDimensions(img.naturalWidth, img.naturalHeight);
-        draw();
-      }};
-      img.src = evt.target.result;
     }};
-    reader.readAsDataURL(file);
   }}
 
-  // Canvas size mode buttons (True Size, Square, 16:9, 9:16)
+  // Canvas Size & Ratio buttons
   document.querySelectorAll('#canvasSizeGroup .btn-toggle').forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll('#canvasSizeGroup .btn-toggle').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.canvasSizeRatio = btn.dataset.size;
       updateCanvasDimensions();
+      draw();
     }};
   }});
 
-  // Background Fit mode buttons (Cover vs Fit)
+  // Background Fit Mode
   document.querySelectorAll('#bgFitGroup .btn-toggle').forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll('#bgFitGroup .btn-toggle').forEach(b => b.classList.remove('active'));
@@ -1532,7 +1768,7 @@ function setupEvents() {{
     }};
   }});
 
-  // Background zoom slider
+  // Background Zoom Slider
   const bgZoomSlider = document.getElementById('bgZoomSlider');
   if (bgZoomSlider) {{
     bgZoomSlider.oninput = (e) => {{
@@ -1542,7 +1778,7 @@ function setupEvents() {{
     }};
   }}
 
-  // Background Pan X and Pan Y sliders
+  // Background Pan Sliders
   const bgPanXSlider = document.getElementById('bgPanXSlider');
   if (bgPanXSlider) {{
     bgPanXSlider.oninput = (e) => {{
@@ -1620,25 +1856,187 @@ function setupEvents() {{
     }};
   }});
 
-  document.querySelectorAll('#accRow .acc-btn').forEach(btn => {{
-    btn.onclick = () => {{
-      const cur = getSelectedFace();
+  // Custom Accessory Upload
+  const accFileInput = document.getElementById('accFileInput');
+  if (accFileInput) {{
+    accFileInput.onchange = (e) => {{
+      if (e.target.files && e.target.files[0]) {{
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = (evt) => {{
+          const img = new Image();
+          img.onload = () => {{
+            const rawName = file.name.split('.')[0];
+            state.accessoriesOnCanvas.push({{
+              id: 'acc_' + Date.now(),
+              name: rawName.slice(0, 12),
+              img: img,
+              x: 0,
+              y: 0,
+              scale: 1.0,
+              rot: 0,
+              flipH: false,
+              flipV: false,
+              opacity: 1.0
+            }});
+            state.selectedAccIdx = state.accessoriesOnCanvas.length - 1;
+            state.selectedFaceIdx = -1;
+            state.selectedTextIdx = -1;
+            renderAccLayersUI();
+            renderFaceLayersUI();
+            renderTextLayersUI();
+            draw();
+          }};
+          img.src = evt.target.result;
+        }};
+        reader.readAsDataURL(file);
+      }}
+    }};
+  }}
+
+  // Accessory Controls
+  const accScale = document.getElementById('accScale');
+  if (accScale) {{
+    accScale.oninput = (e) => {{
+      const cur = getSelectedAcc();
       if (!cur) return;
-      const acc = btn.dataset.acc;
-      if (acc === 'shades') cur.accShades = !cur.accShades;
-      else if (acc === 'laser') cur.accLaser = !cur.accLaser;
-      else if (acc === 'crown') cur.accCrown = !cur.accCrown;
-      else if (acc === 'bubble') cur.accBubble = !cur.accBubble;
-      else if (acc === 'party') cur.accParty = !cur.accParty;
-      else if (acc === 'halo') cur.accHalo = !cur.accHalo;
-      else if (acc === 'horns') cur.accHorns = !cur.accHorns;
-      else if (acc === 'stache') cur.accStache = !cur.accStache;
-      btn.classList.toggle('active');
+      cur.scale = parseFloat(e.target.value);
+      document.getElementById('accScaleVal').innerText = Math.round(cur.scale * 100) + '%';
+      draw();
+    }};
+  }}
+
+  const accRot = document.getElementById('accRot');
+  if (accRot) {{
+    accRot.oninput = (e) => {{
+      const cur = getSelectedAcc();
+      if (!cur) return;
+      cur.rot = parseInt(e.target.value);
+      document.getElementById('accRotVal').innerText = cur.rot + '°';
+      draw();
+    }};
+  }}
+
+  const accFlipHBtn = document.getElementById('accFlipHBtn');
+  if (accFlipHBtn) {{
+    accFlipHBtn.onclick = () => {{
+      const cur = getSelectedAcc();
+      if (!cur) return;
+      cur.flipH = !cur.flipH;
+      accFlipHBtn.classList.toggle('active', cur.flipH);
+      draw();
+    }};
+  }}
+
+  const accFlipVBtn = document.getElementById('accFlipVBtn');
+  if (accFlipVBtn) {{
+    accFlipVBtn.onclick = () => {{
+      const cur = getSelectedAcc();
+      if (!cur) return;
+      cur.flipV = !cur.flipV;
+      accFlipVBtn.classList.toggle('active', cur.flipV);
+      draw();
+    }};
+  }}
+
+  const accOpacity = document.getElementById('accOpacity');
+  if (accOpacity) {{
+    accOpacity.oninput = (e) => {{
+      const cur = getSelectedAcc();
+      if (!cur) return;
+      cur.opacity = parseFloat(e.target.value);
+      document.getElementById('accOpacityVal').innerText = Math.round(cur.opacity * 100) + '%';
+      draw();
+    }};
+  }}
+
+  const deleteAccBtn = document.getElementById('deleteAccBtn');
+  if (deleteAccBtn) {{
+    deleteAccBtn.onclick = () => {{
+      if (state.selectedAccIdx >= 0) {{
+        deleteAcc(state.selectedAccIdx);
+      }}
+    }};
+  }}
+
+  // Custom Movable Text Buttons & Controls
+  const addMovableTextBtn = document.getElementById('addMovableTextBtn');
+  if (addMovableTextBtn) {{
+    addMovableTextBtn.onclick = () => {{
+      addMovableText('MEME TEXT', 0);
+    }};
+  }}
+
+  const addTopPresetTextBtn = document.getElementById('addTopPresetTextBtn');
+  if (addTopPresetTextBtn) {{
+    addTopPresetTextBtn.onclick = () => {{
+      addMovableText('TOP TEXT', -Math.round(canvas.height * 0.38));
+    }};
+  }}
+
+  const addBottomPresetTextBtn = document.getElementById('addBottomPresetTextBtn');
+  if (addBottomPresetTextBtn) {{
+    addBottomPresetTextBtn.onclick = () => {{
+      addMovableText('BOTTOM TEXT', Math.round(canvas.height * 0.38));
+    }};
+  }}
+
+  const activeTextInput = document.getElementById('activeTextInput');
+  if (activeTextInput) {{
+    activeTextInput.oninput = (e) => {{
+      const cur = getSelectedText();
+      if (!cur) return;
+      cur.text = e.target.value;
+      const title = document.getElementById('selectedTextTitle');
+      if (title) title.innerText = cur.text ? `"${{cur.text.slice(0, 10)}}${{cur.text.length > 10 ? '...' : ''}}"` : 'Text';
+      renderTextLayersUI();
+      draw();
+    }};
+  }}
+
+  const textSizeSlider = document.getElementById('textSizeSlider');
+  if (textSizeSlider) {{
+    textSizeSlider.oninput = (e) => {{
+      const cur = getSelectedText();
+      if (!cur) return;
+      cur.size = parseInt(e.target.value);
+      document.getElementById('textSizeVal').innerText = cur.size + 'px';
+      draw();
+    }};
+  }}
+
+  const textRotSlider = document.getElementById('textRotSlider');
+  if (textRotSlider) {{
+    textRotSlider.oninput = (e) => {{
+      const cur = getSelectedText();
+      if (!cur) return;
+      cur.rot = parseInt(e.target.value);
+      document.getElementById('textRotVal').innerText = cur.rot + '°';
+      draw();
+    }};
+  }}
+
+  document.querySelectorAll('#textColorGroup .btn-toggle').forEach(btn => {{
+    btn.onclick = () => {{
+      const cur = getSelectedText();
+      if (!cur) return;
+      document.querySelectorAll('#textColorGroup .btn-toggle').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      cur.color = btn.dataset.color;
       draw();
     }};
   }});
 
-  // Flip Horizontal & Vertical
+  const deleteTextBtn = document.getElementById('deleteTextBtn');
+  if (deleteTextBtn) {{
+    deleteTextBtn.onclick = () => {{
+      if (state.selectedTextIdx >= 0) {{
+        deleteText(state.selectedTextIdx);
+      }}
+    }};
+  }}
+
+  // Face Flip Horizontal & Vertical
   const flipHBtn = document.getElementById('flipHBtn');
   if (flipHBtn) {{
     flipHBtn.onclick = () => {{
@@ -1701,7 +2099,22 @@ function setupEvents() {{
     draw();
   }};
 
+  // Quick tools apply to active selected element (Text, Accessory, or Face!)
   document.getElementById('zoomInBtn').onclick = () => {{
+    if (state.selectedTextIdx >= 0 && state.textsOnCanvas[state.selectedTextIdx]) {{
+      const cur = state.textsOnCanvas[state.selectedTextIdx];
+      cur.size = Math.min(90, cur.size + 4);
+      syncControlsToSelectedText();
+      draw();
+      return;
+    }}
+    if (state.selectedAccIdx >= 0 && state.accessoriesOnCanvas[state.selectedAccIdx]) {{
+      const cur = state.accessoriesOnCanvas[state.selectedAccIdx];
+      cur.scale = Math.min(3.0, cur.scale + 0.15);
+      syncControlsToSelectedAcc();
+      draw();
+      return;
+    }}
     const cur = getSelectedFace();
     if (!cur) return;
     cur.scale = Math.min(2.5, cur.scale + 0.15);
@@ -1711,6 +2124,20 @@ function setupEvents() {{
   }};
 
   document.getElementById('zoomOutBtn').onclick = () => {{
+    if (state.selectedTextIdx >= 0 && state.textsOnCanvas[state.selectedTextIdx]) {{
+      const cur = state.textsOnCanvas[state.selectedTextIdx];
+      cur.size = Math.max(14, cur.size - 4);
+      syncControlsToSelectedText();
+      draw();
+      return;
+    }}
+    if (state.selectedAccIdx >= 0 && state.accessoriesOnCanvas[state.selectedAccIdx]) {{
+      const cur = state.accessoriesOnCanvas[state.selectedAccIdx];
+      cur.scale = Math.max(0.1, cur.scale - 0.15);
+      syncControlsToSelectedAcc();
+      draw();
+      return;
+    }}
     const cur = getSelectedFace();
     if (!cur) return;
     cur.scale = Math.max(0.3, cur.scale - 0.15);
@@ -1720,6 +2147,20 @@ function setupEvents() {{
   }};
 
   document.getElementById('rotLeftBtn').onclick = () => {{
+    if (state.selectedTextIdx >= 0 && state.textsOnCanvas[state.selectedTextIdx]) {{
+      const cur = state.textsOnCanvas[state.selectedTextIdx];
+      cur.rot = (cur.rot - 15) % 360;
+      syncControlsToSelectedText();
+      draw();
+      return;
+    }}
+    if (state.selectedAccIdx >= 0 && state.accessoriesOnCanvas[state.selectedAccIdx]) {{
+      const cur = state.accessoriesOnCanvas[state.selectedAccIdx];
+      cur.rot = (cur.rot - 15) % 360;
+      syncControlsToSelectedAcc();
+      draw();
+      return;
+    }}
     const cur = getSelectedFace();
     if (!cur) return;
     cur.rot = (cur.rot - 15) % 360;
@@ -1729,6 +2170,20 @@ function setupEvents() {{
   }};
 
   document.getElementById('rotRightBtn').onclick = () => {{
+    if (state.selectedTextIdx >= 0 && state.textsOnCanvas[state.selectedTextIdx]) {{
+      const cur = state.textsOnCanvas[state.selectedTextIdx];
+      cur.rot = (cur.rot + 15) % 360;
+      syncControlsToSelectedText();
+      draw();
+      return;
+    }}
+    if (state.selectedAccIdx >= 0 && state.accessoriesOnCanvas[state.selectedAccIdx]) {{
+      const cur = state.accessoriesOnCanvas[state.selectedAccIdx];
+      cur.rot = (cur.rot + 15) % 360;
+      syncControlsToSelectedAcc();
+      draw();
+      return;
+    }}
     const cur = getSelectedFace();
     if (!cur) return;
     cur.rot = (cur.rot + 15) % 360;
@@ -1738,6 +2193,20 @@ function setupEvents() {{
   }};
 
   document.getElementById('recenterBtn').onclick = () => {{
+    if (state.selectedTextIdx >= 0 && state.textsOnCanvas[state.selectedTextIdx]) {{
+      const cur = state.textsOnCanvas[state.selectedTextIdx];
+      cur.x = 0; cur.y = 0; cur.rot = 0;
+      syncControlsToSelectedText();
+      draw();
+      return;
+    }}
+    if (state.selectedAccIdx >= 0 && state.accessoriesOnCanvas[state.selectedAccIdx]) {{
+      const cur = state.accessoriesOnCanvas[state.selectedAccIdx];
+      cur.x = 0; cur.y = 0; cur.rot = 0;
+      syncControlsToSelectedAcc();
+      draw();
+      return;
+    }}
     const cur = getSelectedFace();
     if (!cur) return;
     cur.x = 0;
@@ -1752,9 +2221,23 @@ function setupEvents() {{
 
   canvas.addEventListener('wheel', (e) => {{
     e.preventDefault();
+    const delta = e.deltaY < 0 ? 0.05 : -0.05;
+    if (state.selectedTextIdx >= 0 && state.textsOnCanvas[state.selectedTextIdx]) {{
+      const cur = state.textsOnCanvas[state.selectedTextIdx];
+      cur.size = Math.max(14, Math.min(90, cur.size + (e.deltaY < 0 ? 2 : -2)));
+      syncControlsToSelectedText();
+      draw();
+      return;
+    }}
+    if (state.selectedAccIdx >= 0 && state.accessoriesOnCanvas[state.selectedAccIdx]) {{
+      const cur = state.accessoriesOnCanvas[state.selectedAccIdx];
+      cur.scale = Math.max(0.1, Math.min(3.0, cur.scale + delta));
+      syncControlsToSelectedAcc();
+      draw();
+      return;
+    }}
     const cur = getSelectedFace();
     if (!cur) return;
-    const delta = e.deltaY < 0 ? 0.05 : -0.05;
     cur.scale = Math.max(0.3, Math.min(2.5, cur.scale + delta));
     document.getElementById('faceScale').value = cur.scale;
     document.getElementById('sizeVal').innerText = Math.round(cur.scale * 100) + '%';
@@ -1769,35 +2252,6 @@ function setupEvents() {{
       state.frame = 0;
       state.totalFrames = state.anim === 'none' ? 1 : (state.anim === 'petpet' ? 8 : (state.anim === 'disco' ? 16 : 12));
       state.fps = state.anim === 'petpet' ? 14 : 12;
-      draw();
-    }};
-  }});
-
-  const topInput = document.getElementById('memeCaptionTop');
-  if (topInput) {{
-    topInput.oninput = (e) => {{
-      state.topCaption = e.target.value;
-      const displayTxt = state.topCaption || state.bottomCaption || 'Look at this new meme sticker! 💀';
-      document.getElementById('discordMsgText').innerText = displayTxt;
-      draw();
-    }};
-  }}
-
-  const bottomInput = document.getElementById('memeCaptionBottom');
-  if (bottomInput) {{
-    bottomInput.oninput = (e) => {{
-      state.bottomCaption = e.target.value;
-      const displayTxt = state.topCaption || state.bottomCaption || 'Look at this new meme sticker! 💀';
-      document.getElementById('discordMsgText').innerText = displayTxt;
-      draw();
-    }};
-  }}
-
-  document.querySelectorAll('#captionColorGroup .btn-toggle').forEach(btn => {{
-    btn.onclick = () => {{
-      document.querySelectorAll('#captionColorGroup .btn-toggle').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      state.captionColor = btn.dataset.color;
       draw();
     }};
   }});
@@ -1827,7 +2281,9 @@ function setupEvents() {{
   if (copyBtn) copyBtn.onclick = copyToClipboard;
 }}
 
-// REAL-TIME MOUSE DRAG & DROP FOR MURAD'S FACE
+// -------------------------------------------------------------
+// REAL-TIME MOUSE / TOUCH DRAG & DROP FOR FACES, STICKERS & TEXT
+// -------------------------------------------------------------
 function setupDragging() {{
   function getCanvasPos(e) {{
     const rect = canvas.getBoundingClientRect();
@@ -1839,6 +2295,58 @@ function setupDragging() {{
       x: (clientX - rect.left) * scaleX,
       y: (clientY - rect.top) * scaleY
     }};
+  }}
+
+  function findTextAt(canvasX, canvasY, w, h) {{
+    for (let i = state.textsOnCanvas.length - 1; i >= 0; i--) {{
+      const t = state.textsOnCanvas[i];
+      if (!t.text) continue;
+      const cx = w/2 + t.x;
+      const cy = h/2 + t.y;
+      const dx = canvasX - cx;
+      const dy = canvasY - cy;
+      const angle = -(t.rot * Math.PI / 180);
+      const rx = dx * Math.cos(angle) - dy * Math.sin(angle);
+      const ry = dx * Math.sin(angle) + dy * Math.cos(angle);
+
+      ctx.save();
+      ctx.font = `900 ${{t.size}}px Impact, sans-serif`;
+      const tw = ctx.measureText(t.text).width;
+      ctx.restore();
+      const th = t.size * 1.1;
+
+      if (Math.abs(rx) <= tw/2 + 12 && Math.abs(ry) <= th/2 + 12) {{
+        return i;
+      }}
+    }}
+    return -1;
+  }}
+
+  function findAccAt(canvasX, canvasY, w, h) {{
+    for (let i = state.accessoriesOnCanvas.length - 1; i >= 0; i--) {{
+      const acc = state.accessoriesOnCanvas[i];
+      const img = acc.img;
+      if (!img || !img.complete || img.naturalWidth === 0) continue;
+      const cx = w/2 + acc.x;
+      const cy = h/2 + acc.y;
+      const baseSize = w * 0.35;
+      const aspect = (img.naturalWidth || 1) / (img.naturalHeight || 1);
+      let aw = aspect >= 1 ? baseSize : baseSize * aspect;
+      let ah = aspect >= 1 ? baseSize / aspect : baseSize;
+      aw *= acc.scale;
+      ah *= acc.scale;
+
+      const dx = canvasX - cx;
+      const dy = canvasY - cy;
+      const angle = -(acc.rot * Math.PI / 180);
+      const rx = dx * Math.cos(angle) - dy * Math.sin(angle);
+      const ry = dx * Math.sin(angle) + dy * Math.cos(angle);
+
+      if (Math.abs(rx) <= aw/2 + 10 && Math.abs(ry) <= ah/2 + 10) {{
+        return i;
+      }}
+    }}
+    return -1;
   }}
 
   function findFaceAt(canvasX, canvasY, w, h) {{
@@ -1879,39 +2387,108 @@ function setupDragging() {{
 
   function onPointerDown(e) {{
     const pos = getCanvasPos(e);
-    const hitIdx = findFaceAt(pos.x, pos.y, canvas.width, canvas.height);
-    if (hitIdx !== -1) {{
-      state.selectedFaceIdx = hitIdx;
-      syncControlsToSelectedFace();
-      renderFaceLayersUI();
-    }}
-    const cur = getSelectedFace();
-    if (cur) {{
+
+    // 1. Check text first (topmost)
+    const hitText = findTextAt(pos.x, pos.y, canvas.width, canvas.height);
+    if (hitText !== -1) {{
+      state.selectedTextIdx = hitText;
+      state.selectedAccIdx = -1;
+      state.selectedFaceIdx = -1;
+      state.dragTarget = {{ type: 'text', idx: hitText }};
       state.isDragging = true;
       state.dragStartX = pos.x;
       state.dragStartY = pos.y;
-      state.initialFaceX = cur.x;
-      state.initialFaceY = cur.y;
+      state.initialTargetX = state.textsOnCanvas[hitText].x;
+      state.initialTargetY = state.textsOnCanvas[hitText].y;
+      renderTextLayersUI();
+      syncControlsToSelectedText();
+      renderFaceLayersUI();
+      renderAccLayersUI();
       draw();
+      return;
     }}
+
+    // 2. Check accessory second
+    const hitAcc = findAccAt(pos.x, pos.y, canvas.width, canvas.height);
+    if (hitAcc !== -1) {{
+      state.selectedAccIdx = hitAcc;
+      state.selectedTextIdx = -1;
+      state.selectedFaceIdx = -1;
+      state.dragTarget = {{ type: 'acc', idx: hitAcc }};
+      state.isDragging = true;
+      state.dragStartX = pos.x;
+      state.dragStartY = pos.y;
+      state.initialTargetX = state.accessoriesOnCanvas[hitAcc].x;
+      state.initialTargetY = state.accessoriesOnCanvas[hitAcc].y;
+      renderAccLayersUI();
+      syncControlsToSelectedAcc();
+      renderFaceLayersUI();
+      renderTextLayersUI();
+      draw();
+      return;
+    }}
+
+    // 3. Check face third
+    const hitFace = findFaceAt(pos.x, pos.y, canvas.width, canvas.height);
+    if (hitFace !== -1) {{
+      state.selectedFaceIdx = hitFace;
+      state.selectedAccIdx = -1;
+      state.selectedTextIdx = -1;
+      state.dragTarget = {{ type: 'face', idx: hitFace }};
+      state.isDragging = true;
+      state.dragStartX = pos.x;
+      state.dragStartY = pos.y;
+      state.initialTargetX = state.facesOnCanvas[hitFace].x;
+      state.initialTargetY = state.facesOnCanvas[hitFace].y;
+      renderFaceLayersUI();
+      syncControlsToSelectedFace();
+      renderAccLayersUI();
+      renderTextLayersUI();
+      draw();
+      return;
+    }}
+
+    // Clicked empty area
+    state.isDragging = false;
+    state.dragTarget = null;
+    draw();
   }}
 
   function onPointerMove(e) {{
-    if (!state.isDragging) return;
+    if (!state.isDragging || !state.dragTarget) return;
     if (e.cancelable) e.preventDefault();
-    const cur = getSelectedFace();
-    if (!cur) return;
     const pos = getCanvasPos(e);
     const dx = pos.x - state.dragStartX;
     const dy = pos.y - state.dragStartY;
-    cur.x = Math.round(state.initialFaceX + dx);
-    cur.y = Math.round(state.initialFaceY + dy);
-    draw();
+
+    if (state.dragTarget.type === 'text') {{
+      const item = state.textsOnCanvas[state.dragTarget.idx];
+      if (item) {{
+        item.x = Math.round(state.initialTargetX + dx);
+        item.y = Math.round(state.initialTargetY + dy);
+        draw();
+      }}
+    }} else if (state.dragTarget.type === 'acc') {{
+      const item = state.accessoriesOnCanvas[state.dragTarget.idx];
+      if (item) {{
+        item.x = Math.round(state.initialTargetX + dx);
+        item.y = Math.round(state.initialTargetY + dy);
+        draw();
+      }}
+    }} else if (state.dragTarget.type === 'face') {{
+      const item = state.facesOnCanvas[state.dragTarget.idx];
+      if (item) {{
+        item.x = Math.round(state.initialTargetX + dx);
+        item.y = Math.round(state.initialTargetY + dy);
+        draw();
+      }}
+    }}
   }}
 
   function onPointerUp() {{
     if (state.isDragging) {{
       state.isDragging = false;
+      state.dragTarget = null;
       draw();
     }}
   }}
@@ -1949,102 +2526,125 @@ function drawBackground(tCtx, w, h) {{
     }}
   }}
 
-  if (!source || !srcW || !srcH) {{
-    tCtx.fillStyle = '#1e1f22';
+  if (!source) {{
+    const grad = tCtx.createRadialGradient(w/2, h/2, 40, w/2, h/2, Math.max(w, h));
+    grad.addColorStop(0, '#2b2d31');
+    grad.addColorStop(1, '#111214');
+    tCtx.fillStyle = grad;
     tCtx.fillRect(0, 0, w, h);
     return;
   }}
 
-  let baseScale = 1;
-  if (state.bgFitMode === 'fit') {{
-    baseScale = Math.min(w / srcW, h / srcH);
+  tCtx.fillStyle = '#0a0a0c';
+  tCtx.fillRect(0, 0, w, h);
+
+  let drawW = w;
+  let drawH = h;
+  let drawX = 0;
+  let drawY = 0;
+
+  const canvasAspect = w / h;
+  const srcAspect = srcW / srcH;
+
+  if (state.bgFitMode === 'cover') {{
+    if (srcAspect > canvasAspect) {{
+      drawH = h;
+      drawW = h * srcAspect;
+      drawX = (w - drawW) / 2;
+    }} else {{
+      drawW = w;
+      drawH = w / srcAspect;
+      drawY = (h - drawH) / 2;
+    }}
   }} else {{
-    baseScale = Math.max(w / srcW, h / srcH);
+    if (srcAspect > canvasAspect) {{
+      drawW = w;
+      drawH = w / srcAspect;
+      drawY = (h - drawH) / 2;
+    }} else {{
+      drawH = h;
+      drawW = h * srcAspect;
+      drawX = (w - drawW) / 2;
+    }}
   }}
 
-  const finalScale = baseScale * state.bgScale;
-  const dw = srcW * finalScale;
-  const dh = srcH * finalScale;
-  const dx = (w - dw) / 2 + state.bgPanX;
-  const dy = (h - dh) / 2 + state.bgPanY;
-
-  tCtx.fillStyle = '#111214';
-  tCtx.fillRect(0, 0, w, h);
-  tCtx.drawImage(source, dx, dy, dw, dh);
+  tCtx.save();
+  tCtx.translate(w / 2 + state.bgPanX, h / 2 + state.bgPanY);
+  tCtx.scale(state.bgScale, state.bgScale);
+  tCtx.drawImage(source, drawX - w/2, drawY - h/2, drawW, drawH);
+  tCtx.restore();
 }}
 
+// -------------------------------------------------------------
+// MAIN RENDER PIPELINE
+// -------------------------------------------------------------
 function render(tCtx, w, h, frameIdx) {{
   tCtx.clearRect(0, 0, w, h);
+
+  // 1. Background
   drawBackground(tCtx, w, h);
 
-  let ax = 0, ay = 0, as = 1.0, ar = 0;
+  // Animation transforms
+  let animOffsetX = 0;
+  let animOffsetY = 0;
+  let animScale = 1.0;
+  let animRot = 0;
+
   const progress = (frameIdx / state.totalFrames) * Math.PI * 2;
+
   if (state.anim === 'bob') {{
-    ay = Math.sin(progress) * 14;
-    ar = Math.cos(progress) * 0.08;
+    animOffsetY = Math.sin(progress) * 14;
   }} else if (state.anim === 'shake') {{
-    ax = (Math.random() - 0.5) * 12;
-    ay = (Math.random() - 0.5) * 12;
+    animOffsetX = (Math.random() - 0.5) * 12;
+    animOffsetY = (Math.random() - 0.5) * 12;
   }} else if (state.anim === 'spin') {{
-    ar = (frameIdx / state.totalFrames) * Math.PI * 2;
+    animRot = (frameIdx / state.totalFrames) * 360;
   }} else if (state.anim === 'zoom') {{
-    as = 1 + Math.sin(progress) * 0.18;
-  }} else if (state.anim === 'petpet') {{
-    const squish = Math.sin((frameIdx % 5) / 5 * Math.PI);
-    as = 1 - squish * 0.2;
-    ay = squish * 12;
+    animScale = 1.0 + Math.sin(progress) * 0.16;
   }} else if (state.anim === 'pulse') {{
-    as = 1 + Math.sin(progress) * 0.22;
+    animScale = 1.0 + Math.abs(Math.sin(progress * 2)) * 0.14;
   }} else if (state.anim === 'wobble') {{
-    ax = Math.sin(progress) * 14;
-    ar = Math.cos(progress) * 0.18;
-  }} else if (state.anim === 'disco') {{
-    ay = Math.sin(progress * 2) * 8;
+    animRot = Math.sin(progress) * 18;
+    animOffsetY = Math.cos(progress) * 8;
   }}
 
-  // Draw all Face Layers (from bottom to top)
-  state.facesOnCanvas.forEach((fLayer, fIdx) => {{
+  // 2. Render each face layer
+  state.facesOnCanvas.forEach((fLayer, idx) => {{
     const faceImg = loadedFaces[fLayer.faceIndex];
     if (!faceImg || !faceImg.complete) return;
-    const isSelected = fIdx === state.selectedFaceIdx;
 
     tCtx.save();
-    const cx = w/2 + fLayer.x + ax;
-    const cy = h/2 + fLayer.y + ay;
+    const cx = w/2 + fLayer.x + animOffsetX;
+    const cy = h/2 + fLayer.y + animOffsetY;
     tCtx.translate(cx, cy);
-    tCtx.rotate((fLayer.rot * Math.PI / 180) + ar);
-    const scaleX = (fLayer.flipH ? -1 : 1) * fLayer.scale * as;
-    const scaleY = (fLayer.flipV ? -1 : 1) * fLayer.scale * as;
-    tCtx.scale(scaleX, scaleY);
+    tCtx.rotate((fLayer.rot + animRot) * Math.PI / 180);
+    tCtx.scale((fLayer.flipH ? -1 : 1) * animScale, (fLayer.flipV ? -1 : 1) * animScale);
     tCtx.globalAlpha = fLayer.opacity !== undefined ? fLayer.opacity : 1.0;
 
-    if (fLayer.filter === 'grayscale') {{
-      tCtx.filter = 'grayscale(100%)';
+    if (fLayer.filter === 'bw') {{
+      tCtx.filter = 'grayscale(100%) contrast(120%)';
     }} else if (fLayer.filter === 'deepfried') {{
-      tCtx.filter = 'contrast(220%) saturate(320%)';
+      tCtx.filter = 'contrast(240%) saturate(300%) brightness(110%)';
     }} else if (fLayer.filter === 'invert') {{
       tCtx.filter = 'invert(100%)';
+    }} else {{
+      tCtx.filter = 'none';
     }}
 
     const baseSize = w * 0.44;
     const fAspect = (faceImg.naturalWidth || faceImg.width) / (faceImg.naturalHeight || faceImg.height);
-    let fw, fh;
-    if (fAspect >= 1) {{
-      fw = baseSize;
-      fh = baseSize / fAspect;
-    }} else {{
-      fh = baseSize;
-      fw = baseSize * fAspect;
-    }}
+    let fw = fAspect >= 1 ? baseSize : baseSize * fAspect;
+    let fh = fAspect >= 1 ? baseSize / fAspect : baseSize;
+    fw *= fLayer.scale;
+    fh *= fLayer.scale;
 
     if (fLayer.mask === 'circle') {{
       tCtx.shadowColor = 'rgba(0, 0, 0, 0.45)';
       tCtx.shadowBlur = 16;
       tCtx.shadowOffsetX = 0;
       tCtx.shadowOffsetY = 6;
-      const rad = Math.min(fw, fh) / 2;
       tCtx.beginPath();
-      tCtx.arc(0, 0, rad, 0, Math.PI * 2);
+      tCtx.arc(0, 0, Math.min(fw, fh) * 0.5, 0, Math.PI * 2);
       tCtx.save();
       tCtx.clip();
       tCtx.drawImage(faceImg, -fw/2, -fh/2, fw, fh);
@@ -2067,15 +2667,14 @@ function render(tCtx, w, h, frameIdx) {{
       tCtx.lineWidth = 4;
       tCtx.stroke();
     }} else {{
-      // Full Frame (True natural aspect ratio, completely uncropped!)
+      // Full Frame (True natural aspect ratio)
       tCtx.drawImage(faceImg, -fw/2, -fh/2, fw, fh);
     }}
 
-    // Reset filters and opacity for accessories & selection ring
     tCtx.filter = 'none';
     tCtx.globalAlpha = 1.0;
 
-    // Selection ring indicator if selected and (dragging or multiple faces)
+    const isSelected = (idx === state.selectedFaceIdx && state.selectedAccIdx === -1 && state.selectedTextIdx === -1);
     if (isSelected && (state.isDragging || state.facesOnCanvas.length > 1)) {{
       tCtx.save();
       tCtx.strokeStyle = '#5865F2';
@@ -2094,145 +2693,6 @@ function render(tCtx, w, h, frameIdx) {{
       tCtx.shadowColor = `hsl(${{hue}}, 100%, 55%)`;
       tCtx.shadowBlur = 18;
       tCtx.strokeRect(-fw/2 - 4, -fh/2 - 4, fw + 8, fh + 8);
-      tCtx.restore();
-    }}
-
-    // 1. Thug Shades
-    if (fLayer.accShades) {{
-      tCtx.fillStyle = '#000000';
-      tCtx.fillRect(-fw*0.35, -fh*0.12, fw*0.32, fh*0.14);
-      tCtx.fillRect(fw*0.03, -fh*0.12, fw*0.32, fh*0.14);
-      tCtx.fillRect(-fw*0.05, -fh*0.08, fw*0.1, 4);
-      tCtx.fillStyle = 'rgba(255,255,255,0.4)';
-      tCtx.fillRect(-fw*0.3, -fh*0.1, 4, 6);
-      tCtx.fillRect(fw*0.08, -fh*0.1, 4, 6);
-    }}
-
-    // 2. Laser Eyes
-    if (fLayer.accLaser) {{
-      const eye1X = -fw*0.15, eye2X = fw*0.15, eyeY = -fh*0.06;
-      [eye1X, eye2X].forEach(ex => {{
-        const rad = tCtx.createRadialGradient(ex, eyeY, 2, ex, eyeY, 25);
-        rad.addColorStop(0, '#ffffff'); rad.addColorStop(0.3, '#ff003b'); rad.addColorStop(1, 'transparent');
-        tCtx.fillStyle = rad;
-        tCtx.beginPath(); tCtx.arc(ex, eyeY, 25, 0, Math.PI*2); tCtx.fill();
-        tCtx.strokeStyle = '#ff003b'; tCtx.lineWidth = 4;
-        tCtx.beginPath(); tCtx.moveTo(ex, eyeY); tCtx.lineTo(ex > 0 ? ex + 120 : ex - 120, h*0.5); tCtx.stroke();
-      }});
-    }}
-
-    // 3. Gold Crown
-    if (fLayer.accCrown) {{
-      tCtx.fillStyle = '#eab308';
-      tCtx.strokeStyle = '#a16207';
-      tCtx.lineWidth = 2;
-      tCtx.beginPath();
-      tCtx.moveTo(-fw*0.35, -fh*0.36);
-      tCtx.lineTo(-fw*0.38, -fh*0.55);
-      tCtx.lineTo(-fw*0.18, -fh*0.44);
-      tCtx.lineTo(0, -fh*0.62);
-      tCtx.lineTo(fw*0.18, -fh*0.44);
-      tCtx.lineTo(fw*0.38, -fh*0.55);
-      tCtx.lineTo(fw*0.35, -fh*0.36);
-      tCtx.closePath();
-      tCtx.fill(); tCtx.stroke();
-      tCtx.fillStyle = '#ef4444';
-      tCtx.beginPath(); tCtx.arc(0, -fh*0.46, 5, 0, Math.PI*2); tCtx.fill();
-    }}
-
-    // 4. Speech Bubble
-    if (fLayer.accBubble) {{
-      tCtx.save();
-      tCtx.fillStyle = '#ffffff';
-      tCtx.strokeStyle = '#000000';
-      tCtx.lineWidth = 2;
-      tCtx.beginPath();
-      tCtx.roundRect(fw*0.25, -fh*0.6, 90, 36, 8);
-      tCtx.fill(); tCtx.stroke();
-      tCtx.beginPath();
-      tCtx.moveTo(fw*0.25, -fh*0.4);
-      tCtx.lineTo(fw*0.15, -fh*0.3);
-      tCtx.lineTo(fw*0.35, -fh*0.35);
-      tCtx.closePath();
-      tCtx.fill(); tCtx.stroke();
-      tCtx.font = '700 11px sans-serif';
-      tCtx.fillStyle = '#000000';
-      const bubbleName = (faces[fLayer.faceIndex]?.name || 'MURAD').split(' ')[0].toUpperCase();
-      tCtx.fillText(`${{bubbleName}}! 💀`, fw*0.25 + 10, -fh*0.6 + 22);
-      tCtx.restore();
-    }}
-
-    // 5. Party Hat
-    if (fLayer.accParty) {{
-      tCtx.save();
-      tCtx.beginPath();
-      tCtx.moveTo(0, -fh*0.82);
-      tCtx.lineTo(-fw*0.26, -fh*0.42);
-      tCtx.lineTo(fw*0.26, -fh*0.42);
-      tCtx.closePath();
-      tCtx.fillStyle = '#f43f5e';
-      tCtx.fill();
-      tCtx.strokeStyle = '#facc15';
-      tCtx.lineWidth = 4;
-      tCtx.beginPath();
-      tCtx.moveTo(-fw*0.13, -fh*0.64);
-      tCtx.lineTo(fw*0.13, -fh*0.64);
-      tCtx.moveTo(-fw*0.21, -fh*0.49);
-      tCtx.lineTo(fw*0.21, -fh*0.49);
-      tCtx.stroke();
-      tCtx.fillStyle = '#facc15';
-      tCtx.beginPath();
-      tCtx.arc(0, -fh*0.83, 7, 0, Math.PI*2);
-      tCtx.fill();
-      tCtx.restore();
-    }}
-
-    // 6. Angel Halo
-    if (fLayer.accHalo) {{
-      tCtx.save();
-      tCtx.strokeStyle = '#facc15';
-      tCtx.lineWidth = 5;
-      tCtx.shadowColor = '#facc15';
-      tCtx.shadowBlur = 14;
-      tCtx.beginPath();
-      tCtx.ellipse(0, -fh*0.58, fw*0.35, fh*0.11, 0, 0, Math.PI*2);
-      tCtx.stroke();
-      tCtx.restore();
-    }}
-
-    // 7. Devil Horns
-    if (fLayer.accHorns) {{
-      tCtx.save();
-      tCtx.fillStyle = '#ef4444';
-      tCtx.strokeStyle = '#991b1b';
-      tCtx.lineWidth = 2;
-      tCtx.beginPath();
-      tCtx.moveTo(-fw*0.24, -fh*0.38);
-      tCtx.quadraticCurveTo(-fw*0.38, -fh*0.65, -fw*0.46, -fh*0.7);
-      tCtx.quadraticCurveTo(-fw*0.26, -fh*0.58, -fw*0.14, -fh*0.4);
-      tCtx.closePath();
-      tCtx.fill(); tCtx.stroke();
-      tCtx.beginPath();
-      tCtx.moveTo(fw*0.24, -fh*0.38);
-      tCtx.quadraticCurveTo(fw*0.38, -fh*0.65, fw*0.46, -fh*0.7);
-      tCtx.quadraticCurveTo(fw*0.26, -fh*0.58, fw*0.14, -fh*0.4);
-      tCtx.closePath();
-      tCtx.fill(); tCtx.stroke();
-      tCtx.restore();
-    }}
-
-    // 8. Mustache
-    if (fLayer.accStache) {{
-      tCtx.save();
-      tCtx.fillStyle = '#1c1917';
-      tCtx.beginPath();
-      tCtx.moveTo(0, fh*0.12);
-      tCtx.quadraticCurveTo(-fw*0.18, fh*0.06, -fw*0.32, fh*0.2);
-      tCtx.quadraticCurveTo(-fw*0.18, fh*0.22, 0, fh*0.16);
-      tCtx.quadraticCurveTo(fw*0.18, fh*0.22, fw*0.32, fh*0.2);
-      tCtx.quadraticCurveTo(fw*0.18, fh*0.06, 0, fh*0.12);
-      tCtx.closePath();
-      tCtx.fill();
       tCtx.restore();
     }}
 
@@ -2263,35 +2723,63 @@ function render(tCtx, w, h, frameIdx) {{
     tCtx.restore();
   }}
 
-  // Top Caption text
-  if (state.topCaption && state.topCaption.trim()) {{
+  // 3. Render Custom User Accessories & Stickers
+  state.accessoriesOnCanvas.forEach((acc, aIdx) => {{
+    const img = acc.img;
+    if (!img || !img.complete || img.naturalWidth === 0) return;
     tCtx.save();
-    tCtx.font = `900 ${{Math.max(16, Math.floor(w*0.08))}}px Impact, sans-serif`;
-    tCtx.textAlign = 'center';
-    tCtx.textBaseline = 'top';
-    tCtx.fillStyle = state.captionColor || '#ffffff';
-    tCtx.strokeStyle = '#000000';
-    tCtx.lineWidth = Math.max(4, Math.floor(w*0.02));
-    const txt = state.topCaption.toUpperCase();
-    tCtx.strokeText(txt, w/2, 12, w-20);
-    tCtx.fillText(txt, w/2, 12, w-20);
-    tCtx.restore();
-  }}
+    tCtx.translate(w/2 + acc.x, h/2 + acc.y);
+    tCtx.rotate(acc.rot * Math.PI / 180);
+    tCtx.scale(acc.flipH ? -1 : 1, acc.flipV ? -1 : 1);
+    tCtx.globalAlpha = acc.opacity !== undefined ? acc.opacity : 1.0;
 
-  // Bottom Caption text
-  if (state.bottomCaption && state.bottomCaption.trim()) {{
-    tCtx.save();
-    tCtx.font = `900 ${{Math.max(16, Math.floor(w*0.08))}}px Impact, sans-serif`;
-    tCtx.textAlign = 'center';
-    tCtx.textBaseline = 'bottom';
-    tCtx.fillStyle = state.captionColor || '#ffffff';
-    tCtx.strokeStyle = '#000000';
-    tCtx.lineWidth = Math.max(4, Math.floor(w*0.02));
-    const txt = state.bottomCaption.toUpperCase();
-    tCtx.strokeText(txt, w/2, h-12, w-20);
-    tCtx.fillText(txt, w/2, h-12, w-20);
+    const baseSize = w * 0.35;
+    const aspect = (img.naturalWidth || 1) / (img.naturalHeight || 1);
+    let aw = aspect >= 1 ? baseSize : baseSize * aspect;
+    let ah = aspect >= 1 ? baseSize / aspect : baseSize;
+    aw *= acc.scale;
+    ah *= acc.scale;
+
+    tCtx.drawImage(img, -aw/2, -ah/2, aw, ah);
+
+    // Dashed selection box
+    if (aIdx === state.selectedAccIdx) {{
+      tCtx.strokeStyle = '#5865F2';
+      tCtx.lineWidth = 2;
+      tCtx.setLineDash([4, 4]);
+      tCtx.strokeRect(-aw/2 - 4, -ah/2 - 4, aw + 8, ah + 8);
+    }}
     tCtx.restore();
-  }}
+  }});
+
+  // 4. Render Custom Movable Text Layers
+  state.textsOnCanvas.forEach((txtItem, tIdx) => {{
+    if (!txtItem.text || !txtItem.text.trim()) return;
+    tCtx.save();
+    tCtx.translate(w/2 + txtItem.x, h/2 + txtItem.y);
+    tCtx.rotate(txtItem.rot * Math.PI / 180);
+    tCtx.font = `900 ${{txtItem.size}}px Impact, sans-serif`;
+    tCtx.textAlign = 'center';
+    tCtx.textBaseline = 'middle';
+    tCtx.lineJoin = 'round';
+    tCtx.lineWidth = Math.max(3, Math.round(txtItem.size * 0.12));
+    tCtx.strokeStyle = txtItem.strokeColor || '#000000';
+    tCtx.strokeText(txtItem.text, 0, 0);
+    tCtx.fillStyle = txtItem.color || '#ffffff';
+    tCtx.fillText(txtItem.text, 0, 0);
+
+    // Dashed selection box
+    if (tIdx === state.selectedTextIdx) {{
+      const textMetrics = tCtx.measureText(txtItem.text);
+      const tw = textMetrics.width;
+      const th = txtItem.size * 1.1;
+      tCtx.strokeStyle = '#5865F2';
+      tCtx.lineWidth = 2;
+      tCtx.setLineDash([4, 4]);
+      tCtx.strokeRect(-tw/2 - 6, -th/2 - 4, tw + 12, th + 8);
+    }}
+    tCtx.restore();
+  }});
 }}
 
 function draw() {{
@@ -2369,77 +2857,69 @@ function exportGif() {{
   const txt = document.getElementById('progressText');
   wrap.style.display = 'block';
   bar.style.width = '10%';
-  txt.innerText = 'Capturing GIF frames...';
+  txt.innerText = 'Preparing GIF frames...';
 
-  const maxExp = 320;
-  const aspect = canvas.width / canvas.height;
-  let expW, expH;
-  if (aspect >= 1) {{
-    expW = maxExp;
-    expH = Math.round(maxExp / aspect);
-  }} else {{
-    expH = maxExp;
-    expW = Math.round(maxExp * aspect);
+  const exportW = canvas.width;
+  const exportH = canvas.height;
+  const tempCanvas = document.createElement('canvas');
+  tempCanvas.width = exportW;
+  tempCanvas.height = exportH;
+  const tempCtx = tempCanvas.getContext('2d');
+
+  let framesToCapture = state.anim === 'none' ? 12 : state.totalFrames;
+  if (state.isBgGif && state.bgGifFrames.length > 0) {{
+    framesToCapture = Math.max(framesToCapture, Math.min(24, state.bgGifFrames.length));
   }}
 
-  const offscreen = document.createElement('canvas');
-  offscreen.width = expW;
-  offscreen.height = expH;
-  const offCtx = offscreen.getContext('2d');
+  const capturedFrames = [];
+  const origGifIdx = state.gifBgFrameIndex;
 
-  let totalExportFrames = state.totalFrames;
-  if (state.isBgGif && state.bgGifFrames.length > 1) {{
-    totalExportFrames = Math.max(state.totalFrames, Math.min(state.bgGifFrames.length, 30));
-  }}
-
-  const frames = [];
-  const origGifIndex = state.gifBgFrameIndex;
-  const origFrame = state.frame;
-
-  for (let i = 0; i < totalExportFrames; i++) {{
+  for (let i = 0; i < framesToCapture; i++) {{
     if (state.isBgGif && state.bgGifFrames.length > 0) {{
       state.gifBgFrameIndex = i % state.bgGifFrames.length;
     }}
-    state.frame = i % state.totalFrames;
-    render(offCtx, expW, expH, state.frame);
-    frames.push(offscreen.toDataURL('image/png'));
+    render(tempCtx, exportW, exportH, i);
+    capturedFrames.push(tempCanvas.toDataURL('image/png'));
   }}
+  state.gifBgFrameIndex = origGifIdx;
+  draw();
 
-  state.gifBgFrameIndex = origGifIndex;
-  state.frame = origFrame;
-
-  bar.style.width = '40%';
+  bar.style.width = '35%';
   txt.innerText = 'Encoding Discord GIF...';
 
-  if (window.gifshot) {{
-    window.gifshot.createGIF({{
-      images: frames,
-      gifWidth: expW,
-      gifHeight: expH,
-      interval: 1 / state.fps,
-      numFrames: totalExportFrames,
-      sampleInterval: 8,
-      numWorkers: 2,
-      progressCallback: (p) => {{
-        const pct = Math.round(40 + p * 55);
-        bar.style.width = pct + '%';
-        txt.innerText = `Encoding: ${{pct}}%...`;
-      }}
-    }}, (obj) => {{
+  gifshot.createGIF({{
+    images: capturedFrames,
+    gifWidth: exportW,
+    gifHeight: exportH,
+    interval: 1 / state.fps,
+    numFrames: framesToCapture,
+    progressCallback: (captureProgress) => {{
+      const pct = Math.round(35 + captureProgress * 60);
+      bar.style.width = pct + '%';
+      txt.innerText = `Encoding GIF: ${{pct}}%`;
+    }}
+  }}, (obj) => {{
+    if (!obj.error) {{
       bar.style.width = '100%';
-      txt.innerText = 'Ready!';
-      if (!obj.error) {{
-        const link = document.createElement('a');
-        link.download = getDownloadFilename('gif');
-        link.href = obj.image;
-        link.click();
-        setTimeout(() => {{ wrap.style.display = 'none'; }}, 2000);
-      }} else {{
-        alert('GIF error: ' + obj.errorMsg);
-        wrap.style.display = 'none';
-      }}
-    }});
-  }}
+      txt.innerText = 'GIF Ready! Downloading...';
+      const a = document.createElement('a');
+      a.download = getDownloadFilename('gif');
+      a.href = obj.image;
+      a.click();
+      setTimeout(() => {{ wrap.style.display = 'none'; }}, 2000);
+    }} else {{
+      alert('GIF error: ' + obj.errorMsg);
+      wrap.style.display = 'none';
+    }}
+  }});
+}}
+
+function init() {{
+  updateCanvasDimensions();
+  setupEvents();
+  setupDragging();
+  draw();
+  startAnim();
 }}
 
 window.onload = init;
@@ -2449,10 +2929,7 @@ window.onload = init;
 """
 
 # --- TOP HEADER & ADMIN PANEL (TOP RIGHT) ---
-col_head_left, col_head_right = st.columns([5, 2])
-with col_head_left:
-    st.markdown("<div style='padding: 4px 0;'><h2 style='margin:0; font-size: 22px; color: #fff; display: flex; align-items: center; gap: 8px;'>🎭 Murad Face Slapper <span style='font-size: 13px; color: #5865F2; background: rgba(88,101,242,0.15); padding: 2px 8px; border-radius: 12px; font-weight: 500;'>Discord Meme & GIF Maker</span></h2></div>", unsafe_allow_html=True)
-
+_, col_head_right = st.columns([5.5, 1.5])
 with col_head_right:
     admin_ui = st.popover("🔐 Admin Panel", use_container_width=True) if hasattr(st, "popover") else st.expander("🔐 Admin Panel")
     with admin_ui:
