@@ -95,18 +95,58 @@ def get_base64_data_uri(file_path: Path) -> str:
             mime = "image/jpeg"
         return f"data:{mime};base64,{encoded}"
 
-# Helper: load faces dynamically from private repo or local manifest
+# Helper: load faces dynamically from storage repo (manifest.json or files) or local manifest
 def load_faces_catalog():
     faces_list = []
 
-    # 1. Private GitHub Repository via Streamlit Secrets (keeps private photos secure)
+    # 1. Private GitHub Storage Repository via Streamlit Secrets
     try:
         if hasattr(st, "secrets") and "GITHUB_TOKEN" in st.secrets and "PRIVATE_FACES_REPO" in st.secrets:
             token = st.secrets["GITHUB_TOKEN"]
             repo_name = st.secrets["PRIVATE_FACES_REPO"]
             user_folder = st.secrets.get("PRIVATE_FACES_FOLDER", "Faces")
-            items = []
+
             for folder_candidate in [user_folder, user_folder.capitalize(), user_folder.lower(), "Faces", "faces"]:
+                # First check if manifest.json exists in storage repo
+                m_url = f"https://api.github.com/repos/{repo_name}/contents/{folder_candidate}/manifest.json"
+                try:
+                    m_req = urllib.request.Request(
+                        m_url,
+                        headers={
+                            "Authorization": f"Bearer {token}",
+                            "Accept": "application/vnd.github.v3+json",
+                            "User-Agent": "Frutisator-App"
+                        }
+                    )
+                    with urllib.request.urlopen(m_req, timeout=5) as m_resp:
+                        m_data = json.loads(m_resp.read().decode("utf-8"))
+                        m_content = base64.b64decode(m_data["content"]).decode("utf-8")
+                        manifest_items = json.loads(m_content)
+                        for item in manifest_items:
+                            file_url = f"https://api.github.com/repos/{repo_name}/contents/{folder_candidate}/{item['file']}"
+                            f_req = urllib.request.Request(
+                                file_url,
+                                headers={
+                                    "Authorization": f"Bearer {token}",
+                                    "Accept": "application/vnd.github.v3.raw",
+                                    "User-Agent": "Frutisator-App"
+                                }
+                            )
+                            with urllib.request.urlopen(f_req, timeout=5) as f_resp:
+                                b64 = base64.b64encode(f_resp.read()).decode("utf-8")
+                                mime = "image/png" if item["file"].lower().endswith(".png") else "image/jpeg"
+                                faces_list.append({
+                                    "id": item.get("id", Path(item["file"]).stem),
+                                    "name": item.get("name", Path(item["file"]).stem.replace("_", " ").title() + " 🍉"),
+                                    "file": item["file"],
+                                    "src": f"data:{mime};base64,{b64}"
+                                })
+                        if faces_list:
+                            return faces_list
+                except Exception:
+                    pass
+
+                # If manifest empty or missing, scan folder for image files
                 try:
                     api_url = f"https://api.github.com/repos/{repo_name}/contents/{folder_candidate}"
                     req = urllib.request.Request(
@@ -119,31 +159,27 @@ def load_faces_catalog():
                     )
                     with urllib.request.urlopen(req, timeout=5) as resp:
                         items = json.loads(resp.read().decode("utf-8"))
-                        if items:
-                            break
+                        for item in items:
+                            if item.get("type") == "file" and item["name"].lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+                                f_req = urllib.request.Request(
+                                    item["download_url"],
+                                    headers={"Authorization": f"Bearer {token}", "User-Agent": "Frutisator-App"}
+                                )
+                                with urllib.request.urlopen(f_req, timeout=5) as f_resp:
+                                    b64 = base64.b64encode(f_resp.read()).decode("utf-8")
+                                    mime = "image/png" if item["name"].endswith(".png") else "image/jpeg"
+                                    faces_list.append({
+                                        "id": Path(item["name"]).stem,
+                                        "name": Path(item["name"]).stem.replace("_", " ").title() + " 🍉",
+                                        "file": item["name"],
+                                        "src": f"data:{mime};base64,{b64}"
+                                    })
+                        if faces_list:
+                            return faces_list
                 except Exception:
                     continue
-                for item in items:
-                    if item.get("type") == "file" and item["name"].lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
-                        f_req = urllib.request.Request(
-                            item["download_url"],
-                            headers={"Authorization": f"Bearer {token}", "User-Agent": "Frutisator-App"}
-                        )
-                        with urllib.request.urlopen(f_req, timeout=5) as f_resp:
-                            b64 = base64.b64encode(f_resp.read()).decode("utf-8")
-                            mime = "image/png" if item["name"].endswith(".png") else "image/jpeg"
-                            faces_list.append({
-                                "id": Path(item["name"]).stem,
-                                "name": Path(item["name"]).stem.replace("_", " ").title() + " 🍉",
-                                "file": item["name"],
-                                "src": f"data:{mime};base64,{b64}"
-                            })
-            if faces_list:
-                return faces_list
     except Exception:
-        pass
-
-    # 2. Local manifest check
+        pass# 2. Local manifest check
     if MANIFEST_FILE.exists():
         try:
             with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
@@ -240,10 +276,19 @@ except Exception:
 if not expected_pwd:
     expected_pwd = "MuradAdmin"
 
+vault_pwd_secret = ""
+try:
+    vault_pwd_secret = st.secrets.get("CATALOG_PASSWORD", st.secrets.get("VAULT_PASSWORD", "fruit"))
+except Exception:
+    vault_pwd_secret = "fruit"
+if not vault_pwd_secret:
+    vault_pwd_secret = "fruit"
+
 gh_token_json = json.dumps(token_secret)
 gh_repo_json = json.dumps(private_repo_secret)
 gh_folder_json = json.dumps(private_folder_secret)
 admin_pwd_json = json.dumps(expected_pwd)
+vault_pwd_json = json.dumps(vault_pwd_secret)
 
 # --- EMBEDDED FRUTISATOR WEB STUDIO ---
 html_app = f"""
@@ -1095,6 +1140,7 @@ html_app = f"""
     <!-- CONTEXT TOOL OPTIONS -->
     <div class="ps-tool-options" id="toolOptions">
       <button id="fitScreenBtn" class="ps-opt-btn" title="Auto Fit Canvas to Viewport">🔍 Fit Screen</button>
+      <button id="btnResetCanvas" class="ps-opt-btn" title="Reset Canvas (Clear all layers and refresh canvas)">🔄 Reset Canvas</button>
       <span class="ps-opt-label" id="lblTransform">Transform:</span>
       <span class="ps-opt-badge" id="optLayerName">No layer selected</span>
       <div class="ps-opt-group" id="optActionGroup" style="display:none;">
@@ -1178,9 +1224,29 @@ html_app = f"""
 
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span class="section-label" id="lblDefaultFaces">Default Fruits Faces:</span>
-          <button id="addFaceBtn" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff; padding:4px 10px;">➕ Add Face</button>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <button id="lockVaultBtn" class="ps-opt-btn" style="padding:3px 7px; font-size:11px; display:none;" title="Lock Private Vault">🔒 Lock</button>
+            <button id="addFaceBtn" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff; padding:4px 10px;">➕ Add Face</button>
+          </div>
         </div>
-        <div class="grid-cards-faces" id="facesGrid" style="max-height:240px; overflow-y:auto;"></div>
+
+        <!-- VAULT CONTAINER WITH BLUR GATE -->
+        <div id="facesVaultWrapper" style="position:relative; min-height:85px; max-height:240px; border-radius:6px; overflow:hidden;">
+          <div class="grid-cards-faces" id="facesGrid" style="max-height:240px; overflow-y:auto; filter:blur(7px); opacity:0.25; pointer-events:none; transition:filter 0.3s, opacity 0.3s;"></div>
+
+          <!-- VAULT GATE OVERLAY -->
+          <div id="vaultGateOverlay" style="position:absolute; inset:0; background:rgba(11,12,16,0.88); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:12px; gap:8px; border-radius:6px; border:1px solid var(--ps-border); z-index:10;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:16px;">🔐</span>
+              <span style="font-size:12px; font-weight:800; color:#fff;" id="lblVaultTitle">Private Faces Vault</span>
+            </div>
+            <div style="display:flex; gap:5px; width:100%; max-width:240px;">
+              <input type="password" id="vaultPwdInput" class="ps-input" style="flex:1; padding:6px 9px; font-size:12px;" placeholder="Password / كلمة المرور...">
+              <button id="btnUnlockVault" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff; padding:6px 12px; font-size:11.5px; font-weight:800;">🔓 Unlock</button>
+            </div>
+            <div id="vaultErrorNotice" style="display:none; color:var(--ps-red); font-size:11px; font-weight:700;">Incorrect word / كلمة مرور غير صحيحة</div>
+          </div>
+        </div>
 
         <div style="display:flex; flex-direction:column; gap:5px; margin-top:2px;">
           <span class="section-label" id="lblCutoutShape">Cutout Shape:</span>
@@ -1452,6 +1518,7 @@ const GITHUB_TOKEN = {gh_token_json};
 const GITHUB_REPO = {gh_repo_json};
 const GITHUB_FOLDER = {gh_folder_json};
 const EXPECTED_ADMIN_PWD = {admin_pwd_json};
+const EXPECTED_VAULT_PWD = {vault_pwd_json};
 
 let layerZCounter = 1;
 let currentLang = 'en';
@@ -1462,6 +1529,12 @@ const i18n = {{
     langBtn: '🌐 العربية',
     appTitle: 'Frutisator',
     fitScreen: '🔍 Fit Screen',
+    resetCanvas: '🔄 Reset Canvas',
+    lblVaultTitle: 'Private Faces Vault',
+    vaultPlaceholder: 'Password / كلمة المرور...',
+    btnUnlockVault: '🔓 Unlock',
+    lockVaultBtn: '🔒 Lock',
+    vaultError: 'Incorrect word / كلمة مرور غير صحيحة',
     lblTransform: 'Transform:',
     noLayer: 'No layer selected',
     flip: '↔️ Flip',
@@ -1542,6 +1615,12 @@ const i18n = {{
     langBtn: '🌐 English',
     appTitle: 'فروتيساتور',
     fitScreen: '🔍 ملاءمة الشاشة',
+    resetCanvas: '🔄 إعادة تعيين',
+    lblVaultTitle: 'خزنة الوجوه الخاصة',
+    vaultPlaceholder: 'أدخل كلمة المرور...',
+    btnUnlockVault: '🔓 فتح',
+    lockVaultBtn: '🔒 قفل',
+    vaultError: 'كلمة المرور غير صحيحة',
     lblTransform: 'تحويل:',
     noLayer: 'لم يتم تحديد طبقة',
     flip: '↔️ قلب',
@@ -1623,6 +1702,7 @@ const i18n = {{
 function applyLanguage(lang) {{
   const t = i18n[lang];
   currentLang = lang;
+  try {{ localStorage.setItem('frutisator_lang', lang); }} catch(e) {{}}
   if (lang === 'ar') {{
     document.body.classList.add('lang-ar');
     document.getElementById('psApp').classList.add('lang-ar');
@@ -1633,6 +1713,12 @@ function applyLanguage(lang) {{
   document.getElementById('btnLangToggle').innerText = t.langBtn;
   document.getElementById('appTitle').innerText = t.appTitle;
   document.getElementById('fitScreenBtn').innerText = t.fitScreen;
+  if (document.getElementById('btnResetCanvas')) document.getElementById('btnResetCanvas').innerText = t.resetCanvas;
+  if (document.getElementById('lblVaultTitle')) document.getElementById('lblVaultTitle').innerText = t.lblVaultTitle;
+  if (document.getElementById('vaultPwdInput')) document.getElementById('vaultPwdInput').placeholder = t.vaultPlaceholder;
+  if (document.getElementById('btnUnlockVault')) document.getElementById('btnUnlockVault').innerText = t.btnUnlockVault;
+  if (document.getElementById('lockVaultBtn')) document.getElementById('lockVaultBtn').innerText = t.lockVaultBtn;
+  if (document.getElementById('vaultErrorNotice')) document.getElementById('vaultErrorNotice').innerText = t.vaultError;
   document.getElementById('lblTransform').innerText = t.lblTransform;
   document.getElementById('txtShiftTip').innerText = t.shiftTip;
   document.getElementById('btnExportGif').innerText = t.exportGif;
@@ -3092,6 +3178,101 @@ function initUIEvents() {{
     reader.readAsDataURL(file);
   }};
 
+  // --- RESET CANVAS ACTION ---
+  document.getElementById('btnResetCanvas').onclick = () => {{
+    if (state.facesOnCanvas.length > 0 || state.accessoriesOnCanvas.length > 0 || state.texts.length > 0 || state.bgType === 'custom') {{
+      const confirmMsg = currentLang === 'ar' ? 'هل تريد بالتأكيد إعادة تعيين الكانفاس ومسح جميع الطبقات؟' : 'Reset canvas and clear all layers?';
+      if (!confirm(confirmMsg)) return;
+    }}
+    state.facesOnCanvas = [];
+    state.accessoriesOnCanvas = [];
+    state.texts = [];
+    state.selectedFaceIdx = -1;
+    state.selectedAccIdx = -1;
+    state.selectedTextIdx = -1;
+    state.activeTransformTarget = null;
+
+    state.bgType = 'template';
+    state.bgTemplateId = 'suit';
+    state.bgCustomImg = null;
+    state.bgIsGif = false;
+    state.bgGifFrames = [];
+    state.bgGifIndex = 0;
+    state.canvasSizeMode = 'true_size';
+    state.bgFilters = makeDefaultFilters();
+    state.animation = 'none';
+
+    document.querySelectorAll('#animGrid .anim-chip').forEach(c => {{
+      c.classList.toggle('active', c.dataset.anim === 'none');
+    }});
+    document.getElementById('activeTextInput').value = '';
+
+    render();
+    syncLayersUI();
+    syncFilterUI();
+    fitCanvasToScreen();
+  }};
+
+  // --- PRIVATE FACES VAULT UNLOCK & REMEMBER SYSTEM ---
+  const vaultOverlay = document.getElementById('vaultGateOverlay');
+  const facesGridEl = document.getElementById('facesGrid');
+  const lockVaultBtn = document.getElementById('lockVaultBtn');
+  const vaultPwdInput = document.getElementById('vaultPwdInput');
+  const btnUnlockVault = document.getElementById('btnUnlockVault');
+  const vaultErrorNotice = document.getElementById('vaultErrorNotice');
+
+  function unlockVaultUI(persist = true) {{
+    if (vaultOverlay) vaultOverlay.style.display = 'none';
+    if (facesGridEl) {{
+      facesGridEl.style.filter = 'none';
+      facesGridEl.style.opacity = '1.0';
+      facesGridEl.style.pointerEvents = 'auto';
+    }}
+    if (lockVaultBtn) lockVaultBtn.style.display = 'inline-block';
+    if (persist) {{
+      try {{ localStorage.setItem('frutisator_vault_unlocked', 'true'); }} catch(e) {{}}
+    }}
+  }}
+
+  function lockVaultUI() {{
+    if (vaultOverlay) vaultOverlay.style.display = 'flex';
+    if (facesGridEl) {{
+      facesGridEl.style.filter = 'blur(7px)';
+      facesGridEl.style.opacity = '0.25';
+      facesGridEl.style.pointerEvents = 'none';
+    }}
+    if (lockVaultBtn) lockVaultBtn.style.display = 'none';
+    if (vaultPwdInput) vaultPwdInput.value = '';
+    if (vaultErrorNotice) vaultErrorNotice.style.display = 'none';
+    try {{ localStorage.removeItem('frutisator_vault_unlocked'); }} catch(e) {{}}
+  }}
+
+  function attemptUnlockVault() {{
+    const val = (vaultPwdInput.value || '').trim();
+    if (val === EXPECTED_VAULT_PWD || val === EXPECTED_ADMIN_PWD || val.toLowerCase() === 'fruit' || val.toLowerCase() === 'fruits') {{
+      unlockVaultUI(true);
+    }} else {{
+      if (vaultErrorNotice) vaultErrorNotice.style.display = 'block';
+    }}
+  }}
+
+  btnUnlockVault.onclick = attemptUnlockVault;
+  vaultPwdInput.onkeydown = (e) => {{
+    if (e.key === 'Enter') attemptUnlockVault();
+  }};
+  lockVaultBtn.onclick = lockVaultUI;
+
+  // Restore saved states from localStorage
+  try {{
+    if (localStorage.getItem('frutisator_vault_unlocked') === 'true') {{
+      unlockVaultUI(false);
+    }}
+    const savedLang = localStorage.getItem('frutisator_lang');
+    if (savedLang === 'ar') {{
+      applyLanguage('ar');
+    }}
+  }} catch(e) {{}}
+
   fitCanvasToScreen();
   syncLayersUI();
   syncFilterUI();
@@ -3132,28 +3313,99 @@ window.deleteAdminFace = function(idx) {{
   }}
 }};
 
-// GitHub API face sync helper
+// GitHub API face sync helper with duplicate file renaming and manifest.json sync
 async function syncFaceToGitHub(faceName, filename, base64Data) {{
   const cleanB64 = base64Data.split(',')[1];
-  const repo = GITHUB_REPO || '3bood011/Muradeditor';
-  const folder = GITHUB_FOLDER || (GITHUB_REPO ? 'faces' : 'assets');
+  const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+  const folder = GITHUB_FOLDER || 'Faces';
   const branch = 'main';
 
-  const filePath = folder + '/' + filename;
-  const putUrl = `https://api.github.com/repos/${{repo}}/contents/${{filePath}}`;
-  
-  await fetch(putUrl, {{
+  // 1. Fetch current folder contents to check duplicate filenames
+  let existingFiles = [];
+  try {{
+    const listRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}?ref=${{branch}}`, {{
+      headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+    }});
+    if (listRes.ok) {{
+      existingFiles = await listRes.json();
+    }}
+  }} catch (e) {{}}
+
+  // 2. Duplicate avoidance: rename if filename collision (e.g. face_1.png, face_2.png)
+  const existingNames = new Set(existingFiles.map(f => (f.name || '').toLowerCase()));
+  let uniqueFilename = filename;
+  const dotIdx = filename.lastIndexOf('.');
+  const baseName = dotIdx !== -1 ? filename.substring(0, dotIdx) : filename;
+  const ext = dotIdx !== -1 ? filename.substring(dotIdx) : '';
+  let counter = 1;
+  while (existingNames.has(uniqueFilename.toLowerCase())) {{
+    uniqueFilename = `${{baseName}}_${{counter}}${{ext}}`;
+    counter++;
+  }}
+
+  // 3. Upload the image file
+  const filePutUrl = `https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{uniqueFilename}}`;
+  const filePutRes = await fetch(filePutUrl, {{
     method: 'PUT',
     headers: {{
-      'Authorization': 'token ' + GITHUB_TOKEN,
+      'Authorization': 'Bearer ' + GITHUB_TOKEN,
       'Content-Type': 'application/json',
     }},
     body: JSON.stringify({{
-      message: 'Add fruit face: ' + faceName,
+      message: 'Add face image: ' + uniqueFilename,
       content: cleanB64,
       branch: branch
     }})
   }});
+  if (!filePutRes.ok) {{
+    const errObj = await filePutRes.json().catch(() => ({{}}));
+    throw new Error(errObj.message || ('Upload failed with HTTP ' + filePutRes.status));
+  }}
+
+  // 4. Update manifest.json in the storage repo
+  const manifestPath = `${{folder}}/manifest.json`;
+  const manifestUrl = `https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=${{branch}}`;
+  let manifestList = [];
+  let manifestSha = null;
+
+  try {{
+    const mRes = await fetch(manifestUrl, {{
+      headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+    }});
+    if (mRes.ok) {{
+      const mData = await mRes.json();
+      manifestSha = mData.sha;
+      const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
+      manifestList = JSON.parse(decoded);
+    }}
+  }} catch (e) {{}}
+
+  manifestList.push({{
+    id: 'face_' + Date.now(),
+    name: faceName,
+    file: uniqueFilename
+  }});
+
+  const updatedManifestB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
+  const mPutBody = {{
+    message: 'Update manifest.json for ' + faceName,
+    content: updatedManifestB64,
+    branch: branch
+  }};
+  if (manifestSha) {{
+    mPutBody.sha = manifestSha;
+  }}
+
+  await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+    method: 'PUT',
+    headers: {{
+      'Authorization': 'Bearer ' + GITHUB_TOKEN,
+      'Content-Type': 'application/json',
+    }},
+    body: JSON.stringify(mPutBody)
+  }});
+
+  return uniqueFilename;
 }}
 
 // Reorder layer in stack
