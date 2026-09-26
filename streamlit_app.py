@@ -95,9 +95,48 @@ def get_base64_data_uri(file_path: Path) -> str:
             mime = "image/jpeg"
         return f"data:{mime};base64,{encoded}"
 
-# Helper: load faces dynamically from manifest
+# Helper: load faces dynamically from private repo or local manifest
 def load_faces_catalog():
     faces_list = []
+
+    # 1. Private GitHub Repository via Streamlit Secrets (keeps private photos secure)
+    try:
+        if hasattr(st, "secrets") and "GITHUB_TOKEN" in st.secrets and "PRIVATE_FACES_REPO" in st.secrets:
+            token = st.secrets["GITHUB_TOKEN"]
+            repo_name = st.secrets["PRIVATE_FACES_REPO"]
+            folder = st.secrets.get("PRIVATE_FACES_FOLDER", "faces")
+            api_url = f"https://api.github.com/repos/{repo_name}/contents/{folder}"
+            req = urllib.request.Request(
+                api_url,
+                headers={
+                    "Authorization": f"Bearer {token}",
+                    "Accept": "application/vnd.github.v3+json",
+                    "User-Agent": "Frutisator-App"
+                }
+            )
+            with urllib.request.urlopen(req, timeout=5) as resp:
+                items = json.loads(resp.read().decode("utf-8"))
+                for item in items:
+                    if item.get("type") == "file" and item["name"].lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+                        f_req = urllib.request.Request(
+                            item["download_url"],
+                            headers={"Authorization": f"Bearer {token}", "User-Agent": "Frutisator-App"}
+                        )
+                        with urllib.request.urlopen(f_req, timeout=5) as f_resp:
+                            b64 = base64.b64encode(f_resp.read()).decode("utf-8")
+                            mime = "image/png" if item["name"].endswith(".png") else "image/jpeg"
+                            faces_list.append({
+                                "id": Path(item["name"]).stem,
+                                "name": Path(item["name"]).stem.replace("_", " ").title() + " 🍉",
+                                "file": item["name"],
+                                "src": f"data:{mime};base64,{b64}"
+                            })
+            if faces_list:
+                return faces_list
+    except Exception:
+        pass
+
+    # 2. Local manifest check
     if MANIFEST_FILE.exists():
         try:
             with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
@@ -115,7 +154,7 @@ def load_faces_catalog():
         except Exception:
             pass
 
-    # Fallback to scan directory ONLY if manifest is missing
+    # 3. Fallback scan if manifest missing
     if not MANIFEST_FILE.exists():
         for p in ASSETS_DIR.glob("*.png"):
             if not p.name.startswith("murad_"):
@@ -193,6 +232,9 @@ html_app = f"""
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Frutisator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {{
     --ps-bg: #000000;
@@ -954,6 +996,61 @@ html_app = f"""
     .ps-body {{ flex-direction: column; overflow-y: auto; }}
     .ps-sidebar {{ width: 100% !important; height: auto; }}
   }}
+
+  /* ARABIC TYPOGRAPHY ENHANCEMENTS: BIGGER & BOLDER */
+  body.lang-ar,
+  .ps-app.lang-ar {{
+    font-family: 'Cairo', -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, sans-serif !important;
+  }}
+  .ps-app.lang-ar button,
+  .ps-app.lang-ar .ps-opt-btn,
+  .ps-app.lang-ar .btn-toggle,
+  .ps-app.lang-ar .btn-pill,
+  .ps-app.lang-ar .ps-panel-title,
+  .ps-app.lang-ar .panel-section-title,
+  .ps-app.lang-ar .section-label,
+  .ps-app.lang-ar .grid-card span,
+  .ps-app.lang-ar .ps-title,
+  .ps-app.lang-ar .ps-brand span,
+  .ps-app.lang-ar .ps-doc-badge,
+  .ps-app.lang-ar .slider-row label,
+  .ps-app.lang-ar .slider-row b,
+  .ps-app.lang-ar .ps-input,
+  .ps-app.lang-ar .ps-dropzone span,
+  .ps-app.lang-ar .layer-item span {{
+    font-family: 'Cairo', -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, sans-serif !important;
+    font-weight: 800 !important;
+    letter-spacing: 0 !important;
+  }}
+  .ps-app.lang-ar .panel-section-title {{
+    font-size: 13.5px !important;
+    font-weight: 900 !important;
+  }}
+  .ps-app.lang-ar .section-label {{
+    font-size: 12px !important;
+    font-weight: 800 !important;
+  }}
+  .ps-app.lang-ar .ps-opt-btn,
+  .ps-app.lang-ar .btn-toggle {{
+    font-size: 12px !important;
+    font-weight: 800 !important;
+  }}
+  .ps-app.lang-ar .ps-title {{
+    font-size: 16px !important;
+    font-weight: 900 !important;
+  }}
+  .ps-app.lang-ar .slider-row label {{
+    font-size: 12px !important;
+    font-weight: 700 !important;
+  }}
+  .ps-app.lang-ar .slider-row b {{
+    font-size: 12.5px !important;
+    font-weight: 900 !important;
+  }}
+  .ps-app.lang-ar #txtShiftTip {{
+    font-size: 12px !important;
+    font-weight: 800 !important;
+  }}
 </style>
 <script>
 {gifshot_script}
@@ -1076,6 +1173,68 @@ html_app = f"""
         <div class="slider-row">
           <label><span id="lblFaceOpacity">Face Opacity:</span> <b id="faceOpacityVal">100%</b></label>
           <input type="range" id="faceOpacitySlider" min="0.1" max="1.0" step="0.05" value="1.0">
+        </div>
+      </div>
+
+      <!-- 3. SECTION: COLOR FILTERS & ADJUSTMENTS -->
+      <div class="ps-panel-section" id="section-filters">
+        <div class="panel-section-header">
+          <span class="panel-section-title" id="secTitleFilters">🎨 Color & Filters</span>
+          <button id="resetFiltersBtn" class="ps-opt-btn" style="padding:2px 7px; font-size:10.5px;" title="Reset Filters">🔄 Reset</button>
+        </div>
+
+        <!-- TARGET SELECTOR: BACKDROP, FACE, STICKER -->
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <span class="section-label" id="lblFilterTarget">Apply Filter To:</span>
+          <div class="btn-group-grid btn-group-3" id="filterTargetGroup">
+            <button class="btn-toggle active" data-target="bg" id="btnFilterBg">🖼️ Backdrop</button>
+            <button class="btn-toggle" data-target="face" id="btnFilterFace">🍉 Face</button>
+            <button class="btn-toggle" data-target="acc" id="btnFilterAcc">🎀 Sticker</button>
+          </div>
+        </div>
+
+        <!-- NOTICE WHEN NO FACE/STICKER LAYER IS ACTIVE -->
+        <div id="filterNoTargetNotice" style="display:none; color:var(--ps-yellow); font-size:11px; padding:6px 8px; border:1px dashed var(--ps-border); border-radius:5px; background:rgba(255,200,0,0.05); text-align:center;"></div>
+
+        <div id="filterSlidersBox" style="display:flex; flex-direction:column; gap:6px; transition:opacity 0.2s;">
+          <!-- QUICK PRESETS: 8 PRESETS IN A 4-COLUMN GRID -->
+          <div style="display:flex; flex-direction:column; gap:4px; margin-top:2px;">
+            <span class="section-label" id="lblFilterPresets">Quick Presets:</span>
+            <div class="btn-group-grid btn-group-4" id="filterPresetsGrid">
+              <button class="ps-opt-btn active" data-preset="normal" id="presetNormal" style="padding:4px 2px; font-size:10.5px; justify-content:center;">Normal</button>
+              <button class="ps-opt-btn" data-preset="bw" id="presetBw" style="padding:4px 2px; font-size:10.5px; justify-content:center;">🖤 B&W</button>
+              <button class="ps-opt-btn" data-preset="sepia" id="presetSepia" style="padding:4px 2px; font-size:10.5px; justify-content:center;">📜 Sepia</button>
+              <button class="ps-opt-btn" data-preset="invert" id="presetInvert" style="padding:4px 2px; font-size:10.5px; justify-content:center;">🔮 Invert</button>
+              <button class="ps-opt-btn" data-preset="shift" id="presetShift" style="padding:4px 2px; font-size:10.5px; justify-content:center;">🌈 Shift</button>
+              <button class="ps-opt-btn" data-preset="vivid" id="presetVivid" style="padding:4px 2px; font-size:10.5px; justify-content:center;">⚡ Vivid</button>
+              <button class="ps-opt-btn" data-preset="cyber" id="presetCyber" style="padding:4px 2px; font-size:10.5px; justify-content:center;">🌆 Cyber</button>
+              <button class="ps-opt-btn" data-preset="warm" id="presetWarm" style="padding:4px 2px; font-size:10.5px; justify-content:center;">🔥 Warm</button>
+            </div>
+          </div>
+
+          <!-- FINE ADJUSTMENT SLIDERS -->
+          <div style="display:flex; flex-direction:column; gap:5px; margin-top:3px;">
+            <div class="slider-row">
+              <label><span id="lblFilterHue">Hue / Color Shift:</span> <b id="valFilterHue">0°</b></label>
+              <input type="range" id="sliderFilterHue" min="0" max="360" step="5" value="0">
+            </div>
+            <div class="slider-row">
+              <label><span id="lblFilterBw">B&W (Grayscale):</span> <b id="valFilterBw">0%</b></label>
+              <input type="range" id="sliderFilterBw" min="0" max="100" step="5" value="0">
+            </div>
+            <div class="slider-row">
+              <label><span id="lblFilterBrightness">Brightness:</span> <b id="valFilterBrightness">100%</b></label>
+              <input type="range" id="sliderFilterBrightness" min="40" max="180" step="5" value="100">
+            </div>
+            <div class="slider-row">
+              <label><span id="lblFilterContrast">Contrast:</span> <b id="valFilterContrast">100%</b></label>
+              <input type="range" id="sliderFilterContrast" min="40" max="200" step="5" value="100">
+            </div>
+            <div class="slider-row">
+              <label><span id="lblFilterSaturate">Saturation:</span> <b id="valFilterSaturate">100%</b></label>
+              <input type="range" id="sliderFilterSaturate" min="0" max="250" step="5" value="100">
+            </div>
+          </div>
         </div>
       </div>
 
@@ -1326,7 +1485,28 @@ const i18n = {{
     animDisco: 'Disco',
 
     secTitleLayers: '📑 Active Layers',
-    noLayers: 'No active layers on canvas'
+    noLayers: 'No active layers on canvas',
+
+    secTitleFilters: '🎨 Color & Filters',
+    resetFilters: '🔄 Reset',
+    lblFilterTarget: 'Apply Filter To:',
+    btnFilterBg: '🖼️ Backdrop',
+    btnFilterFace: '🍉 Face',
+    btnFilterAcc: '🎀 Sticker',
+    lblFilterPresets: 'Quick Presets:',
+    presetNormal: 'Normal',
+    presetBw: '🖤 B&W',
+    presetSepia: '📜 Sepia',
+    presetInvert: '🔮 Invert',
+    presetShift: '🌈 Shift',
+    presetVivid: '⚡ Vivid',
+    presetCyber: '🌆 Cyber',
+    presetWarm: '🔥 Warm',
+    lblFilterHue: 'Hue / Color Shift:',
+    lblFilterBw: 'B&W (Grayscale):',
+    lblFilterBrightness: 'Brightness:',
+    lblFilterContrast: 'Contrast:',
+    lblFilterSaturate: 'Saturation:'
   }},
   ar: {{
     langBtn: '🌐 English',
@@ -1384,13 +1564,41 @@ const i18n = {{
     animDisco: 'ديسكو',
 
     secTitleLayers: '📑 الطبقات النشطة',
-    noLayers: 'لا توجد طبقات نشطة على الكانفاس'
+    noLayers: 'لا توجد طبقات نشطة على الكانفاس',
+
+    secTitleFilters: '🎨 فلاتر وتعديل الألوان',
+    resetFilters: '🔄 إعادة ضبط',
+    lblFilterTarget: 'تطبيق الفلتر على:',
+    btnFilterBg: '🖼️ الخلفية',
+    btnFilterFace: '🍉 الوجه',
+    btnFilterAcc: '🎀 الملصق',
+    lblFilterPresets: 'فلاتر سريعة جاهزة:',
+    presetNormal: 'عادي',
+    presetBw: '🖤 أبيض وأسود',
+    presetSepia: '📜 كلاسيكي',
+    presetInvert: '🔮 عكس الألوان',
+    presetShift: '🌈 تدوير الألوان',
+    presetVivid: '⚡ ألوان مشبعة',
+    presetCyber: '🌆 سايبر نيون',
+    presetWarm: '🔥 دافئ',
+    lblFilterHue: 'تدوير / إزاحة اللون:',
+    lblFilterBw: 'أبيض وأسود (رمادي):',
+    lblFilterBrightness: 'السطوع:',
+    lblFilterContrast: 'التباين:',
+    lblFilterSaturate: 'تشبع الألوان:'
   }}
 }};
 
 function applyLanguage(lang) {{
   const t = i18n[lang];
   currentLang = lang;
+  if (lang === 'ar') {{
+    document.body.classList.add('lang-ar');
+    document.getElementById('psApp').classList.add('lang-ar');
+  }} else {{
+    document.body.classList.remove('lang-ar');
+    document.getElementById('psApp').classList.remove('lang-ar');
+  }}
   document.getElementById('btnLangToggle').innerText = t.langBtn;
   document.getElementById('appTitle').innerText = t.appTitle;
   document.getElementById('fitScreenBtn').innerText = t.fitScreen;
@@ -1448,8 +1656,58 @@ function applyLanguage(lang) {{
   if (emptyNotice) {{
     emptyNotice.innerText = lang === 'ar' ? 'لا توجد وجوه افتراضية. ارفع فاكهة أو صورة مخصصة بالأعلى للبدء!' : 'No default faces. Upload a custom fruit or photo above to start!';
   }}
+
+  // Filters section translations
+  if (document.getElementById('secTitleFilters')) {{
+    document.getElementById('secTitleFilters').innerText = t.secTitleFilters;
+    document.getElementById('resetFiltersBtn').innerText = t.resetFilters;
+    document.getElementById('lblFilterTarget').innerText = t.lblFilterTarget;
+    document.getElementById('btnFilterBg').innerText = t.btnFilterBg;
+    document.getElementById('btnFilterFace').innerText = t.btnFilterFace;
+    document.getElementById('btnFilterAcc').innerText = t.btnFilterAcc;
+    document.getElementById('lblFilterPresets').innerText = t.lblFilterPresets;
+    document.getElementById('presetNormal').innerText = t.presetNormal;
+    document.getElementById('presetBw').innerText = t.presetBw;
+    document.getElementById('presetSepia').innerText = t.presetSepia;
+    document.getElementById('presetInvert').innerText = t.presetInvert;
+    document.getElementById('presetShift').innerText = t.presetShift;
+    document.getElementById('presetVivid').innerText = t.presetVivid;
+    document.getElementById('presetCyber').innerText = t.presetCyber;
+    document.getElementById('presetWarm').innerText = t.presetWarm;
+    document.getElementById('lblFilterHue').innerText = t.lblFilterHue;
+    document.getElementById('lblFilterBw').innerText = t.lblFilterBw;
+    document.getElementById('lblFilterBrightness').innerText = t.lblFilterBrightness;
+    document.getElementById('lblFilterContrast').innerText = t.lblFilterContrast;
+    document.getElementById('lblFilterSaturate').innerText = t.lblFilterSaturate;
+  }}
+  syncFilterUI();
   updateTopbarToolOptions();
   syncLayersUI();
+}}
+
+function makeDefaultFilters() {{
+  return {{
+    hue: 0,
+    grayscale: 0,
+    brightness: 100,
+    contrast: 100,
+    saturate: 100,
+    invert: 0,
+    sepia: 0
+  }};
+}}
+
+function getFilterString(f) {{
+  if (!f) return 'none';
+  const parts = [];
+  if (f.grayscale) parts.push('grayscale(' + f.grayscale + '%)');
+  if (f.sepia) parts.push('sepia(' + f.sepia + '%)');
+  if (f.invert) parts.push('invert(' + f.invert + '%)');
+  if (f.hue) parts.push('hue-rotate(' + f.hue + 'deg)');
+  if (f.brightness !== undefined && f.brightness !== 100) parts.push('brightness(' + f.brightness + '%)');
+  if (f.contrast !== undefined && f.contrast !== 100) parts.push('contrast(' + f.contrast + '%)');
+  if (f.saturate !== undefined && f.saturate !== 100) parts.push('saturate(' + f.saturate + '%)');
+  return parts.length ? parts.join(' ') : 'none';
 }}
 
 function makeFaceLayer(faceIndex, x, y, scale, z) {{
@@ -1466,6 +1724,7 @@ function makeFaceLayer(faceIndex, x, y, scale, z) {{
     opacity: 1.0,
     maskShape: 'square',
     customImg: null,
+    filters: makeDefaultFilters(),
     z: z !== undefined ? z : ++layerZCounter
   }};
 }}
@@ -1481,6 +1740,7 @@ const state = {{
   bgIsGif: false,
   bgGifFrames: [],
   bgGifIndex: 0,
+  bgFilters: makeDefaultFilters(),
 
   canvasSizeMode: 'true_size',
 
@@ -1775,12 +2035,15 @@ function render(offsetObj) {{
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // 1. Draw Background
+  ctx.save();
+  ctx.filter = getFilterString(state.bgFilters);
   if (bgImg) {{
     ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
   }} else {{
     ctx.fillStyle = '#060608';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }}
+  ctx.restore();
 
   // 2. Render Layers in exact Z order (back to front)
   const drawList = getAllLayers().reverse();
@@ -1792,6 +2055,7 @@ function render(offsetObj) {{
       if (!img) return;
 
       ctx.save();
+      ctx.filter = getFilterString(obj.filters);
       const cx = canvas.width / 2 + obj.x + animOff.x;
       const cy = canvas.height / 2 + obj.y + animOff.y;
       ctx.translate(cx, cy);
@@ -1819,6 +2083,7 @@ function render(offsetObj) {{
     }} else if (layerType === 'acc') {{
       if (!obj.img) return;
       ctx.save();
+      ctx.filter = getFilterString(obj.filters);
       const cx = canvas.width / 2 + obj.x;
       const cy = canvas.height / 2 + obj.y;
       ctx.translate(cx, cy);
@@ -2392,6 +2657,162 @@ function initUIEvents() {{
     }}
   }};
 
+  // --- COLOR FILTERS & ADJUSTMENTS CONTROLLER ---
+  let currentFilterTarget = 'bg';
+
+  window.getActiveFilterTargetObj = function() {{
+    if (currentFilterTarget === 'bg') {{
+      if (!state.bgFilters) state.bgFilters = makeDefaultFilters();
+      return state.bgFilters;
+    }}
+    if (currentFilterTarget === 'face') {{
+      const active = getActiveLayerData();
+      if (active && active.type === 'face') {{
+        if (!active.obj.filters) active.obj.filters = makeDefaultFilters();
+        return active.obj.filters;
+      }}
+      if (state.facesOnCanvas.length > 0) {{
+        const f0 = state.facesOnCanvas[0];
+        if (!f0.filters) f0.filters = makeDefaultFilters();
+        return f0.filters;
+      }}
+      return null;
+    }}
+    if (currentFilterTarget === 'acc') {{
+      const active = getActiveLayerData();
+      if (active && active.type === 'acc') {{
+        if (!active.obj.filters) active.obj.filters = makeDefaultFilters();
+        return active.obj.filters;
+      }}
+      if (state.accessoriesOnCanvas.length > 0) {{
+        const a0 = state.accessoriesOnCanvas[0];
+        if (!a0.filters) a0.filters = makeDefaultFilters();
+        return a0.filters;
+      }}
+      return null;
+    }}
+    return null;
+  }};
+
+  window.syncFilterUI = function() {{
+    const f = getActiveFilterTargetObj();
+    const box = document.getElementById('filterSlidersBox');
+    const notice = document.getElementById('filterNoTargetNotice');
+    if (!f) {{
+      if (box) box.style.opacity = '0.35';
+      if (notice) {{
+        notice.style.display = 'block';
+        notice.innerText = currentFilterTarget === 'face'
+          ? (currentLang === 'ar' ? '⚠️ لا يوجد وجه على الكانفاس. أضف وجهاً أولاً!' : '⚠️ No face layer on canvas. Add a face first!')
+          : (currentLang === 'ar' ? '⚠️ لا يوجد ملصق على الكانفاس. ارفع ملصقاً أولاً!' : '⚠️ No sticker on canvas. Upload a sticker first!');
+      }}
+      return;
+    }}
+    if (box) box.style.opacity = '1.0';
+    if (notice) notice.style.display = 'none';
+
+    document.getElementById('sliderFilterHue').value = f.hue || 0;
+    document.getElementById('valFilterHue').innerText = (f.hue || 0) + '°';
+
+    document.getElementById('sliderFilterBw').value = f.grayscale || 0;
+    document.getElementById('valFilterBw').innerText = (f.grayscale || 0) + '%';
+
+    document.getElementById('sliderFilterBrightness').value = f.brightness !== undefined ? f.brightness : 100;
+    document.getElementById('valFilterBrightness').innerText = (f.brightness !== undefined ? f.brightness : 100) + '%';
+
+    document.getElementById('sliderFilterContrast').value = f.contrast !== undefined ? f.contrast : 100;
+    document.getElementById('valFilterContrast').innerText = (f.contrast !== undefined ? f.contrast : 100) + '%';
+
+    document.getElementById('sliderFilterSaturate').value = f.saturate !== undefined ? f.saturate : 100;
+    document.getElementById('valFilterSaturate').innerText = (f.saturate !== undefined ? f.saturate : 100) + '%';
+  }};
+
+  const filterPresetDefs = {{
+    normal: {{ hue: 0, grayscale: 0, brightness: 100, contrast: 100, saturate: 100, invert: 0, sepia: 0 }},
+    bw: {{ hue: 0, grayscale: 100, brightness: 100, contrast: 110, saturate: 100, invert: 0, sepia: 0 }},
+    sepia: {{ hue: 0, grayscale: 0, brightness: 95, contrast: 100, saturate: 90, invert: 0, sepia: 85 }},
+    invert: {{ hue: 0, grayscale: 0, brightness: 100, contrast: 100, saturate: 100, invert: 100, sepia: 0 }},
+    shift: {{ hue: 180, grayscale: 0, brightness: 100, contrast: 100, saturate: 120, invert: 0, sepia: 0 }},
+    vivid: {{ hue: 0, grayscale: 0, brightness: 105, contrast: 130, saturate: 160, invert: 0, sepia: 0 }},
+    cyber: {{ hue: 280, grayscale: 0, brightness: 110, contrast: 135, saturate: 170, invert: 0, sepia: 0 }},
+    warm: {{ hue: 25, grayscale: 0, brightness: 105, contrast: 105, saturate: 130, invert: 0, sepia: 20 }}
+  }};
+
+  document.querySelectorAll('#filterPresetsGrid .ps-opt-btn').forEach(btn => {{
+    btn.onclick = () => {{
+      const presetKey = btn.getAttribute('data-preset');
+      const f = getActiveFilterTargetObj();
+      if (!f || !filterPresetDefs[presetKey]) return;
+      Object.assign(f, filterPresetDefs[presetKey]);
+      document.querySelectorAll('#filterPresetsGrid .ps-opt-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      syncFilterUI();
+      render();
+    }};
+  }});
+
+  ['bg', 'face', 'acc'].forEach(tgt => {{
+    const btn = document.getElementById('btnFilter' + tgt.charAt(0).toUpperCase() + tgt.slice(1));
+    if (btn) {{
+      btn.onclick = () => {{
+        currentFilterTarget = tgt;
+        document.querySelectorAll('#filterTargetGroup .btn-toggle').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        syncFilterUI();
+      }};
+    }}
+  }});
+
+  document.getElementById('sliderFilterHue').oninput = (e) => {{
+    const f = getActiveFilterTargetObj();
+    if (!f) return;
+    f.hue = parseInt(e.target.value);
+    document.getElementById('valFilterHue').innerText = f.hue + '°';
+    render();
+  }};
+
+  document.getElementById('sliderFilterBw').oninput = (e) => {{
+    const f = getActiveFilterTargetObj();
+    if (!f) return;
+    f.grayscale = parseInt(e.target.value);
+    document.getElementById('valFilterBw').innerText = f.grayscale + '%';
+    render();
+  }};
+
+  document.getElementById('sliderFilterBrightness').oninput = (e) => {{
+    const f = getActiveFilterTargetObj();
+    if (!f) return;
+    f.brightness = parseInt(e.target.value);
+    document.getElementById('valFilterBrightness').innerText = f.brightness + '%';
+    render();
+  }};
+
+  document.getElementById('sliderFilterContrast').oninput = (e) => {{
+    const f = getActiveFilterTargetObj();
+    if (!f) return;
+    f.contrast = parseInt(e.target.value);
+    document.getElementById('valFilterContrast').innerText = f.contrast + '%';
+    render();
+  }};
+
+  document.getElementById('sliderFilterSaturate').oninput = (e) => {{
+    const f = getActiveFilterTargetObj();
+    if (!f) return;
+    f.saturate = parseInt(e.target.value);
+    document.getElementById('valFilterSaturate').innerText = f.saturate + '%';
+    render();
+  }};
+
+  document.getElementById('resetFiltersBtn').onclick = () => {{
+    const f = getActiveFilterTargetObj();
+    if (!f) return;
+    Object.assign(f, makeDefaultFilters());
+    document.querySelectorAll('#filterPresetsGrid .ps-opt-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('presetNormal').classList.add('active');
+    syncFilterUI();
+    render();
+  }};
+
   // 4. Custom Sticker Upload
   document.getElementById('accFileInput').onchange = (e) => {{
     const file = e.target.files[0];
@@ -2412,6 +2833,7 @@ function initUIEvents() {{
           rotation: 0,
           flipH: 1,
           opacity: 1.0,
+          filters: makeDefaultFilters(),
           z: ++layerZCounter
         }});
         state.activeTransformTarget = {{ type: 'acc', idx: state.accessoriesOnCanvas.length - 1 }};
@@ -2576,6 +2998,7 @@ function initUIEvents() {{
 
   fitCanvasToScreen();
   syncLayersUI();
+  syncFilterUI();
 }}
 
 // Sync Admin Catalog List
