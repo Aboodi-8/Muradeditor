@@ -25,12 +25,13 @@ st.markdown("""
     }
     iframe {
         width: 100% !important;
-        min-height: 98vh !important;
-        height: 98vh !important;
+        min-height: 92vh !important;
+        height: 95vh !important;
         border: none !important;
     }
     .stApp {
         background-color: #121315;
+        overflow: hidden;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -285,32 +286,33 @@ html_app = f"""
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 10px 16px 140px 16px;
+    padding: 48px 8px 74px 8px; /* Room for top context pill and bottom floating dock */
   }}
 
   /* CONTEXT ACTION PILL (HOVERS ABOVE CANVAS) */
   .context-pill {{
     position: absolute;
-    top: 14px;
+    top: 10px;
     background: var(--bg-surface);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--border);
     border-radius: 30px;
-    padding: 6px 16px;
+    padding: 5px 14px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.45);
     z-index: 50;
+    max-width: calc(100vw - 20px);
     transition: all 0.2s ease;
   }}
   .pill-badge {{
     background: rgba(88, 101, 242, 0.2);
     color: var(--blurple);
-    font-size: 11.5px;
+    font-size: 11px;
     font-weight: 700;
-    padding: 3px 10px;
+    padding: 3px 8px;
     border-radius: 20px;
     white-space: nowrap;
   }}
@@ -324,13 +326,14 @@ html_app = f"""
     gap: 4px;
     align-items: center;
     border-left: 1px solid var(--border);
-    padding-left: 10px;
+    padding-left: 8px;
+    flex-shrink: 0;
   }}
   .pill-btn {{
     background: var(--bg-input);
     border: 1px solid var(--border);
     color: var(--text-main);
-    padding: 4px 9px;
+    padding: 4px 8px;
     border-radius: 6px;
     font-size: 11px;
     font-weight: 700;
@@ -339,6 +342,8 @@ html_app = f"""
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    white-space: nowrap;
+    touch-action: manipulation;
   }}
   .pill-btn:hover {{
     border-color: #fff;
@@ -353,15 +358,15 @@ html_app = f"""
   /* BIG DYNAMIC CANVAS STAGE */
   .canvas-stage {{
     position: relative;
-    max-width: 90vw;
-    max-height: 72vh;
+    max-width: 96vw;
+    max-height: calc(100vh - 128px);
     display: flex;
     align-items: center;
     justify-content: center;
   }}
   #mainCanvas {{
     max-width: 100%;
-    max-height: 72vh;
+    max-height: calc(100vh - 128px);
     border-radius: 12px;
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.08);
     cursor: grab;
@@ -377,7 +382,7 @@ html_app = f"""
   /* FLOATING BOTTOM DOCK */
   .floating-dock-wrap {{
     position: fixed;
-    bottom: 16px;
+    bottom: 12px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
@@ -385,7 +390,8 @@ html_app = f"""
     align-items: center;
     z-index: 100;
     width: auto;
-    max-width: 95vw;
+    max-width: calc(100vw - 12px);
+    pointer-events: none;
   }}
 
   .floating-dock {{
@@ -394,26 +400,31 @@ html_app = f"""
     -webkit-backdrop-filter: blur(28px);
     border: 1px solid var(--border);
     border-radius: 20px;
-    padding: 8px 14px;
+    padding: 6px 10px;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     box-shadow: 0 16px 40px rgba(0,0,0,0.6);
+    pointer-events: auto;
+    max-width: 100%;
+    box-sizing: border-box;
   }}
 
   .dock-tab {{
     background: transparent;
     border: none;
     color: var(--text-muted);
-    padding: 7px 12px;
+    padding: 7px 10px;
     border-radius: 10px;
     cursor: pointer;
     font-size: 12px;
     font-weight: 700;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     transition: all 0.15s ease;
+    white-space: nowrap;
+    touch-action: manipulation;
   }}
   .dock-tab:hover {{
     color: #fff;
@@ -427,9 +438,10 @@ html_app = f"""
 
   .dock-sep {{
     width: 1px;
-    height: 24px;
+    height: 20px;
     background: var(--border);
     margin: 0 2px;
+    flex-shrink: 0;
   }}
 
   /* EXPORT BUTTONS ON DOCK */
@@ -438,15 +450,18 @@ html_app = f"""
     color: #fff;
     border: none;
     border-radius: 10px;
-    padding: 8px 16px;
-    font-size: 12px;
+    padding: 7px 13px;
+    font-size: 11.5px;
     font-weight: 800;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 5px;
     box-shadow: 0 4px 15px rgba(88,101,242,0.35);
     transition: all 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+    touch-action: manipulation;
   }}
   .dock-export-gif:hover {{
     transform: translateY(-1px);
@@ -457,11 +472,17 @@ html_app = f"""
     border: 1px solid var(--border);
     color: #fff;
     border-radius: 10px;
-    padding: 8px 12px;
-    font-size: 12px;
+    padding: 7px 11px;
+    font-size: 11.5px;
     font-weight: 700;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     transition: all 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+    touch-action: manipulation;
   }}
   .dock-export-png:hover {{
     border-color: #fff;
@@ -472,11 +493,17 @@ html_app = f"""
     border: 1px solid var(--border);
     color: #fff;
     border-radius: 10px;
-    padding: 8px 10px;
+    padding: 7px 10px;
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     transition: all 0.15s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+    touch-action: manipulation;
   }}
   .dock-copy:hover {{
     border-color: var(--green);
@@ -486,22 +513,24 @@ html_app = f"""
   /* SLIDE-UP GLASS DRAWER */
   .glass-drawer {{
     position: absolute;
-    bottom: 74px;
+    bottom: 64px;
     width: 440px;
-    max-width: 92vw;
+    max-width: calc(100vw - 20px);
     background: var(--bg-drawer);
     backdrop-filter: blur(32px);
     -webkit-backdrop-filter: blur(32px);
     border: 1px solid var(--border);
     border-radius: 18px;
-    padding: 16px;
+    padding: 14px;
     box-shadow: 0 20px 50px rgba(0,0,0,0.7);
     display: none;
     flex-direction: column;
-    gap: 12px;
-    max-height: 58vh;
+    gap: 10px;
+    max-height: calc(100vh - 120px);
     overflow-y: auto;
     animation: drawerPop 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    pointer-events: auto;
+    box-sizing: border-box;
   }}
   .glass-drawer.open {{
     display: flex;
@@ -611,20 +640,23 @@ html_app = f"""
     padding: 3px;
     border: 1px solid var(--border);
     gap: 3px;
+    flex-wrap: wrap;
   }}
   .btn-toggle {{
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 50px;
     background: transparent;
     border: none;
     color: var(--text-muted);
     font-size: 11px;
     font-weight: 700;
-    padding: 6px;
+    padding: 6px 8px;
     border-radius: 6px;
     cursor: pointer;
     transition: all 0.15s ease;
     text-align: center;
     white-space: nowrap;
+    touch-action: manipulation;
   }}
   .btn-toggle.active {{
     background: var(--blurple);
@@ -692,6 +724,129 @@ html_app = f"""
     color: var(--text-muted);
     text-align: center;
     margin-top: 6px;
+  }}
+
+  /* RESPONSIVE SCALING - GUARANTEE ALL BUTTONS FIT ON ALL SCREENS */
+  @media (max-width: 768px) {{
+    .workspace {{
+      padding: 44px 6px 68px 6px;
+    }}
+    .context-pill {{
+      top: 6px;
+      padding: 4px 10px;
+      gap: 6px;
+    }}
+    .pill-hint {{
+      display: none; /* Hide instruction text on mobile/tablet so all 7 tools fit */
+    }}
+    .pill-tools {{
+      gap: 3px;
+      padding-left: 6px;
+    }}
+    .pill-btn {{
+      padding: 4px 6px;
+      font-size: 10px;
+    }}
+    .floating-dock {{
+      padding: 5px 8px;
+      gap: 4px;
+      border-radius: 16px;
+    }}
+    .dock-tab {{
+      padding: 6px 8px;
+      font-size: 11px;
+      gap: 4px;
+    }}
+    .dock-export-gif {{
+      padding: 6px 9px;
+      font-size: 11px;
+    }}
+    .dock-export-png {{
+      padding: 6px 8px;
+      font-size: 11px;
+    }}
+    .dock-copy {{
+      padding: 6px 8px;
+      font-size: 11px;
+    }}
+  }}
+
+  @media (max-width: 540px) {{
+    .context-pill {{
+      gap: 4px;
+      padding: 3px 6px;
+      max-width: calc(100vw - 12px);
+    }}
+    .pill-badge {{
+      font-size: 9.5px;
+      padding: 2px 5px;
+    }}
+    .pill-tools {{
+      gap: 2px;
+      padding-left: 4px;
+    }}
+    .pill-btn {{
+      padding: 3px 5px;
+      font-size: 9.5px;
+    }}
+    /* Hide dock text labels on small screens so all buttons fit neatly in 1 bar */
+    .tab-label {{
+      display: none;
+    }}
+    .dock-tab {{
+      padding: 7px 8px;
+      font-size: 14px;
+    }}
+    .exp-icon {{
+      display: none;
+    }}
+    .dock-export-gif {{
+      padding: 7px 9px;
+      font-size: 11px;
+      font-weight: 800;
+    }}
+    .dock-export-png {{
+      padding: 7px 8px;
+      font-size: 11px;
+    }}
+    .dock-copy {{
+      padding: 7px 8px;
+      font-size: 12px;
+    }}
+    .glass-drawer {{
+      bottom: 58px;
+      padding: 12px;
+    }}
+  }}
+
+  @media (max-width: 380px) {{
+    .floating-dock {{
+      padding: 4px 5px;
+      gap: 2px;
+    }}
+    .dock-tab {{
+      padding: 5px 6px;
+      font-size: 13px;
+    }}
+    .dock-export-gif {{
+      padding: 5px 6px;
+      font-size: 10px;
+    }}
+    .dock-export-png {{
+      padding: 5px 6px;
+      font-size: 10px;
+    }}
+    .dock-copy {{
+      padding: 5px 6px;
+      font-size: 11px;
+    }}
+    .dock-sep {{
+      margin: 0 1px;
+    }}
+    .pill-btn {{
+      padding: 3px 4px;
+      font-size: 9px;
+    }}
   }}
 </style>
 <script>
@@ -790,10 +945,10 @@ html_app = f"""
         <button class="drawer-close" onclick="closeAllDrawers()">✕</button>
       </div>
 
-      <div style="display:flex; gap:6px;">
-        <button id="addTopTextBtn" class="pill-btn" style="flex:1; padding:8px;">➕ Top Text</button>
-        <button id="addBottomTextBtn" class="pill-btn" style="flex:1; padding:8px;">➕ Bottom Text</button>
-        <button id="addCustomTextBtn" class="pill-btn" style="flex:1; padding:8px; background:var(--blurple); color:#fff; border-color:var(--blurple);">➕ Custom</button>
+      <div style="display:flex; gap:6px; flex-wrap:wrap;">
+        <button id="addTopTextBtn" class="pill-btn" style="flex:1 1 80px; padding:8px;">➕ Top Text</button>
+        <button id="addBottomTextBtn" class="pill-btn" style="flex:1 1 80px; padding:8px;">➕ Bottom Text</button>
+        <button id="addCustomTextBtn" class="pill-btn" style="flex:1 1 80px; padding:8px; background:var(--blurple); color:#fff; border-color:var(--blurple);">➕ Custom</button>
       </div>
 
       <div id="textEditorBox" style="display:flex; flex-direction:column; gap:8px; margin-top:4px;">
@@ -864,17 +1019,17 @@ html_app = f"""
 
     <!-- THE FLOATING GLASS DOCK (ICONS + EXPORT) -->
     <div class="floating-dock">
-      <button class="dock-tab" data-target="faces"><span>🎭</span><span>Faces</span></button>
-      <button class="dock-tab" data-target="bg"><span>🖼️</span><span>Backdrop</span></button>
-      <button class="dock-tab" data-target="text"><span>💬</span><span>Text</span></button>
-      <button class="dock-tab" data-target="stickers"><span>🎀</span><span>Stickers</span></button>
-      <button class="dock-tab" data-target="anim"><span>✨</span><span>Animate</span></button>
+      <button class="dock-tab" data-target="faces" title="Murad Faces"><span class="tab-icon">🎭</span><span class="tab-label">Faces</span></button>
+      <button class="dock-tab" data-target="bg" title="Backdrop & Templates"><span class="tab-icon">🖼️</span><span class="tab-label">Backdrop</span></button>
+      <button class="dock-tab" data-target="text" title="Meme Text"><span class="tab-icon">💬</span><span class="tab-label">Text</span></button>
+      <button class="dock-tab" data-target="stickers" title="Custom Stickers"><span class="tab-icon">🎀</span><span class="tab-label">Stickers</span></button>
+      <button class="dock-tab" data-target="anim" title="Discord GIF Effects"><span class="tab-icon">✨</span><span class="tab-label">Animate</span></button>
 
       <div class="dock-sep"></div>
 
-      <button id="downloadGifBtn" class="dock-export-gif"><span>⬇️</span><span>GIF</span></button>
-      <button id="downloadPngBtn" class="dock-export-png"><span>⬇️</span><span>PNG</span></button>
-      <button id="copyPngBtn" class="dock-copy" title="Copy to clipboard">📋</button>
+      <button id="downloadGifBtn" class="dock-export-gif" title="Export Animated GIF"><span class="exp-icon">⬇️</span><span class="exp-label">GIF</span></button>
+      <button id="downloadPngBtn" class="dock-export-png" title="Export High-Res PNG"><span class="exp-icon">⬇️</span><span class="exp-label">PNG</span></button>
+      <button id="copyPngBtn" class="dock-copy" title="Copy to clipboard for Discord paste"><span class="exp-icon">📋</span></button>
     </div>
 
     <!-- PROGRESS BAR OVERLAY -->
