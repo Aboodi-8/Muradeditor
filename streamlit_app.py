@@ -9,7 +9,7 @@ import streamlit.components.v1 as components
 
 # Configure Streamlit page for full width
 st.set_page_config(
-    page_title="Meme Editor & GIF Maker",
+    page_title="Murad Meme Studio | Discord GIF & Meme Maker",
     page_icon="🎭",
     layout="wide",
     initial_sidebar_state="collapsed",
@@ -20,21 +20,14 @@ st.markdown("""
 <style>
     #MainMenu, header, footer { visibility: hidden; }
     .block-container {
-        padding-top: 0.5rem;
-        padding-bottom: 1rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding-top: 0.25rem;
+        padding-bottom: 0.5rem;
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
         max-width: 100%;
     }
     .stApp {
         background-color: #1e1f22;
-    }
-    .admin-box {
-        background-color: #2b2d31;
-        border: 1px solid rgba(88, 101, 242, 0.3);
-        border-radius: 10px;
-        padding: 16px;
-        margin-top: 15px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -118,7 +111,6 @@ def push_file_to_github(repo_owner: str, repo_name: str, file_path: str, content
         "X-GitHub-Api-Version": "2022-11-28",
     }
 
-    # Check if file exists to fetch sha
     sha = None
     try:
         req = urllib.request.Request(url, headers=headers)
@@ -128,7 +120,7 @@ def push_file_to_github(repo_owner: str, repo_name: str, file_path: str, content
                 sha = data.get("sha")
     except urllib.error.HTTPError as e:
         if e.code == 404:
-            pass  # New file, sha not required
+            pass
         elif e.code in (401, 403):
             err_body = e.read().decode("utf-8", errors="replace")
             try:
@@ -177,7 +169,6 @@ def delete_file_from_github(repo_owner: str, repo_name: str, file_path: str, com
         "X-GitHub-Api-Version": "2022-11-28",
     }
 
-    # Fetch current file sha
     sha = None
     try:
         req = urllib.request.Request(url, headers=headers)
@@ -228,7 +219,6 @@ def delete_file_from_github(repo_owner: str, repo_name: str, file_path: str, com
     except Exception as e:
         return False, f"Network error: {str(e)}"
 
-
 # Read local libraries
 with open(ASSETS_DIR / "gifshot.min.js", "r", encoding="utf-8") as f:
     gifshot_script = f.read()
@@ -245,7 +235,7 @@ faces_json = json.dumps(faces_data)
 templates_data = load_templates_catalog()
 templates_json = json.dumps(templates_data)
 
-# Embed Interactive HTML5 Canvas Application with Real-Time Mouse Dragging
+# --- EMBEDDED CANVA-STYLE STUDIO HTML5 APP ---
 html_app = f"""
 <!DOCTYPE html>
 <html>
@@ -259,11 +249,14 @@ html_app = f"""
     --bg-sidebar: #232428;
     --bg-input: #111214;
     --border: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.18);
     --blurple: #5865F2;
     --blurple-hover: #4752C4;
     --text-main: #f2f3f5;
     --text-muted: #949ba4;
     --green: #23a55a;
+    --green-hover: #1f9350;
+    --danger: #da373c;
   }}
   * {{ box-sizing: border-box; margin: 0; padding: 0; }}
   body {{
@@ -271,69 +264,167 @@ html_app = f"""
     background: var(--bg-dark);
     color: var(--text-main);
     overflow-x: hidden;
-    padding: 8px 12px;
-  }}
-  .app-container {{
-    display: grid;
-    grid-template-columns: minmax(560px, 680px) 1fr;
-    gap: 20px;
-    max-width: 100%;
-    width: 100%;
-    margin: 0 auto;
-    align-items: start;
     padding: 4px 8px;
   }}
-  .sidebar-col {{
+
+  /* STUDIO MAIN CONTAINER */
+  .studio-container {{
+    display: grid;
+    grid-template-columns: 370px 1fr;
+    gap: 16px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    align-items: start;
+    min-height: 92vh;
+  }}
+
+  /* STUDIO SIDEBAR (Rail + Panel) */
+  .studio-sidebar {{
+    display: flex;
+    background: var(--bg-sidebar);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    height: 88vh;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  }}
+
+  /* TABS RAIL (Left Icon Strip) */
+  .studio-tabs-rail {{
+    width: 68px;
+    background: #18191c;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    align-items: center;
+    padding: 10px 0;
+    gap: 6px;
+    border-right: 1px solid var(--border);
+    flex-shrink: 0;
   }}
-  .sidebar-grid {{
-    display: grid;
-    grid-template-columns: 1fr 1fr;
+  .rail-tab {{
+    width: 54px;
+    height: 52px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: all 0.15s ease;
+    gap: 3px;
+    padding: 4px;
+  }}
+  .rail-tab:hover {{
+    background: rgba(255,255,255,0.06);
+    color: var(--text-main);
+  }}
+  .rail-tab.active {{
+    background: rgba(88, 101, 242, 0.18);
+    color: #fff;
+    border-left: 3px solid var(--blurple);
+    border-radius: 0 8px 8px 0;
+  }}
+  .rail-icon {{
+    font-size: 18px;
+    line-height: 1;
+  }}
+  .rail-label {{
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }}
+
+  /* ACTIVE TAB PANEL */
+  .studio-panel {{
+    flex: 1;
+    padding: 14px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }}
+  .tab-pane {{
+    display: none;
+    flex-direction: column;
     gap: 12px;
-    align-items: start;
   }}
-  .sidebar-subcol {{
+  .tab-pane.active {{
     display: flex;
-    flex-direction: column;
-    gap: 10px;
   }}
-  .card-step5 {{
-    margin-bottom: 0 !important;
+
+  .pane-header {{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
   }}
-  .step5-body {{
-    display: grid;
-    grid-template-columns: 1.15fr 1fr;
-    gap: 14px;
-    margin-top: 6px;
-    align-items: start;
+  .pane-title {{
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
   }}
-  .btn-add-face {{
+  .pane-desc {{
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }}
+
+  /* BUTTONS & CONTROLS */
+  .btn-primary-sm {{
     background: var(--blurple);
     color: #fff;
     border: none;
     border-radius: 6px;
-    padding: 3px 8px;
+    padding: 4px 10px;
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
     transition: background 0.15s ease;
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
   }}
-  .btn-add-face:hover {{
-    background: var(--blurple-hover);
-  }}
-  .face-layers-bar {{
-    background: rgba(0,0,0,0.35);
-    border: 1px solid var(--border);
+  .btn-primary-sm:hover {{ background: var(--blurple-hover); }}
+
+  .btn-upload-box {{
+    display: block;
+    background: rgba(88, 101, 242, 0.1);
+    border: 1px dashed var(--blurple);
     border-radius: 8px;
-    padding: 7px 10px;
-    margin-bottom: 8px;
+    padding: 10px;
+    text-align: center;
+    color: #fff;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
   }}
-  .face-layer-pill {{
+  .btn-upload-box:hover {{
+    background: rgba(88, 101, 242, 0.2);
+    border-color: #fff;
+  }}
+  .btn-upload-box input {{ display: none; }}
+
+  .section-label {{
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    display: block;
+    margin-bottom: 4px;
+  }}
+
+  /* LAYERS CHIPS STRIP */
+  .layers-strip {{
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    align-items: center;
+  }}
+  .layer-pill {{
     background: var(--bg-input);
     border: 1px solid var(--border);
     color: var(--text-main);
@@ -348,232 +439,13 @@ html_app = f"""
     transition: all 0.15s ease;
     max-width: 140px;
     white-space: nowrap;
-    overflow: hidden;
   }}
-  .face-layer-pill img {{
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    object-fit: cover;
-    flex-shrink: 0;
-    display: inline-block;
-  }}
-  .face-layer-pill span {{
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }}
-  .face-layer-pill:hover {{
-    border-color: rgba(88,101,242,0.5);
-  }}
-  .face-layer-pill.active {{
-    background: rgba(88,101,242,0.3);
+  .layer-pill.active {{
     border-color: var(--blurple);
-    color: #fff;
-    box-shadow: 0 0 8px rgba(88,101,242,0.4);
-  }}
-  .pill-del {{
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 11px;
-    cursor: pointer;
-    padding: 0 2px;
-    line-height: 1;
-    font-weight: 700;
-  }}
-  .pill-del:hover {{
-    color: #ef4444;
-  }}
-  @media (max-width: 1240px) {{
-    .app-container {{
-      grid-template-columns: minmax(480px, 560px) 1fr;
-      gap: 16px;
-    }}
-  }}
-  @media (max-width: 980px) {{
-    .sidebar-grid {{
-      grid-template-columns: 1fr;
-    }}
-    .step5-body {{
-      grid-template-columns: 1fr;
-    }}
-    .app-container {{
-      grid-template-columns: 1fr;
-    }}
-    .canvas-stage {{
-      position: static !important;
-    }}
-  }}
-
-  .card {{
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 10px;
-  }}
-  .card-title {{
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 700;
-    margin-bottom: 4px;
-  }}
-  .step-badge {{
-    width: 20px;
-    height: 20px;
-    background: var(--blurple);
-    color: #fff;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 11px;
-    font-weight: 700;
-  }}
-  .hint {{ font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }}
-  .btn-upload {{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    background: var(--blurple);
-    color: #fff;
-    border-radius: 6px;
-    padding: 9px;
-    font-weight: 700;
-    font-size: 12px;
-    cursor: pointer;
-    text-align: center;
-    transition: background 0.15s ease;
-  }}
-  .btn-upload:hover {{ background: var(--blurple-hover); }}
-  .btn-upload input {{ display: none; }}
-  .presets-row {{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-    margin-top: 8px;
-  }}
-  .preset-btn {{
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    color: var(--text-main);
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.15s ease;
-  }}
-  .preset-btn:hover {{ border-color: var(--blurple); }}
-  .preset-btn.active {{
-    background: var(--blurple);
-    color: #fff;
-    border-color: var(--blurple);
-  }}
-  .faces-grid {{
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-    max-height: 230px;
-    overflow-y: auto;
-  }}
-  .face-btn {{
-    background: var(--bg-input);
-    border: 2px solid transparent;
-    border-radius: 8px;
-    padding: 4px;
-    cursor: pointer;
-    text-align: center;
-    transition: all 0.15s ease;
-  }}
-  .face-btn:hover {{ border-color: rgba(88,101,242,0.5); }}
-  .face-btn.active {{
-    border-color: var(--blurple);
-    background: rgba(88,101,242,0.25);
-    box-shadow: 0 0 10px rgba(88,101,242,0.4);
-  }}
-  .face-btn img {{
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    object-fit: cover;
-    display: block;
-    margin: 0 auto 3px;
-    border: 2px solid rgba(255,255,255,0.15);
-  }}
-  .face-btn span {{
-    font-size: 10px;
-    font-weight: 600;
-    display: block;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }}
-  .row-flex {{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-top: 8px;
-  }}
-  .btn-group {{
-    display: flex;
-    background: var(--bg-input);
-    padding: 2px;
-    border-radius: 6px;
-    gap: 2px;
-  }}
-  .btn-toggle {{
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 11px;
-    font-weight: 600;
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-  }}
-  .btn-toggle.active {{
-    background: var(--blurple);
+    background: rgba(88, 101, 242, 0.25);
     color: #fff;
   }}
-  .slider-control {{ margin-bottom: 8px; }}
-  .slider-control label {{
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    color: var(--text-muted);
-    margin-bottom: 3px;
-  }}
-  .slider-control input[type="range"] {{
-    width: 100%;
-    accent-color: var(--blurple);
-    cursor: pointer;
-  }}
-  .acc-layer-pill, .text-layer-pill {{
-    background: var(--bg-input);
-    border: 1px solid var(--border);
-    color: var(--text-main);
-    padding: 3px 8px;
-    border-radius: 6px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    transition: all 0.15s ease;
-    max-width: 150px;
-    white-space: nowrap;
-  }}
-  .acc-layer-pill.active, .text-layer-pill.active {{
-    border-color: var(--blurple);
-    background: rgba(88, 101, 242, 0.2);
-    color: #fff;
-  }}
-  .acc-layer-pill img {{
+  .layer-pill img {{
     width: 18px;
     height: 18px;
     border-radius: 4px;
@@ -584,197 +456,444 @@ html_app = f"""
     color: var(--text-muted);
     font-weight: bold;
     border-radius: 50%;
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 10px;
+    font-size: 9px;
     background: transparent;
     border: none;
     cursor: pointer;
-    line-height: 1;
   }}
-  .pill-del-btn:hover {{
-    background: #da373c;
+  .pill-del-btn:hover {{ background: var(--danger); color: #fff; }}
+
+  /* FACES GRID */
+  .faces-grid {{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding-right: 2px;
+  }}
+  .face-btn {{
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }}
+  .face-btn:hover {{
+    border-color: var(--border-hover);
+    transform: translateY(-1px);
+  }}
+  .face-btn.active {{
+    border-color: var(--blurple);
+    background: rgba(88, 101, 242, 0.2);
+  }}
+  .face-btn img {{
+    width: 52px;
+    height: 52px;
+    border-radius: 6px;
+    object-fit: cover;
+    margin-bottom: 4px;
+  }}
+  .face-btn span {{
+    font-size: 10px;
+    color: var(--text-main);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+  }}
+
+  /* PRESET BUTTONS ROW */
+  .presets-row {{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 5px;
+  }}
+  .preset-btn {{
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 6px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s ease;
+  }}
+  .preset-btn:hover {{ border-color: var(--blurple); }}
+  .preset-btn.active {{
+    background: rgba(88, 101, 242, 0.2);
+    border-color: var(--blurple);
     color: #fff;
   }}
-  .item-box {{
-    background: rgba(0,0,0,0.25);
+
+  /* BUTTON GROUPS & TOGGLES */
+  .btn-group {{
+    display: flex;
+    background: var(--bg-input);
     border-radius: 6px;
-    padding: 8px;
-    border: 1px solid rgba(255,255,255,0.05);
+    padding: 2px;
+    border: 1px solid var(--border);
+    gap: 2px;
   }}
+  .btn-toggle {{
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 10.5px;
+    font-weight: 600;
+    padding: 5px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    text-align: center;
+  }}
+  .btn-toggle.active {{
+    background: var(--blurple);
+    color: #fff;
+  }}
+
+  /* ACCORDION */
+  .accordion {{
+    background: rgba(0,0,0,0.25);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+  }}
+  .accordion summary {{
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    cursor: pointer;
+    outline: none;
+    user-select: none;
+  }}
+  .accordion-content {{
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }}
+
+  /* SLIDER GROUPS */
+  .slider-group {{
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }}
+  .slider-group label {{
+    font-size: 10.5px;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+  }}
+  .slider-group input[type="range"] {{
+    width: 100%;
+    accent-color: var(--blurple);
+    cursor: pointer;
+  }}
+
+  /* ITEM EDIT CARD */
+  .item-edit-card {{
+    background: rgba(0,0,0,0.25);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }}
+  .edit-header {{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }}
+  .edit-title {{
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--blurple);
+  }}
+  .btn-danger-xs {{
+    background: var(--danger);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+  }}
+  .btn-ghost-xs {{
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+  }}
+  .btn-preset-text {{
+    flex: 1;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 6px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }}
+  .pane-input {{
+    width: 100%;
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: #fff;
+    font-size: 12px;
+    padding: 7px 10px;
+    border-radius: 6px;
+    outline: none;
+  }}
+  .empty-prompt {{
+    padding: 14px 10px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 11px;
+    background: rgba(0,0,0,0.15);
+    border-radius: 8px;
+    border: 1px dashed var(--border);
+  }}
+
+  /* ANIMATION GRID */
   .anim-grid {{
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
+    gap: 6px;
   }}
-  .anim-btn {{
-    background: var(--bg-input);
+  .anim-card {{
+    background: var(--bg-card);
     border: 1px solid var(--border);
-    border-radius: 6px;
-    padding: 6px 2px;
-    cursor: pointer;
-    color: var(--text-main);
+    border-radius: 8px;
+    padding: 8px 4px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2px;
-    font-size: 10px;
-    font-weight: 600;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
   }}
-  .anim-btn.active {{
-    background: rgba(88,101,242,0.25);
+  .anim-card:hover {{ border-color: var(--border-hover); }}
+  .anim-card.active {{
+    background: rgba(88, 101, 242, 0.2);
     border-color: var(--blurple);
   }}
-  .canvas-stage {{
+  .anim-icon {{ font-size: 18px; line-height: 1; }}
+  .anim-name {{ font-size: 10px; font-weight: 600; color: var(--text-main); text-align: center; }}
+
+  /* ========================================================
+     STAGE AREA (RIGHT COLUMN)
+     ======================================================== */
+  .studio-stage {{
     display: flex;
     flex-direction: column;
+    gap: 8px;
+    position: sticky;
+    top: 4px;
     align-items: center;
   }}
 
-  .canvas-stage {{
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
+  /* FLOATING CONTEXT BAR (TOP OF CANVAS) */
+  .context-bar {{
     width: 100%;
-    position: sticky;
-    top: 8px;
-    z-index: 10;
-  }}
-  .canvas-header {{
-    width: 100%;
+    max-width: 680px;
+    background: #232428;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
     display: flex;
-    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25);
   }}
-  .drag-badge {{
-    background: rgba(35,165,90,0.15);
-    color: #57f287;
+  .context-info {{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    overflow: hidden;
+  }}
+  .context-badge {{
+    background: rgba(88, 101, 242, 0.2);
+    color: #5865F2;
+    padding: 2px 8px;
+    border-radius: 6px;
     font-size: 11px;
     font-weight: 700;
-    padding: 4px 10px;
-    border-radius: 9999px;
-    border: 1px solid rgba(35,165,90,0.3);
+    white-space: nowrap;
   }}
-  .canvas-box {{
-    width: 100%;
-    max-width: 100%;
-    min-height: 480px;
-    background: #111214;
-    border: 2px solid rgba(88,101,242,0.5);
-    border-radius: 14px;
+  .context-hint {{
+    font-size: 10.5px;
+    color: var(--text-muted);
+    white-space: nowrap;
     overflow: hidden;
-    position: relative;
-    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
-    touch-action: none;
+    text-overflow: ellipsis;
+  }}
+  .context-actions {{
     display: flex;
-    justify-content: center;
+    gap: 3px;
     align-items: center;
+  }}
+  .btn-tool {{
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    width: 28px;
+    height: 28px;
+    border-radius: 5px;
+    font-size: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }}
+  .btn-tool:hover {{
+    background: rgba(255,255,255,0.08);
+    border-color: #fff;
+  }}
+  .btn-tool.danger:hover {{
+    background: var(--danger);
+    color: #fff;
+    border-color: var(--danger);
+  }}
+
+  /* CANVAS VIEWPORT */
+  .canvas-viewport {{
+    width: 100%;
+    max-width: 680px;
+    background: #111214;
+    border: 1px solid var(--border);
+    border-radius: 12px;
     padding: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.5);
   }}
   #mainCanvas {{
     max-width: 100%;
-    width: auto;
-    height: auto;
-    max-height: 68vh;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-    display: block;
+    max-height: 64vh;
+    object-fit: contain;
+    border-radius: 6px;
     cursor: grab;
-    transition: max-height 0.2s ease;
+    display: block;
+    user-select: none;
+    -webkit-user-select: none;
   }}
   #mainCanvas:active {{
     cursor: grabbing;
   }}
-  .quick-tools {{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 10px;
-    width: 100%;
-    justify-content: center;
-  }}
-  .quick-btn {{
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    font-size: 11px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.15s ease;
-  }}
-  .quick-btn:hover {{ color: #fff; border-color: var(--blurple); }}
-  .action-row {{
-    width: 100%;
-    display: flex;
-    gap: 8px;
-    margin-top: 10px;
-  }}
-  .filename-row {{
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin-top: 10px;
-    width: 100%;
-  }}
 
-  .btn-action-primary {{
-    flex: 2;
+  /* STAGE FOOTER & DOWNLOAD BUTTONS */
+  .stage-footer {{
+    width: 100%;
+    max-width: 680px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }}
+  .action-buttons-row {{
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 8px;
+  }}
+  .btn-download-gif {{
     background: var(--blurple);
     color: #fff;
     border: none;
     border-radius: 8px;
-    padding: 12px;
     font-size: 13px;
     font-weight: 700;
+    padding: 10px;
     cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    box-shadow: 0 4px 16px rgba(88,101,242,0.4);
+    transition: background 0.15s ease;
+    box-shadow: 0 4px 12px rgba(88,101,242,0.3);
   }}
-  .btn-action-primary:hover {{ background: var(--blurple-hover); }}
-  .btn-action-secondary {{
-    flex: 1;
+  .btn-download-gif:hover {{ background: var(--blurple-hover); }}
+
+  .btn-download-png {{
     background: var(--bg-card);
-    color: var(--text-main);
     border: 1px solid var(--border);
+    color: #fff;
     border-radius: 8px;
-    padding: 12px;
     font-size: 12px;
     font-weight: 600;
+    padding: 10px;
     cursor: pointer;
+    transition: all 0.15s ease;
   }}
-  .btn-action-secondary:hover {{ background: #35373c; }}
-  .caption-input {{
-    width: 100%;
-    background: var(--bg-input);
+  .btn-download-png:hover {{ border-color: #fff; background: rgba(255,255,255,0.08); }}
+
+  .btn-copy-png {{
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: #fff;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 10px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }}
+  .btn-copy-png:hover {{ border-color: var(--green); color: var(--green); }}
+
+  .filename-bar {{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 8px 10px;
+    padding: 4px 10px;
+  }}
+  .filename-label {{ font-size: 11px; color: var(--text-muted); font-weight: 600; }}
+  .filename-bar input {{
+    flex: 1;
+    background: transparent;
+    border: none;
     color: #fff;
-    font-size: 12px;
-    margin-top: 6px;
+    font-size: 11.5px;
     outline: none;
   }}
-  .caption-input:focus {{ border-color: var(--blurple); }}
+  .filename-suffix {{
+    font-size: 10px;
+    color: var(--blurple);
+    background: rgba(88,101,242,0.15);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+  }}
+
+  /* PROGRESS BAR */
   .progress-wrap {{
     width: 100%;
-    max-width: 440px;
     background: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 8px;
     padding: 10px;
-    margin-top: 10px;
-    display: none;
   }}
   .progress-track {{
     height: 8px;
@@ -795,6 +914,18 @@ html_app = f"""
     margin-top: 6px;
   }}
 
+  @media (max-width: 900px) {{
+    .studio-container {{
+      grid-template-columns: 1fr;
+    }}
+    .studio-sidebar {{
+      height: auto;
+      max-height: 480px;
+    }}
+    .studio-stage {{
+      position: static;
+    }}
+  }}
 </style>
 <script>
 {gifshot_script}
@@ -805,325 +936,338 @@ html_app = f"""
 </head>
 <body>
 
-<div class="app-container">
-  <!-- Controls Column -->
-  <div class="sidebar-col">
-    <div class="sidebar-grid">
-      <!-- Left Sub-column -->
-      <div class="sidebar-subcol">
-        <!-- 1. Background -->
-        <div class="card">
-          <div class="card-title">
-            <span class="step-badge">1</span>
-            <span>Background Image / Meme / GIF</span>
-          </div>
-          <div class="hint">Upload any image/meme/GIF or pick a preset body:</div>
-          <label class="btn-upload">
-            <span>📁 Upload Picture / Meme / Animated GIF</span>
-            <input type="file" id="bgFileInput" accept="image/*,.gif">
-          </label>
-          <div class="presets-row" id="bgPresetsRow">
-            <!-- Dynamically populated from real meme template images -->
-          </div>
+<div class="studio-container">
 
-          <!-- Framing & True Size Mode -->
-          <div style="margin-top: 10px; margin-bottom: 6px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-              <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Canvas Size & Ratio:</span>
-              <span id="canvasDimsBadge" style="font-size: 10px; background: rgba(88,101,242,0.2); color: #5865F2; padding: 1px 6px; border-radius: 8px;">500x500</span>
-            </div>
-            <div class="btn-group" id="canvasSizeGroup" style="display:flex; gap:3px;">
-              <button class="btn-toggle active" data-size="true_size" title="Keep natural true size and aspect ratio of upload">📐 True Size</button>
-              <button class="btn-toggle" data-size="square" title="1:1 Square Discord sticker">⏹️ Square</button>
-              <button class="btn-toggle" data-size="landscape" title="16:9 Landscape">🖼️ 16:9</button>
-              <button class="btn-toggle" data-size="portrait" title="9:16 Portrait">📱 9:16</button>
-            </div>
-          </div>
+  <!-- LEFT: TAB NAVIGATION & CONTROLS DRAWER -->
+  <div class="studio-sidebar">
 
-          <!-- Crop & Framing Controls -->
-          <div style="margin-top: 8px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-              <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Crop & Fit:</span>
-              <button id="resetBgCropBtn" style="font-size: 10px; background: transparent; border: 1px solid var(--border); color: var(--text-muted); padding: 2px 6px; border-radius: 4px; cursor: pointer;">🔄 Reset Crop</button>
-            </div>
-            <div class="btn-group" id="bgFitGroup" style="display:flex; gap:3px; margin-bottom: 6px;">
-              <button class="btn-toggle active" data-fit="cover" title="Fill canvas (auto-crop edges)">✂️ Fill & Crop</button>
-              <button class="btn-toggle" data-fit="fit" title="Fit entire image without cropping">🔍 Full Image</button>
-            </div>
-
-            <div style="background: rgba(0,0,0,0.25); border-radius: 6px; padding: 8px; border: 1px solid rgba(255,255,255,0.05);">
-              <div style="display:flex; justify-content:space-between; font-size:11px; margin-bottom:3px;">
-                <span style="color:var(--text-muted);">Background Zoom:</span>
-                <span id="bgZoomVal" style="color:#fff; font-weight:600;">100%</span>
-              </div>
-              <input type="range" id="bgZoomSlider" min="0.4" max="2.5" step="0.05" value="1.0" style="width:100%; margin-bottom:6px;">
-
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                <div>
-                  <span style="font-size:10px; color:var(--text-muted);">Pan Left / Right:</span>
-                  <input type="range" id="bgPanXSlider" min="-300" max="300" step="2" value="0" style="width:100%;">
-                </div>
-                <div>
-                  <span style="font-size:10px; color:var(--text-muted);">Pan Up / Down:</span>
-                  <input type="range" id="bgPanYSlider" min="-300" max="300" step="2" value="0" style="width:100%;">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- 3. Custom Accessories & Stickers -->
-        <div class="card">
-          <div class="card-title">
-            <span class="step-badge">3</span>
-            <span>Custom Accessories & Stickers</span>
-          </div>
-          <div class="hint">Upload any stickers or images and drag them freely:</div>
-
-          <label class="btn-upload" style="margin-bottom:8px; padding:6px 10px; font-size:11px;">
-            <span>📁 Upload Custom Accessory / Sticker</span>
-            <input type="file" id="accFileInput" accept="image/*,.gif">
-          </label>
-
-          <div id="accLayersContainer" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:8px;">
-            <!-- Dynamically populated accessory pills -->
-          </div>
-
-          <div id="accControlsBox" class="item-box" style="display:none;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <span id="selectedAccTitle" style="font-size:11px; font-weight:700; color:#5865F2;">Accessory #1</span>
-              <button id="deleteAccBtn" type="button" style="background:#da373c; color:#fff; border:none; border-radius:4px; padding:2px 7px; font-size:10px; font-weight:700; cursor:pointer;">🗑️ Remove</button>
-            </div>
-            <div class="slider-control">
-              <label>Size: <span id="accScaleVal">100%</span></label>
-              <input type="range" id="accScale" min="0.1" max="3.0" step="0.05" value="1.0">
-            </div>
-            <div class="slider-control">
-              <label>Rotation: <span id="accRotVal">0°</span></label>
-              <input type="range" id="accRot" min="-180" max="180" step="5" value="0">
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
-              <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Flip:</span>
-              <div class="btn-group" style="display:flex; gap:3px;">
-                <button class="btn-toggle" id="accFlipHBtn" title="Flip horizontally">↔️ Flip H</button>
-                <button class="btn-toggle" id="accFlipVBtn" title="Flip vertically">↕️ Flip V</button>
-              </div>
-            </div>
-            <div class="slider-control" style="margin-top:6px;">
-              <label>Opacity: <span id="accOpacityVal">100%</span></label>
-              <input type="range" id="accOpacity" min="0.1" max="1.0" step="0.05" value="1.0">
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Right Sub-column -->
-      <div class="sidebar-subcol">
-        <!-- 2. Choose fruits Faces -->
-        <div class="card">
-          <div class="card-title">
-            <span class="step-badge">2</span>
-            <span>Choose fruits Faces</span>
-          </div>
-          <div class="hint">Pick a face or upload your own to slap on the meme:</div>
-
-          <!-- Face Layers Bar (Multi-face manager) -->
-          <div class="face-layers-bar">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-size:10px; font-weight:700; color:var(--text-muted);">ACTIVE FACE LAYERS:</span>
-                <span id="faceLayersCount" style="font-size:10px; color:#5865F2; font-weight:700;">1 face</span>
-              </div>
-              <button id="addFaceLayerBtn" type="button" class="btn-add-face" title="Add another face layer to slap on the meme">➕ Add Face</button>
-            </div>
-            <div id="faceLayersContainer" style="display:flex; gap:5px; flex-wrap:wrap; align-items:center;">
-              <!-- Dynamically populated face pills -->
-            </div>
-          </div>
-          
-          <label class="btn-upload" style="margin-bottom:8px; padding:6px 10px; font-size:11px;">
-            <span>📸 Upload Custom Face / Sticker</span>
-            <input type="file" id="faceFileInput" accept="image/*">
-          </label>
-
-          <div class="faces-grid" id="facesGrid"></div>
-          
-          <div class="row-flex">
-            <span style="font-size: 11px; color: var(--text-muted);">Cutout Shape:</span>
-            <div class="btn-group" id="maskGroup">
-              <button class="btn-toggle active" data-mask="square">Full Frame (True Size)</button>
-              <button class="btn-toggle" data-mask="circle">Sticker Circle</button>
-              <button class="btn-toggle" data-mask="oval">Oval Face</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- 4. Face Sizing, Flip & Filters -->
-        <div class="card">
-          <div class="card-title">
-            <span class="step-badge">4</span>
-            <span>Face Sizing, Flip & FX</span>
-          </div>
-          <div class="slider-control">
-            <label>Size: <span id="sizeVal">100%</span></label>
-            <input type="range" id="faceScale" min="0.3" max="2.5" step="0.05" value="1.0">
-          </div>
-          <div class="slider-control">
-            <label>Rotation: <span id="rotVal">0°</span></label>
-            <input type="range" id="faceRot" min="-180" max="180" step="5" value="0">
-          </div>
-
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-            <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Flip Face:</span>
-            <div class="btn-group" id="flipGroup" style="display:flex; gap:3px;">
-              <button class="btn-toggle" id="flipHBtn" title="Mirror / Flip horizontally">↔️ Flip H</button>
-              <button class="btn-toggle" id="flipVBtn" title="Flip vertically">↕️ Flip V</button>
-            </div>
-          </div>
-
-          <div class="slider-control" style="margin-top:8px;">
-            <label>Face Opacity: <span id="opacityVal">100%</span></label>
-            <input type="range" id="faceOpacity" min="0.2" max="1.0" step="0.05" value="1.0">
-          </div>
-
-          <div style="margin-top:6px;">
-            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px; font-weight:600;">Face Color FX:</label>
-            <div class="btn-group" id="faceFilterGroup" style="display:flex; flex-wrap:wrap; gap:3px;">
-              <button class="btn-toggle active" data-filter="none">Normal</button>
-              <button class="btn-toggle" data-filter="grayscale">Noir B&W</button>
-              <button class="btn-toggle" data-filter="deepfried">Deep Fried 🔥</button>
-              <button class="btn-toggle" data-filter="invert">Invert ⚡</button>
-            </div>
-          </div>
-        </div>
-      </div>
+    <!-- Rail of Tabs (Icons) -->
+    <div class="studio-tabs-rail">
+      <button class="rail-tab active" data-tab="faces" title="Murad Faces">
+        <span class="rail-icon">🎭</span>
+        <span class="rail-label">Faces</span>
+      </button>
+      <button class="rail-tab" data-tab="bg" title="Background Image or Meme">
+        <span class="rail-icon">🖼️</span>
+        <span class="rail-label">Backdrop</span>
+      </button>
+      <button class="rail-tab" data-tab="text" title="Custom Movable Text">
+        <span class="rail-icon">💬</span>
+        <span class="rail-label">Text</span>
+      </button>
+      <button class="rail-tab" data-tab="stickers" title="Custom Uploaded Stickers">
+        <span class="rail-icon">🎀</span>
+        <span class="rail-label">Stickers</span>
+      </button>
+      <button class="rail-tab" data-tab="anim" title="Discord GIF Effects">
+        <span class="rail-icon">✨</span>
+        <span class="rail-label">Animate</span>
+      </button>
     </div>
 
-    <!-- 5. Discord GIF Animation & Text (Full width spanning both columns) -->
-    <div class="card card-step5">
-      <div class="card-title">
-        <span class="step-badge">5</span>
-        <span>Discord GIF Animation & Text</span>
-      </div>
-      <div class="step5-body">
-        <div>
-          <span style="font-size:11px; color:var(--text-muted); font-weight:600; display:block; margin-bottom:4px;">GIF Animation Preset:</span>
-          <div class="anim-grid" id="animGrid">
-            <button class="anim-btn active" data-anim="none"><span>🖼️</span><span>Still</span></button>
-            <button class="anim-btn" data-anim="bob"><span>🕺</span><span>Head Bob</span></button>
-            <button class="anim-btn" data-anim="shake"><span>💢</span><span>Shake</span></button>
-            <button class="anim-btn" data-anim="spin"><span>🌀</span><span>Speen</span></button>
-            <button class="anim-btn" data-anim="petpet"><span>👋</span><span>Petpet</span></button>
-            <button class="anim-btn" data-anim="zoom"><span>💥</span><span>Zoom</span></button>
-            <button class="anim-btn" data-anim="pulse"><span>💓</span><span>Pulse</span></button>
-            <button class="anim-btn" data-anim="wobble"><span>🌊</span><span>Wobble</span></button>
-            <button class="anim-btn" data-anim="disco"><span>🪩</span><span>Disco</span></button>
-          </div>
-        </div>
+    <!-- Active Panel Content -->
+    <div class="studio-panel">
 
-        <div style="display:flex; flex-direction:column; justify-content:space-between;">
+      <!-- TAB 1: FACES -->
+      <div class="tab-pane active" id="pane-faces">
+        <div class="pane-header">
           <div>
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-              <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Custom Movable Text:</span>
-              <button id="addMovableTextBtn" type="button" class="btn-add-face" title="Add a movable text box anywhere on the canvas">➕ Add Text</button>
-            </div>
+            <h3 class="pane-title">Choose Face</h3>
+            <p class="pane-desc">Pick Murad's face to slap on the meme</p>
+          </div>
+          <button id="addFaceLayerBtn" type="button" class="btn-primary-sm" title="Add another face layer">➕ Add Face</button>
+        </div>
 
-            <div style="display:flex; gap:4px; margin-bottom:6px;">
-              <button id="addTopPresetTextBtn" type="button" style="flex:1; background:var(--bg-input); border:1px solid var(--border); color:var(--text-muted); padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; font-weight:600;">➕ Top Text</button>
-              <button id="addBottomPresetTextBtn" type="button" style="flex:1; background:var(--bg-input); border:1px solid var(--border); color:var(--text-muted); padding:3px 6px; border-radius:4px; font-size:10px; cursor:pointer; font-weight:600;">➕ Bottom Text</button>
-            </div>
+        <div class="layers-strip" id="faceLayersContainer"></div>
 
-            <div id="textLayersContainer" style="display:flex; gap:5px; flex-wrap:wrap; margin-bottom:6px;">
-              <!-- Dynamically populated text pills -->
-            </div>
+        <label class="btn-upload-box">
+          <span>📸 Upload Your Own Photo / Face</span>
+          <input type="file" id="faceFileInput" accept="image/*">
+        </label>
 
-            <div id="textControlsBox" class="item-box" style="display:none;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <span id="selectedTextTitle" style="font-size:10px; font-weight:700; color:#5865F2;">Text #1</span>
-                <button id="deleteTextBtn" type="button" style="background:#da373c; color:#fff; border:none; border-radius:4px; padding:2px 6px; font-size:10px; font-weight:700; cursor:pointer;">🗑️ Remove</button>
+        <label class="section-label">Default Faces</label>
+        <div class="faces-grid" id="facesGrid"></div>
+
+        <div class="panel-section">
+          <label class="section-label">Cutout Shape</label>
+          <div class="btn-group" id="maskGroup">
+            <button class="btn-toggle active" data-mask="square">Full Frame</button>
+            <button class="btn-toggle" data-mask="circle">Sticker Circle</button>
+            <button class="btn-toggle" data-mask="oval">Oval Face</button>
+          </div>
+        </div>
+
+        <details class="accordion">
+          <summary>⚙️ Face Opacity & Color Filters</summary>
+          <div class="accordion-content">
+            <div class="slider-group">
+              <label>Face Opacity: <b id="opacityVal">100%</b></label>
+              <input type="range" id="faceOpacity" min="0.2" max="1.0" step="0.05" value="1.0">
+            </div>
+            <label class="section-label" style="margin-top:6px;">Color Filter</label>
+            <div class="btn-group" id="faceFilterGroup">
+              <button class="btn-toggle active" data-filter="none">Normal</button>
+              <button class="btn-toggle" data-filter="bw">B&W</button>
+              <button class="btn-toggle" data-filter="deepfried">Deep Fried 🔥</button>
+              <button class="btn-toggle" data-filter="invert">Invert</button>
+            </div>
+          </div>
+        </details>
+      </div>
+
+      <!-- TAB 2: BACKGROUND -->
+      <div class="tab-pane" id="pane-bg">
+        <div class="pane-header">
+          <div>
+            <h3 class="pane-title">Background & Backdrop</h3>
+            <p class="pane-desc">Upload a picture, meme, or GIF</p>
+          </div>
+        </div>
+
+        <label class="btn-upload-box">
+          <span>📁 Upload Picture / Meme / Animated GIF</span>
+          <input type="file" id="bgFileInput" accept="image/*,.gif">
+        </label>
+
+        <label class="section-label">Popular Body Templates</label>
+        <div class="presets-row" id="bgPresetsRow"></div>
+
+        <div class="panel-section">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+            <label class="section-label">Canvas Format</label>
+            <span id="canvasDimsBadge" style="font-size:10px; color:#5865F2; background:rgba(88,101,242,0.15); padding:1px 6px; border-radius:4px;">500x500</span>
+          </div>
+          <div class="btn-group" id="canvasSizeGroup">
+            <button class="btn-toggle active" data-size="true_size">📐 True Size</button>
+            <button class="btn-toggle" data-size="square">⏹️ 1:1 Square</button>
+            <button class="btn-toggle" data-size="landscape">🖼️ 16:9</button>
+            <button class="btn-toggle" data-size="portrait">📱 9:16</button>
+          </div>
+        </div>
+
+        <details class="accordion">
+          <summary>✂️ Background Zoom & Framing</summary>
+          <div class="accordion-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <span style="font-size:11px; color:var(--text-muted);">Fit Mode:</span>
+              <button id="resetBgCropBtn" class="btn-ghost-xs">🔄 Reset Crop</button>
+            </div>
+            <div class="btn-group" id="bgFitGroup" style="margin-bottom:6px;">
+              <button class="btn-toggle active" data-fit="cover">✂️ Fill & Crop</button>
+              <button class="btn-toggle" data-fit="fit">🔍 Fit Whole Image</button>
+            </div>
+            <div class="slider-group">
+              <label>Background Zoom: <b id="bgZoomVal">100%</b></label>
+              <input type="range" id="bgZoomSlider" min="0.4" max="2.5" step="0.05" value="1.0">
+            </div>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:6px;">
+              <div>
+                <span style="font-size:10px; color:var(--text-muted);">Pan Left/Right:</span>
+                <input type="range" id="bgPanXSlider" min="-300" max="300" step="2" value="0" style="width:100%;">
               </div>
-              <input type="text" id="activeTextInput" class="caption-input" placeholder="Type text here..." style="margin-top:0; margin-bottom:6px; font-size:12px; padding:6px 8px;">
-              
-              <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; margin-bottom:6px;">
-                <div>
-                  <span style="font-size:10px; color:var(--text-muted);">Size: <b id="textSizeVal" style="color:#fff;">36px</b></span>
-                  <input type="range" id="textSizeSlider" min="14" max="90" step="2" value="36" style="width:100%;">
-                </div>
-                <div>
-                  <span style="font-size:10px; color:var(--text-muted);">Rotate: <b id="textRotVal" style="color:#fff;">0°</b></span>
-                  <input type="range" id="textRotSlider" min="-180" max="180" step="5" value="0" style="width:100%;">
-                </div>
-              </div>
-
-              <div style="display:flex; align-items:center; justify-content:space-between;">
-                <span style="font-size:10px; color:var(--text-muted); font-weight:600;">Color:</span>
-                <div class="btn-group" id="textColorGroup" style="display:flex; gap:3px;">
-                  <button class="btn-toggle active" data-color="#ffffff" style="color:#ffffff; font-size:10px; padding:2px 5px;">White</button>
-                  <button class="btn-toggle" data-color="#facc15" style="color:#facc15; font-size:10px; padding:2px 5px;">Yellow</button>
-                  <button class="btn-toggle" data-color="#ef4444" style="color:#ef4444; font-size:10px; padding:2px 5px;">Red</button>
-                  <button class="btn-toggle" data-color="#22d3ee" style="color:#22d3ee; font-size:10px; padding:2px 5px;">Cyan</button>
-                  <button class="btn-toggle" data-color="#4ade80" style="color:#4ade80; font-size:10px; padding:2px 5px;">Green</button>
-                </div>
+              <div>
+                <span style="font-size:10px; color:var(--text-muted);">Pan Up/Down:</span>
+                <input type="range" id="bgPanYSlider" min="-300" max="300" step="2" value="0" style="width:100%;">
               </div>
             </div>
           </div>
+        </details>
+      </div>
+
+      <!-- TAB 3: TEXT -->
+      <div class="tab-pane" id="pane-text">
+        <div class="pane-header">
+          <div>
+            <h3 class="pane-title">Meme Text</h3>
+            <p class="pane-desc">Add movable text anywhere</p>
+          </div>
+          <button id="addMovableTextBtn" type="button" class="btn-primary-sm">➕ Add Text</button>
         </div>
+
+        <div style="display:flex; gap:6px;">
+          <button id="addTopPresetTextBtn" class="btn-preset-text">➕ Top Text</button>
+          <button id="addBottomPresetTextBtn" class="btn-preset-text">➕ Bottom Text</button>
+        </div>
+
+        <div class="layers-strip" id="textLayersContainer"></div>
+
+        <div id="textControlsBox" class="item-edit-card" style="display:none;">
+          <div class="edit-header">
+            <span id="selectedTextTitle" class="edit-title">Text Layer</span>
+            <button id="deleteTextBtn" class="btn-danger-xs">🗑️ Delete</button>
+          </div>
+          <input type="text" id="activeTextInput" class="pane-input" placeholder="Type text here...">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+            <div class="slider-group">
+              <label>Size: <b id="textSizeVal">38px</b></label>
+              <input type="range" id="textSizeSlider" min="14" max="90" step="2" value="38">
+            </div>
+            <div class="slider-group">
+              <label>Rotate: <b id="textRotVal">0°</b></label>
+              <input type="range" id="textRotSlider" min="-180" max="180" step="5" value="0">
+            </div>
+          </div>
+          <label class="section-label" style="margin-top:4px;">Color</label>
+          <div class="btn-group" id="textColorGroup">
+            <button class="btn-toggle active" data-color="#ffffff">White</button>
+            <button class="btn-toggle" data-color="#facc15" style="color:#facc15;">Yellow</button>
+            <button class="btn-toggle" data-color="#ef4444" style="color:#ef4444;">Red</button>
+            <button class="btn-toggle" data-color="#22d3ee" style="color:#22d3ee;">Cyan</button>
+            <button class="btn-toggle" data-color="#4ade80" style="color:#4ade80;">Green</button>
+          </div>
+        </div>
+
+        <div id="noTextPrompt" class="empty-prompt">
+          <span>Click <b>"➕ Add Text"</b> above to slap movable captions onto the meme!</span>
+        </div>
+      </div>
+
+      <!-- TAB 4: STICKERS -->
+      <div class="tab-pane" id="pane-stickers">
+        <div class="pane-header">
+          <div>
+            <h3 class="pane-title">Custom Stickers</h3>
+            <p class="pane-desc">Upload accessories, logos or stickers</p>
+          </div>
+        </div>
+
+        <label class="btn-upload-box">
+          <span>📁 Upload Custom Sticker / PNG</span>
+          <input type="file" id="accFileInput" accept="image/*,.gif">
+        </label>
+
+        <div class="layers-strip" id="accLayersContainer"></div>
+
+        <div id="accControlsBox" class="item-edit-card" style="display:none;">
+          <div class="edit-header">
+            <span id="selectedAccTitle" class="edit-title">Sticker Layer</span>
+            <button id="deleteAccBtn" class="btn-danger-xs">🗑️ Delete</button>
+          </div>
+          <div class="slider-group">
+            <label>Size: <b id="accScaleVal">100%</b></label>
+            <input type="range" id="accScale" min="0.1" max="3.0" step="0.05" value="1.0">
+          </div>
+          <div class="slider-group">
+            <label>Rotate: <b id="accRotVal">0°</b></label>
+            <input type="range" id="accRot" min="-180" max="180" step="5" value="0">
+          </div>
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:6px;">
+            <span style="font-size:11px; color:var(--text-muted); font-weight:600;">Flip:</span>
+            <div class="btn-group" style="display:flex; gap:4px;">
+              <button class="btn-toggle" id="accFlipHBtn">↔️ Flip H</button>
+              <button class="btn-toggle" id="accFlipVBtn">↕️ Flip V</button>
+            </div>
+          </div>
+          <div class="slider-group" style="margin-top:6px;">
+            <label>Opacity: <b id="accOpacityVal">100%</b></label>
+            <input type="range" id="accOpacity" min="0.1" max="1.0" step="0.05" value="1.0">
+          </div>
+        </div>
+
+        <div id="noAccPrompt" class="empty-prompt">
+          <span>Upload any accessory, sunglasses, hat, or sticker above to freely place & drag on the meme!</span>
+        </div>
+      </div>
+
+      <!-- TAB 5: ANIMATE -->
+      <div class="tab-pane" id="pane-anim">
+        <div class="pane-header">
+          <div>
+            <h3 class="pane-title">Discord GIF Effects</h3>
+            <p class="pane-desc">Choose motion effect for your meme</p>
+          </div>
+        </div>
+
+        <div class="anim-grid" id="animGrid">
+          <button class="anim-card active" data-anim="none">
+            <span class="anim-icon">🖼️</span>
+            <span class="anim-name">Still Image</span>
+          </button>
+          <button class="anim-card" data-anim="bob">
+            <span class="anim-icon">🕺</span>
+            <span class="anim-name">Head Bob</span>
+          </button>
+          <button class="anim-card" data-anim="shake">
+            <span class="anim-icon">💢</span>
+            <span class="anim-name">Shake Meme</span>
+          </button>
+          <button class="anim-card" data-anim="spin">
+            <span class="anim-icon">🌀</span>
+            <span class="anim-name">Speen 360°</span>
+          </button>
+          <button class="anim-card" data-anim="petpet">
+            <span class="anim-icon">👋</span>
+            <span class="anim-name">Petpet Hand</span>
+          </button>
+          <button class="anim-card" data-anim="zoom">
+            <span class="anim-icon">💥</span>
+            <span class="anim-name">Bass Pulse</span>
+          </button>
+          <button class="anim-card" data-anim="pulse">
+            <span class="anim-icon">💓</span>
+            <span class="anim-name">Heartbeat</span>
+          </button>
+          <button class="anim-card" data-anim="wobble">
+            <span class="anim-icon">🌊</span>
+            <span class="anim-name">Wobble</span>
+          </button>
+          <button class="anim-card" data-anim="disco">
+            <span class="anim-icon">🪩</span>
+            <span class="anim-name">Disco Party</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- RIGHT: BIG CLEAN STAGE & EXPORT -->
+  <div class="studio-stage">
+
+    <!-- Floating Context Inspector Bar -->
+    <div class="context-bar" id="contextBar">
+      <div id="contextInfo" class="context-info">
+        <span class="context-badge" id="contextBadge">🎭 Murad Face</span>
+        <span class="context-hint">Click & drag on canvas to position</span>
+      </div>
+      <div class="context-actions" id="contextActions">
+        <button id="quickZoomIn" class="btn-tool" title="Enlarge (+)">🔍+</button>
+        <button id="quickZoomOut" class="btn-tool" title="Shrink (-)">🔍-</button>
+        <button id="quickRotLeft" class="btn-tool" title="Rotate left 15°">↺</button>
+        <button id="quickRotRight" class="btn-tool" title="Rotate right 15°">↻</button>
+        <button id="quickFlipH" class="btn-tool" title="Flip horizontally">↔️</button>
+        <button id="quickCenter" class="btn-tool" title="Center on canvas">🎯</button>
+        <button id="quickDelete" class="btn-tool danger" title="Delete element">🗑️</button>
+      </div>
+    </div>
+
+    <!-- The Canvas Viewport -->
+    <div class="canvas-viewport" id="canvasBox">
+      <canvas id="mainCanvas" width="500" height="500"></canvas>
+    </div>
+
+    <!-- Export Action Row -->
+    <div class="stage-footer">
+      <div class="action-buttons-row">
+        <button id="downloadGifBtn" class="btn-download-gif">⬇️ Download .GIF</button>
+        <button id="downloadPngBtn" class="btn-download-png">⬇️ Download .PNG</button>
+        <button id="copyPngBtn" class="btn-copy-png" title="Copy to clipboard for instant Discord paste">📋 Copy</button>
+      </div>
+
+      <div class="filename-bar">
+        <span class="filename-label">File Name:</span>
+        <input type="text" id="customFilenameInput" value="murad_meme" placeholder="filename">
+        <span class="filename-suffix">+ random letters</span>
+      </div>
+
+      <div class="progress-wrap" id="progressWrap" style="display:none;">
+        <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
+        <div class="progress-text" id="progressText">Encoding Discord GIF...</div>
       </div>
     </div>
 
   </div>
 
-  <!-- Stage Column -->
-  <div class="canvas-stage">
-    <div class="canvas-header">
-      <div style="display:flex; align-items:center; gap:8px;">
-        <div class="drag-badge">🖱️ CLICK & DRAG TO MOVE ANY FACE, STICKER OR TEXT!</div>
-        <span style="font-size: 11px; color: var(--text-muted);">Scroll wheel = Zoom</span>
-      </div>
-      <div style="display:flex; align-items:center; gap:6px;">
-        <span style="font-size: 11px; color: var(--text-muted); font-weight:600;">Preview Size:</span>
-        <div class="btn-group" id="previewScaleGroup" style="display:flex; gap:3px;">
-          <button class="btn-toggle active" data-scale="fit" title="Fit comfortably in screen height">📐 Auto-Fit</button>
-          <button class="btn-toggle" data-scale="large" title="Enlarged 1.3x view">🔍 Large</button>
-          <button class="btn-toggle" data-scale="max" title="Full size theater view">🌟 Max</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="canvas-box" id="canvasBox">
-      <canvas id="mainCanvas" width="440" height="440"></canvas>
-    </div>
-
-    <div class="quick-tools">
-      <button class="quick-btn" id="zoomInBtn">🔍 Zoom In (+)</button>
-      <button class="quick-btn" id="zoomOutBtn">🔍 Zoom Out (-)</button>
-      <button class="quick-btn" id="rotLeftBtn">↺ Rotate Left</button>
-      <button class="quick-btn" id="rotRightBtn">↻ Rotate Right</button>
-      <button class="quick-btn" id="recenterBtn">🎯 Center Face</button>
-    </div>
-
-    <!-- Filename Input with Random Letters Suffix -->
-    <div class="filename-row">
-      <span style="font-size:11px; color:var(--text-muted); font-weight:600; white-space:nowrap;">Save As:</span>
-      <input type="text" id="customFilenameInput" placeholder="murad_meme" value="murad_meme" style="flex:1; background:var(--bg-input); border:1px solid var(--border); color:#fff; font-size:11px; padding:6px 10px; border-radius:6px; outline:none;">
-      <span style="font-size:10px; color:#5865F2; background:rgba(88,101,242,0.15); padding:3px 6px; border-radius:4px; font-family:monospace;" title="Random letters are automatically attached to avoid duplicates">+ random letters</span>
-    </div>
-
-    <div class="action-row">
-      <button id="downloadGifBtn" class="btn-action-primary">⬇️ Download .GIF</button>
-      <button id="downloadPngBtn" class="btn-action-secondary">⬇️ Download .PNG</button>
-      <button id="copyPngBtn" class="btn-action-secondary" title="Copy image to clipboard for instant pasting in Discord">📋 Copy</button>
-    </div>
-
-    <!-- Progress bar -->
-    <div class="progress-wrap" id="progressWrap">
-      <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
-      <div class="progress-text" id="progressText">Encoding Discord GIF...</div>
-    </div>
-
-
-
-  </div>
 </div>
 
 <script>
@@ -1151,24 +1295,15 @@ const state = {{
     makeFaceLayer(0, 0, -65, 1.0)
   ],
   selectedFaceIdx: 0,
-
-  // Custom User Accessories & Stickers
   accessoriesOnCanvas: [],
   selectedAccIdx: -1,
-
-  // Custom Movable Text Layers
   textsOnCanvas: [],
   selectedTextIdx: -1,
-
-  // Active Drag
-  isDragging: false,
   dragTarget: null, // type: 'face' or 'acc' or 'text'
   dragStartX: 0,
   dragStartY: 0,
   initialTargetX: 0,
   initialTargetY: 0,
-
-  // Background
   bgType: 'preset',
   presetBg: templates.length > 0 ? templates[0].id : 'suit',
   customBgImg: null,
@@ -1182,12 +1317,11 @@ const state = {{
   gifBgFrameIndex: 0,
   lastNatW: 500,
   lastNatH: 500,
-
-  // Animation
   anim: 'none',
   frame: 0,
   totalFrames: 12,
-  fps: 12
+  fps: 12,
+  isDragging: false
 }};
 
 // Preload Images
@@ -1256,44 +1390,70 @@ function getSelectedFace() {{
   return state.facesOnCanvas[state.selectedFaceIdx];
 }}
 
+function getSelectedAcc() {{
+  if (!state.accessoriesOnCanvas || state.accessoriesOnCanvas.length === 0) return null;
+  if (state.selectedAccIdx < 0 || state.selectedAccIdx >= state.accessoriesOnCanvas.length) {{
+    return null;
+  }}
+  return state.accessoriesOnCanvas[state.selectedAccIdx];
+}}
+
+function getSelectedText() {{
+  if (!state.textsOnCanvas || state.textsOnCanvas.length === 0) return null;
+  if (state.selectedTextIdx < 0 || state.selectedTextIdx >= state.textsOnCanvas.length) {{
+    return null;
+  }}
+  return state.textsOnCanvas[state.selectedTextIdx];
+}}
+
+// Update Context Inspector Banner
+function updateContextBar() {{
+  const badge = document.getElementById('contextBadge');
+  const deleteBtn = document.getElementById('quickDelete');
+
+  if (state.selectedTextIdx >= 0 && state.textsOnCanvas[state.selectedTextIdx]) {{
+    const cur = state.textsOnCanvas[state.selectedTextIdx];
+    badge.innerText = `💬 "${{cur.text.slice(0, 10)}}${{cur.text.length > 10 ? '...' : ''}}"`;
+    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+    return;
+  }}
+
+  if (state.selectedAccIdx >= 0 && state.accessoriesOnCanvas[state.selectedAccIdx]) {{
+    const cur = state.accessoriesOnCanvas[state.selectedAccIdx];
+    badge.innerText = `🎀 ${{cur.name || 'Sticker'}}`;
+    if (deleteBtn) deleteBtn.style.display = 'inline-flex';
+    return;
+  }}
+
+  if (state.selectedFaceIdx >= 0 && state.facesOnCanvas[state.selectedFaceIdx]) {{
+    const cur = state.facesOnCanvas[state.selectedFaceIdx];
+    const faceObj = faces[cur.faceIndex];
+    badge.innerText = `🎭 ${{faceObj ? faceObj.name.split(' ')[0] : 'Face'}}`;
+    if (deleteBtn) deleteBtn.style.display = state.facesOnCanvas.length > 1 ? 'inline-flex' : 'none';
+    return;
+  }}
+
+  badge.innerText = '🖼️ Background';
+  if (deleteBtn) deleteBtn.style.display = 'none';
+}}
+
 function syncControlsToSelectedFace() {{
   const cur = getSelectedFace();
   if (!cur) return;
 
-  // Face Grid active thumbnail
   document.querySelectorAll('.face-btn').forEach((b, idx) => {{
     b.classList.toggle('active', idx === cur.faceIndex);
   }});
 
-  // Cutout Mask
   document.querySelectorAll('#maskGroup .btn-toggle').forEach(b => {{
     b.classList.toggle('active', b.dataset.mask === cur.mask);
   }});
 
-  // Scale & Rot
-  const scaleSlider = document.getElementById('faceScale');
-  if (scaleSlider) scaleSlider.value = cur.scale;
-  const sizeVal = document.getElementById('sizeVal');
-  if (sizeVal) sizeVal.innerText = Math.round(cur.scale * 100) + '%';
-
-  const rotSlider = document.getElementById('faceRot');
-  if (rotSlider) rotSlider.value = cur.rot;
-  const rotVal = document.getElementById('rotVal');
-  if (rotVal) rotVal.innerText = cur.rot + '°';
-
-  // Flip
-  const flipHBtn = document.getElementById('flipHBtn');
-  if (flipHBtn) flipHBtn.classList.toggle('active', !!cur.flipH);
-  const flipVBtn = document.getElementById('flipVBtn');
-  if (flipVBtn) flipVBtn.classList.toggle('active', !!cur.flipV);
-
-  // Opacity
   const opacitySlider = document.getElementById('faceOpacity');
   if (opacitySlider) opacitySlider.value = cur.opacity !== undefined ? cur.opacity : 1.0;
   const opacityVal = document.getElementById('opacityVal');
   if (opacityVal) opacityVal.innerText = Math.round((cur.opacity !== undefined ? cur.opacity : 1.0) * 100) + '%';
 
-  // Filter
   document.querySelectorAll('#faceFilterGroup .btn-toggle').forEach(b => {{
     b.classList.toggle('active', b.dataset.filter === (cur.filter || 'none'));
   }});
@@ -1301,17 +1461,13 @@ function syncControlsToSelectedFace() {{
 
 function renderFaceLayersUI() {{
   const container = document.getElementById('faceLayersContainer');
-  const countEl = document.getElementById('faceLayersCount');
   if (!container) return;
   container.innerHTML = '';
-  if (countEl) {{
-    countEl.innerText = state.facesOnCanvas.length + (state.facesOnCanvas.length === 1 ? ' face' : ' faces');
-  }}
 
   state.facesOnCanvas.forEach((fLayer, idx) => {{
     const pill = document.createElement('div');
     const isAct = (idx === state.selectedFaceIdx && state.selectedAccIdx === -1 && state.selectedTextIdx === -1);
-    pill.className = 'face-layer-pill' + (isAct ? ' active' : '');
+    pill.className = 'layer-pill' + (isAct ? ' active' : '');
     const faceObj = faces[fLayer.faceIndex] || {{ name: 'Murad', src: '' }};
     const cleanName = faceObj.name.replace(/[^a-zA-Z0-9 ]/g, '').trim().split(' ')[0] || ('Face #' + (idx+1));
     const thumbHtml = faceObj.src ? `<img src="${{faceObj.src}}">` : `<span>🎭</span>`;
@@ -1319,7 +1475,7 @@ function renderFaceLayersUI() {{
     pill.innerHTML = `
       ${{thumbHtml}}
       <span>${{cleanName}}</span>
-      ${{state.facesOnCanvas.length > 1 ? '<button class="pill-del-btn" title="Remove this face" type="button">✕</button>' : ''}}
+      ${{state.facesOnCanvas.length > 1 ? '<button class="pill-del-btn" title="Remove" type="button">✕</button>' : ''}}
     `;
 
     pill.onclick = (e) => {{
@@ -1335,11 +1491,13 @@ function renderFaceLayersUI() {{
       renderFaceLayersUI();
       renderAccLayersUI();
       renderTextLayersUI();
+      updateContextBar();
       draw();
     }};
 
     container.appendChild(pill);
   }});
+  updateContextBar();
 }}
 
 function deleteFaceLayer(idx) {{
@@ -1350,30 +1508,25 @@ function deleteFaceLayer(idx) {{
   }}
   syncControlsToSelectedFace();
   renderFaceLayersUI();
+  updateContextBar();
   draw();
-}}
-
-// -------------------------------------------------------------
-// CUSTOM USER ACCESSORIES / STICKERS HELPERS
-// -------------------------------------------------------------
-function getSelectedAcc() {{
-  if (!state.accessoriesOnCanvas || state.accessoriesOnCanvas.length === 0) return null;
-  if (state.selectedAccIdx < 0 || state.selectedAccIdx >= state.accessoriesOnCanvas.length) {{
-    return null;
-  }}
-  return state.accessoriesOnCanvas[state.selectedAccIdx];
 }}
 
 function syncControlsToSelectedAcc() {{
   const box = document.getElementById('accControlsBox');
+  const prompt = document.getElementById('noAccPrompt');
   const cur = getSelectedAcc();
+
   if (!cur || !box) {{
     if (box) box.style.display = 'none';
+    if (prompt) prompt.style.display = 'block';
     return;
   }}
-  box.style.display = 'block';
+  box.style.display = 'flex';
+  if (prompt) prompt.style.display = 'none';
+
   const title = document.getElementById('selectedAccTitle');
-  if (title) title.innerText = cur.name || 'Accessory';
+  if (title) title.innerText = cur.name || 'Sticker';
 
   const scaleInput = document.getElementById('accScale');
   if (scaleInput) scaleInput.value = cur.scale;
@@ -1404,12 +1557,12 @@ function renderAccLayersUI() {{
   state.accessoriesOnCanvas.forEach((acc, idx) => {{
     const pill = document.createElement('div');
     const isAct = (idx === state.selectedAccIdx);
-    pill.className = 'acc-layer-pill' + (isAct ? ' active' : '');
+    pill.className = 'layer-pill' + (isAct ? ' active' : '');
     const imgEl = acc.img && acc.img.src ? `<img src="${{acc.img.src}}">` : `<span>🎀</span>`;
     pill.innerHTML = `
       ${{imgEl}}
       <span style="overflow:hidden; text-overflow:ellipsis; max-width:80px;">${{acc.name || ('Sticker #' + (idx+1))}}</span>
-      <button class="pill-del-btn" title="Remove accessory" type="button">✕</button>
+      <button class="pill-del-btn" title="Remove" type="button">✕</button>
     `;
 
     pill.onclick = (e) => {{
@@ -1425,12 +1578,14 @@ function renderAccLayersUI() {{
       syncControlsToSelectedAcc();
       renderFaceLayersUI();
       renderTextLayersUI();
+      updateContextBar();
       draw();
     }};
 
     container.appendChild(pill);
   }});
   syncControlsToSelectedAcc();
+  updateContextBar();
 }}
 
 function deleteAcc(idx) {{
@@ -1442,28 +1597,22 @@ function deleteAcc(idx) {{
   }}
   renderAccLayersUI();
   syncControlsToSelectedAcc();
+  updateContextBar();
   draw();
-}}
-
-// -------------------------------------------------------------
-// CUSTOM MOVABLE TEXT HELPERS
-// -------------------------------------------------------------
-function getSelectedText() {{
-  if (!state.textsOnCanvas || state.textsOnCanvas.length === 0) return null;
-  if (state.selectedTextIdx < 0 || state.selectedTextIdx >= state.textsOnCanvas.length) {{
-    return null;
-  }}
-  return state.textsOnCanvas[state.selectedTextIdx];
 }}
 
 function syncControlsToSelectedText() {{
   const box = document.getElementById('textControlsBox');
+  const prompt = document.getElementById('noTextPrompt');
   const cur = getSelectedText();
+
   if (!cur || !box) {{
     if (box) box.style.display = 'none';
+    if (prompt) prompt.style.display = 'block';
     return;
   }}
-  box.style.display = 'block';
+  box.style.display = 'flex';
+  if (prompt) prompt.style.display = 'none';
 
   const title = document.getElementById('selectedTextTitle');
   if (title) title.innerText = cur.text ? `"${{cur.text.slice(0, 10)}}${{cur.text.length > 10 ? '...' : ''}}"` : 'Text';
@@ -1494,12 +1643,12 @@ function renderTextLayersUI() {{
   state.textsOnCanvas.forEach((txt, idx) => {{
     const pill = document.createElement('div');
     const isAct = (idx === state.selectedTextIdx);
-    pill.className = 'text-layer-pill' + (isAct ? ' active' : '');
+    pill.className = 'layer-pill' + (isAct ? ' active' : '');
     const displayText = txt.text || ('Text #' + (idx+1));
     pill.innerHTML = `
       <span>💬</span>
       <span style="overflow:hidden; text-overflow:ellipsis; max-width:85px;">${{displayText}}</span>
-      <button class="pill-del-btn" title="Remove text" type="button">✕</button>
+      <button class="pill-del-btn" title="Remove" type="button">✕</button>
     `;
 
     pill.onclick = (e) => {{
@@ -1515,12 +1664,14 @@ function renderTextLayersUI() {{
       syncControlsToSelectedText();
       renderFaceLayersUI();
       renderAccLayersUI();
+      updateContextBar();
       draw();
     }};
 
     container.appendChild(pill);
   }});
   syncControlsToSelectedText();
+  updateContextBar();
 }}
 
 function addMovableText(defaultText, defaultY) {{
@@ -1543,6 +1694,7 @@ function addMovableText(defaultText, defaultY) {{
   syncControlsToSelectedText();
   renderFaceLayersUI();
   renderAccLayersUI();
+  updateContextBar();
   draw();
   const input = document.getElementById('activeTextInput');
   if (input) {{
@@ -1560,6 +1712,7 @@ function deleteText(idx) {{
   }}
   renderTextLayersUI();
   syncControlsToSelectedText();
+  updateContextBar();
   draw();
 }}
 
@@ -1679,6 +1832,7 @@ function buildFacesUI() {{
         cFace.faceIndex = idx;
         syncControlsToSelectedFace();
         renderFaceLayersUI();
+        updateContextBar();
         draw();
       }}
     }};
@@ -1693,6 +1847,18 @@ function setupEvents() {{
   syncControlsToSelectedFace();
   renderAccLayersUI();
   renderTextLayersUI();
+  updateContextBar();
+
+  // Rail Tab Switching
+  document.querySelectorAll('.rail-tab').forEach(tabBtn => {{
+    tabBtn.onclick = () => {{
+      document.querySelectorAll('.rail-tab').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      tabBtn.classList.add('active');
+      const targetPane = document.getElementById('pane-' + tabBtn.dataset.tab);
+      if (targetPane) targetPane.classList.add('active');
+    }};
+  }});
 
   // Multi-face add layer
   const addFaceBtn = document.getElementById('addFaceLayerBtn');
@@ -1707,6 +1873,7 @@ function setupEvents() {{
       renderFaceLayersUI();
       renderAccLayersUI();
       renderTextLayersUI();
+      updateContextBar();
       draw();
     }};
   }}
@@ -1747,7 +1914,7 @@ function setupEvents() {{
     }};
   }}
 
-  // Canvas Size & Ratio buttons
+  // Canvas Format
   document.querySelectorAll('#canvasSizeGroup .btn-toggle').forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll('#canvasSizeGroup .btn-toggle').forEach(b => b.classList.remove('active'));
@@ -1836,6 +2003,7 @@ function setupEvents() {{
             buildFacesUI();
             syncControlsToSelectedFace();
             renderFaceLayersUI();
+            updateContextBar();
             draw();
           }};
           img.src = evt.target.result;
@@ -1856,7 +2024,7 @@ function setupEvents() {{
     }};
   }});
 
-  // Custom Accessory Upload
+  // Custom Sticker Upload
   const accFileInput = document.getElementById('accFileInput');
   if (accFileInput) {{
     accFileInput.onchange = (e) => {{
@@ -1885,6 +2053,7 @@ function setupEvents() {{
             renderAccLayersUI();
             renderFaceLayersUI();
             renderTextLayersUI();
+            updateContextBar();
             draw();
           }};
           img.src = evt.target.result;
@@ -1894,7 +2063,7 @@ function setupEvents() {{
     }};
   }}
 
-  // Accessory Controls
+  // Sticker Controls
   const accScale = document.getElementById('accScale');
   if (accScale) {{
     accScale.oninput = (e) => {{
@@ -1959,7 +2128,7 @@ function setupEvents() {{
     }};
   }}
 
-  // Custom Movable Text Buttons & Controls
+  // Movable Text Buttons & Controls
   const addMovableTextBtn = document.getElementById('addMovableTextBtn');
   if (addMovableTextBtn) {{
     addMovableTextBtn.onclick = () => {{
@@ -1990,6 +2159,7 @@ function setupEvents() {{
       const title = document.getElementById('selectedTextTitle');
       if (title) title.innerText = cur.text ? `"${{cur.text.slice(0, 10)}}${{cur.text.length > 10 ? '...' : ''}}"` : 'Text';
       renderTextLayersUI();
+      updateContextBar();
       draw();
     }};
   }}
@@ -2036,29 +2206,6 @@ function setupEvents() {{
     }};
   }}
 
-  // Face Flip Horizontal & Vertical
-  const flipHBtn = document.getElementById('flipHBtn');
-  if (flipHBtn) {{
-    flipHBtn.onclick = () => {{
-      const cur = getSelectedFace();
-      if (!cur) return;
-      cur.flipH = !cur.flipH;
-      flipHBtn.classList.toggle('active', cur.flipH);
-      draw();
-    }};
-  }}
-
-  const flipVBtn = document.getElementById('flipVBtn');
-  if (flipVBtn) {{
-    flipVBtn.onclick = () => {{
-      const cur = getSelectedFace();
-      if (!cur) return;
-      cur.flipV = !cur.flipV;
-      flipVBtn.classList.toggle('active', cur.flipV);
-      draw();
-    }};
-  }}
-
   // Face Opacity
   const faceOpacitySlider = document.getElementById('faceOpacity');
   if (faceOpacitySlider) {{
@@ -2083,24 +2230,8 @@ function setupEvents() {{
     }};
   }});
 
-  document.getElementById('faceScale').oninput = (e) => {{
-    const cur = getSelectedFace();
-    if (!cur) return;
-    cur.scale = parseFloat(e.target.value);
-    document.getElementById('sizeVal').innerText = Math.round(cur.scale * 100) + '%';
-    draw();
-  }};
-
-  document.getElementById('faceRot').oninput = (e) => {{
-    const cur = getSelectedFace();
-    if (!cur) return;
-    cur.rot = parseInt(e.target.value);
-    document.getElementById('rotVal').innerText = cur.rot + '°';
-    draw();
-  }};
-
-  // Quick tools apply to active selected element (Text, Accessory, or Face!)
-  document.getElementById('zoomInBtn').onclick = () => {{
+  // Context Bar Quick Tools
+  document.getElementById('quickZoomIn').onclick = () => {{
     if (state.selectedTextIdx >= 0 && state.textsOnCanvas[state.selectedTextIdx]) {{
       const cur = state.textsOnCanvas[state.selectedTextIdx];
       cur.size = Math.min(90, cur.size + 4);
@@ -2118,12 +2249,10 @@ function setupEvents() {{
     const cur = getSelectedFace();
     if (!cur) return;
     cur.scale = Math.min(2.5, cur.scale + 0.15);
-    document.getElementById('faceScale').value = cur.scale;
-    document.getElementById('sizeVal').innerText = Math.round(cur.scale * 100) + '%';
     draw();
   }};
 
-  document.getElementById('zoomOutBtn').onclick = () => {{
+  document.getElementById('quickZoomOut').onclick = () => {{
     if (state.selectedTextIdx >= 0 && state.textsOnCanvas[state.selectedTextIdx]) {{
       const cur = state.textsOnCanvas[state.selectedTextIdx];
       cur.size = Math.max(14, cur.size - 4);
@@ -2141,12 +2270,10 @@ function setupEvents() {{
     const cur = getSelectedFace();
     if (!cur) return;
     cur.scale = Math.max(0.3, cur.scale - 0.15);
-    document.getElementById('faceScale').value = cur.scale;
-    document.getElementById('sizeVal').innerText = Math.round(cur.scale * 100) + '%';
     draw();
   }};
 
-  document.getElementById('rotLeftBtn').onclick = () => {{
+  document.getElementById('quickRotLeft').onclick = () => {{
     if (state.selectedTextIdx >= 0 && state.textsOnCanvas[state.selectedTextIdx]) {{
       const cur = state.textsOnCanvas[state.selectedTextIdx];
       cur.rot = (cur.rot - 15) % 360;
@@ -2164,12 +2291,10 @@ function setupEvents() {{
     const cur = getSelectedFace();
     if (!cur) return;
     cur.rot = (cur.rot - 15) % 360;
-    document.getElementById('faceRot').value = cur.rot;
-    document.getElementById('rotVal').innerText = cur.rot + '°';
     draw();
   }};
 
-  document.getElementById('rotRightBtn').onclick = () => {{
+  document.getElementById('quickRotRight').onclick = () => {{
     if (state.selectedTextIdx >= 0 && state.textsOnCanvas[state.selectedTextIdx]) {{
       const cur = state.textsOnCanvas[state.selectedTextIdx];
       cur.rot = (cur.rot + 15) % 360;
@@ -2187,12 +2312,24 @@ function setupEvents() {{
     const cur = getSelectedFace();
     if (!cur) return;
     cur.rot = (cur.rot + 15) % 360;
-    document.getElementById('faceRot').value = cur.rot;
-    document.getElementById('rotVal').innerText = cur.rot + '°';
     draw();
   }};
 
-  document.getElementById('recenterBtn').onclick = () => {{
+  document.getElementById('quickFlipH').onclick = () => {{
+    if (state.selectedAccIdx >= 0 && state.accessoriesOnCanvas[state.selectedAccIdx]) {{
+      const cur = state.accessoriesOnCanvas[state.selectedAccIdx];
+      cur.flipH = !cur.flipH;
+      syncControlsToSelectedAcc();
+      draw();
+      return;
+    }}
+    const cur = getSelectedFace();
+    if (!cur) return;
+    cur.flipH = !cur.flipH;
+    draw();
+  }};
+
+  document.getElementById('quickCenter').onclick = () => {{
     if (state.selectedTextIdx >= 0 && state.textsOnCanvas[state.selectedTextIdx]) {{
       const cur = state.textsOnCanvas[state.selectedTextIdx];
       cur.x = 0; cur.y = 0; cur.rot = 0;
@@ -2219,6 +2356,20 @@ function setupEvents() {{
     draw();
   }};
 
+  document.getElementById('quickDelete').onclick = () => {{
+    if (state.selectedTextIdx >= 0) {{
+      deleteText(state.selectedTextIdx);
+      return;
+    }}
+    if (state.selectedAccIdx >= 0) {{
+      deleteAcc(state.selectedAccIdx);
+      return;
+    }}
+    if (state.selectedFaceIdx >= 0 && state.facesOnCanvas.length > 1) {{
+      deleteFaceLayer(state.selectedFaceIdx);
+    }}
+  }};
+
   canvas.addEventListener('wheel', (e) => {{
     e.preventDefault();
     const delta = e.deltaY < 0 ? 0.05 : -0.05;
@@ -2239,39 +2390,18 @@ function setupEvents() {{
     const cur = getSelectedFace();
     if (!cur) return;
     cur.scale = Math.max(0.3, Math.min(2.5, cur.scale + delta));
-    document.getElementById('faceScale').value = cur.scale;
-    document.getElementById('sizeVal').innerText = Math.round(cur.scale * 100) + '%';
     draw();
   }}, {{ passive: false }});
 
-  document.querySelectorAll('#animGrid .anim-btn').forEach(btn => {{
+  document.querySelectorAll('#animGrid .anim-card').forEach(btn => {{
     btn.onclick = () => {{
-      document.querySelectorAll('#animGrid .anim-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#animGrid .anim-card').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       state.anim = btn.dataset.anim;
       state.frame = 0;
       state.totalFrames = state.anim === 'none' ? 1 : (state.anim === 'petpet' ? 8 : (state.anim === 'disco' ? 16 : 12));
       state.fps = state.anim === 'petpet' ? 14 : 12;
       draw();
-    }};
-  }});
-
-  document.querySelectorAll('#previewScaleGroup .btn-toggle').forEach(btn => {{
-    btn.onclick = () => {{
-      document.querySelectorAll('#previewScaleGroup .btn-toggle').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      const scale = btn.dataset.scale;
-      const canvasEl = document.getElementById('mainCanvas');
-      if (scale === 'fit') {{
-        canvasEl.style.maxHeight = '68vh';
-        canvasEl.style.width = 'auto';
-      }} else if (scale === 'large') {{
-        canvasEl.style.maxHeight = '82vh';
-        canvasEl.style.width = 'auto';
-      }} else if (scale === 'max') {{
-        canvasEl.style.maxHeight = '94vh';
-        canvasEl.style.width = '100%';
-      }}
     }};
   }});
 
@@ -2388,7 +2518,7 @@ function setupDragging() {{
   function onPointerDown(e) {{
     const pos = getCanvasPos(e);
 
-    // 1. Check text first (topmost)
+    // 1. Check text first
     const hitText = findTextAt(pos.x, pos.y, canvas.width, canvas.height);
     if (hitText !== -1) {{
       state.selectedTextIdx = hitText;
@@ -2404,6 +2534,7 @@ function setupDragging() {{
       syncControlsToSelectedText();
       renderFaceLayersUI();
       renderAccLayersUI();
+      updateContextBar();
       draw();
       return;
     }}
@@ -2424,6 +2555,7 @@ function setupDragging() {{
       syncControlsToSelectedAcc();
       renderFaceLayersUI();
       renderTextLayersUI();
+      updateContextBar();
       draw();
       return;
     }}
@@ -2444,11 +2576,11 @@ function setupDragging() {{
       syncControlsToSelectedFace();
       renderAccLayersUI();
       renderTextLayersUI();
+      updateContextBar();
       draw();
       return;
     }}
 
-    // Clicked empty area
     state.isDragging = false;
     state.dragTarget = null;
     draw();
@@ -2667,7 +2799,7 @@ function render(tCtx, w, h, frameIdx) {{
       tCtx.lineWidth = 4;
       tCtx.stroke();
     }} else {{
-      // Full Frame (True natural aspect ratio)
+      // Full Frame (Natural aspect ratio)
       tCtx.drawImage(faceImg, -fw/2, -fh/2, fw, fh);
     }}
 
@@ -2723,7 +2855,7 @@ function render(tCtx, w, h, frameIdx) {{
     tCtx.restore();
   }}
 
-  // 3. Render Custom User Accessories & Stickers
+  // 3. Render Custom User Stickers
   state.accessoriesOnCanvas.forEach((acc, aIdx) => {{
     const img = acc.img;
     if (!img || !img.complete || img.naturalWidth === 0) return;
@@ -2742,7 +2874,6 @@ function render(tCtx, w, h, frameIdx) {{
 
     tCtx.drawImage(img, -aw/2, -ah/2, aw, ah);
 
-    // Dashed selection box
     if (aIdx === state.selectedAccIdx) {{
       tCtx.strokeStyle = '#5865F2';
       tCtx.lineWidth = 2;
@@ -2768,7 +2899,6 @@ function render(tCtx, w, h, frameIdx) {{
     tCtx.fillStyle = txtItem.color || '#ffffff';
     tCtx.fillText(txtItem.text, 0, 0);
 
-    // Dashed selection box
     if (tIdx === state.selectedTextIdx) {{
       const textMetrics = tCtx.measureText(txtItem.text);
       const tw = textMetrics.width;
@@ -2928,7 +3058,7 @@ window.onload = init;
 </html>
 """
 
-# --- TOP HEADER & ADMIN PANEL (TOP RIGHT) ---
+# --- TOP ADMIN PANEL (TOP RIGHT) ---
 _, col_head_right = st.columns([5.5, 1.5])
 with col_head_right:
     admin_ui = st.popover("🔐 Admin Panel", use_container_width=True) if hasattr(st, "popover") else st.expander("🔐 Admin Panel")
@@ -2949,7 +3079,6 @@ with col_head_right:
         if admin_pwd and admin_pwd == expected_pwd:
             st.success("✅ Admin Access Granted!")
 
-            # GitHub Token verification / Secret detection
             token_secret = ""
             try:
                 token_secret = st.secrets.get("GITHUB_TOKEN", "")
@@ -2995,34 +3124,32 @@ with col_head_right:
                     st.caption(f"{len(current_manifest)} faces found. Click Delete to remove duplicates, spam, or unwanted faces.")
                     for idx, item in enumerate(current_manifest):
                         c_img, c_name, c_action = st.columns([1, 2.8, 1.2])
-                        local_f = ASSETS_DIR / item.get("file", "")
                         with c_img:
-                            if local_f.exists():
-                                st.image(str(local_f), width=44)
+                            face_p = ASSETS_DIR / item.get("file", "")
+                            if face_p.exists():
+                                st.image(str(face_p), width=45)
                             else:
                                 st.write("🖼️")
                         with c_name:
-                            st.markdown(f"<div style='font-size: 13px; font-weight: 600;'>{item.get('name', 'Unnamed')}</div><div style='font-size: 11px; color: #949ba4;'><code>{item.get('file', '')}</code></div>", unsafe_allow_html=True)
+                            st.markdown(f"**{item.get('name', 'Face')}**")
+                            st.caption(f"`{item.get('file', '')}`")
                         with c_action:
-                            if st.button("🗑️ Remove", key=f"del_face_{idx}_{item.get('id', 'face')}", use_container_width=True):
-                                # 1. Create updated manifest excluding this entry
-                                new_manifest = [x for i, x in enumerate(current_manifest) if i != idx]
-                                manifest_bytes = json.dumps(new_manifest, indent=2).encode("utf-8")
+                            if st.button("🗑️ Remove", key=f"del_face_{idx}_{item.get('id', '')}"):
+                                current_manifest.pop(idx)
+                                manifest_bytes = json.dumps(current_manifest, indent=2).encode("utf-8")
                                 with open(MANIFEST_FILE, "wb") as f:
                                     f.write(manifest_bytes)
 
-                                # 2. Delete local image file only if no other entry uses it
-                                file_still_used = any(x.get("file") == item.get("file") for i, x in enumerate(current_manifest) if i != idx)
-                                if not file_still_used and local_f.exists():
-                                    try:
-                                        local_f.unlink()
-                                    except Exception:
-                                        pass
+                                # If image not referenced by any other entry, remove file
+                                other_refs = [x for x in current_manifest if x.get("file") == item.get("file")]
+                                if not other_refs:
+                                    img_to_del = ASSETS_DIR / item.get("file", "")
+                                    if img_to_del.exists():
+                                        img_to_del.unlink()
 
-                                # 3. Sync deletion to GitHub if token present
                                 if gh_token:
-                                    with st.spinner(f"Syncing deletion to GitHub repo..."):
-                                        if not file_still_used:
+                                    with st.spinner("Deleting face from GitHub repository..."):
+                                        if not other_refs:
                                             delete_file_from_github(
                                                 "Aboodi-8", "Muradeditor", f"assets/{item.get('file', '')}",
                                                 f"Delete face image: {item.get('name')}", gh_token
@@ -3053,12 +3180,10 @@ with col_head_right:
                         filename = f"murad_{clean_name}.png"
                         face_id = f"murad_{clean_name}"
 
-                        # 1. Save locally to assets
                         local_path = ASSETS_DIR / filename
                         with open(local_path, "wb") as f:
                             f.write(img_bytes)
 
-                        # 2. Update local manifest.json
                         current_manifest = []
                         if MANIFEST_FILE.exists():
                             try:
@@ -3077,7 +3202,6 @@ with col_head_right:
                         with open(MANIFEST_FILE, "wb") as f:
                             f.write(manifest_bytes)
 
-                        # 3. Push to GitHub repository
                         if gh_token:
                             with st.spinner("Pushing to GitHub repository (Aboodi-8/Muradeditor)..."):
                                 ok_img, err_img = push_file_to_github(
@@ -3103,5 +3227,5 @@ with col_head_right:
         elif admin_pwd:
             st.error("❌ Incorrect Admin Password.")
 
-# Embed Interactive HTML5 Canvas Application with Real-Time Mouse Dragging
-components.html(html_app, height=1220, scrolling=True)
+# Embed the interactive Canva-style studio HTML5 component
+components.html(html_app, height=920, scrolling=True)
