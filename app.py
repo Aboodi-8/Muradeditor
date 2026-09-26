@@ -214,19 +214,60 @@ def load_faces_catalog():
 TEMPLATES_DIR = ASSETS_DIR / "templates"
 
 def load_templates_catalog():
+    tpl_list = []
+
+    # 1. Load from private storage repo Templates/manifest.json via Streamlit secrets
+    try:
+        if hasattr(st, "secrets") and "GITHUB_TOKEN" in st.secrets and "PRIVATE_FACES_REPO" in st.secrets:
+            token = st.secrets["GITHUB_TOKEN"]
+            repo_name = st.secrets["PRIVATE_FACES_REPO"]
+            for tpl_folder in ["Templates", "templates"]:
+                m_url = f"https://api.github.com/repos/{repo_name}/contents/{tpl_folder}/manifest.json"
+                try:
+                    m_req = urllib.request.Request(
+                        m_url,
+                        headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3+json", "User-Agent": "Frutisator-App"}
+                    )
+                    with urllib.request.urlopen(m_req, timeout=5) as m_resp:
+                        m_data = json.loads(m_resp.read().decode("utf-8"))
+                        m_content = base64.b64decode(m_data["content"]).decode("utf-8")
+                        manifest_items = json.loads(m_content)
+                        for item in manifest_items:
+                            file_url = f"https://api.github.com/repos/{repo_name}/contents/{tpl_folder}/{item['file']}"
+                            f_req = urllib.request.Request(
+                                file_url,
+                                headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3.raw", "User-Agent": "Frutisator-App"}
+                            )
+                            with urllib.request.urlopen(f_req, timeout=5) as f_resp:
+                                b64 = base64.b64encode(f_resp.read()).decode("utf-8")
+                                mime = "image/webp" if item["file"].endswith(".webp") else "image/jpeg"
+                                tpl_list.append({
+                                    "id": item["id"],
+                                    "name": item["name"],
+                                    "file": item["file"],
+                                    "src": f"data:{mime};base64,{b64}"
+                                })
+                        if tpl_list:
+                            return tpl_list
+                except Exception:
+                    pass
+    except Exception:
+        pass
+
+    # 2. Local fallback
     tpl_defs = [
         {"id": "suit", "name": "🤵 Fancy Tux", "file": "tux.jpg"},
         {"id": "gigachad", "name": "🗿 Gigachad", "file": "gigachad.webp"},
         {"id": "throne", "name": "👑 King Throne", "file": "king_throne.jpg"},
         {"id": "astronaut", "name": "🚀 Space", "file": "space.jpg"},
     ]
-    tpl_list = []
     for t in tpl_defs:
         img_p = TEMPLATES_DIR / t["file"]
         if img_p.exists():
             tpl_list.append({
                 "id": t["id"],
                 "name": t["name"],
+                "file": t["file"],
                 "src": get_base64_data_uri(img_p)
             })
     return tpl_list
@@ -1172,6 +1213,7 @@ html_app = f"""
       <div class="ps-panel-section" id="section-bg">
         <div class="panel-section-header">
           <span class="panel-section-title" id="secTitleBackdrop">🖼️ Backdrop & Templates</span>
+          <button id="adminTplLockBtn" class="admin-lock-btn" title="Admin Templates Settings">🔒</button>
         </div>
 
         <!-- UPLOAD BACKDROP DROPZONE WITH SVG UPLOAD ICON -->
@@ -1187,7 +1229,14 @@ html_app = f"""
           <input type="file" id="bgFileInput" accept="image/*,.gif">
         </label>
 
+        <!-- 1. DEFAULT FRUITS TEMPLATES (MOVED TO TOP) -->
         <div style="display:flex; flex-direction:column; gap:5px;">
+          <span class="section-label" id="lblPopularTemplates">Default Fruits Templates:</span>
+          <div class="grid-cards-faces" id="bgPresetsRow" style="max-height:160px; overflow-y:auto;"></div>
+        </div>
+
+        <!-- 2. CANVAS FORMAT BUTTONS (MOVED TO BOTTOM) -->
+        <div style="display:flex; flex-direction:column; gap:5px; margin-top:3px;">
           <span class="section-label" id="lblCanvasFormat">Canvas Format:</span>
           <div class="btn-group-grid btn-group-4" id="canvasSizeGroup">
             <button class="btn-toggle active" data-size="true_size" id="btnTrueSize">📐 True Size</button>
@@ -1196,9 +1245,6 @@ html_app = f"""
             <button class="btn-toggle" data-size="portrait">📱 9:16</button>
           </div>
         </div>
-
-        <span class="section-label" id="lblPopularTemplates">Popular Meme Templates:</span>
-        <div class="grid-cards-faces" id="bgPresetsRow" style="max-height:160px; overflow-y:auto;"></div>
       </div>
 
       <!-- 2. SECTION: FRUITS FACES -->
@@ -1276,15 +1322,7 @@ html_app = f"""
           <span id="valFilterTargetName" style="color:var(--ps-blue); font-weight:800;">🖼️ Backdrop</span>
         </div>
 
-        <!-- TARGET SELECTOR: BACKDROP, FACE, STICKER -->
-        <div style="display:flex; flex-direction:column; gap:4px;">
-          <span class="section-label" id="lblFilterTarget">Switch Target:</span>
-          <div class="btn-group-grid btn-group-3" id="filterTargetGroup">
-            <button class="btn-toggle active" data-target="bg" id="btnFilterBg">🖼️ Backdrop</button>
-            <button class="btn-toggle" data-target="face" id="btnFilterFace">🍉 Face</button>
-            <button class="btn-toggle" data-target="acc" id="btnFilterAcc">🎀 Sticker</button>
-          </div>
-        </div>
+
 
         <!-- NOTICE WHEN NO FACE/STICKER LAYER IS ACTIVE -->
         <div id="filterNoTargetNotice" style="display:none; color:var(--ps-yellow); font-size:11px; padding:6px 8px; border:1px dashed var(--ps-border); border-radius:5px; background:rgba(255,200,0,0.05); text-align:center;"></div>
@@ -1477,33 +1515,67 @@ html_app = f"""
         </div>
       </div>
 
-      <!-- STEP 2: CATALOG MANAGEMENT -->
+      <!-- STEP 2: CATALOG MANAGEMENT (FACES & TEMPLATES) -->
       <div class="admin-modal-body" id="adminManageBody" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="color:var(--ps-green); font-weight:800; font-size:12px;">✅ Admin Access Granted</span>
           <button id="adminLockOutBtn" class="ps-opt-btn" style="font-size:11px;">Lock</button>
         </div>
 
-        <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
-          <span style="font-size:12px; font-weight:800; color:#fff;">➕ ADD NEW FRUIT FACE TO CATALOG:</span>
-          <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
-            <input type="text" id="adminNewFaceName" class="ps-input" placeholder="Fruit Name & Emoji (e.g. Watermelon 🍉)">
-            <input type="file" id="adminNewFaceFile" accept="image/*" class="ps-input" style="padding:6px;">
-            <button id="adminUploadBtn" class="ps-btn ps-btn-primary" style="justify-content:center; gap:8px;">
-              <svg class="upload-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="17 8 12 3 7 8"></polyline>
-                <line x1="12" y1="3" x2="12" y2="15"></line>
-              </svg>
-              <span>Push to Catalog</span>
-            </button>
-            <div id="adminUploadStatus" style="font-size:11.5px; text-align:center;"></div>
+        <!-- TABS: FACES vs TEMPLATES -->
+        <div class="btn-group-grid btn-group-2" id="adminTabsGroup" style="margin-top:4px;">
+          <button class="btn-toggle active" id="adminTabFacesBtn">🍉 Fruit Faces</button>
+          <button class="btn-toggle" id="adminTabTemplatesBtn">🖼️ Templates & Backdrops</button>
+        </div>
+
+        <!-- TAB 1: FACES MANAGEMENT -->
+        <div id="adminTabFacesPanel" style="display:flex; flex-direction:column; gap:10px;">
+          <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
+            <span style="font-size:12px; font-weight:800; color:#fff;">➕ ADD NEW FRUIT FACE TO CATALOG:</span>
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+              <input type="text" id="adminNewFaceName" class="ps-input" placeholder="Fruit Name & Emoji (e.g. Watermelon 🍉)">
+              <input type="file" id="adminNewFaceFile" accept="image/*" class="ps-input" style="padding:6px;">
+              <button id="adminUploadBtn" class="ps-btn ps-btn-primary" style="justify-content:center; gap:8px;">
+                <svg class="upload-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span>Push to Faces Catalog</span>
+              </button>
+              <div id="adminUploadStatus" style="font-size:11.5px; text-align:center;"></div>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
+            <span style="font-size:12px; font-weight:800; color:#fff;">🗑️ MANAGE DEFAULT FRUITS:</span>
+            <div id="adminFacesCatalogList" style="display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-top:6px;"></div>
           </div>
         </div>
 
-        <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
-          <span style="font-size:12px; font-weight:800; color:#fff;">🗑️ MANAGE DEFAULT FRUITS:</span>
-          <div id="adminFacesCatalogList" style="display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-top:6px;"></div>
+        <!-- TAB 2: TEMPLATES MANAGEMENT -->
+        <div id="adminTabTemplatesPanel" style="display:none; flex-direction:column; gap:10px;">
+          <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
+            <span style="font-size:12px; font-weight:800; color:#fff;">➕ ADD NEW TEMPLATE TO CATALOG:</span>
+            <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+              <input type="text" id="adminNewTplName" class="ps-input" placeholder="Template Name & Emoji (e.g. 🏖️ Summer Beach)">
+              <input type="file" id="adminNewTplFile" accept="image/*" class="ps-input" style="padding:6px;">
+              <button id="adminUploadTplBtn" class="ps-btn ps-btn-primary" style="justify-content:center; gap:8px;">
+                <svg class="upload-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="17 8 12 3 7 8"></polyline>
+                  <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span>Push to Templates Catalog</span>
+              </button>
+              <div id="adminUploadTplStatus" style="font-size:11.5px; text-align:center;"></div>
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
+            <span style="font-size:12px; font-weight:800; color:#fff;">🗑️ MANAGE DEFAULT TEMPLATES:</span>
+            <div id="adminTemplatesCatalogList" style="display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-top:6px;"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1550,7 +1622,8 @@ const i18n = {{
     txtUploadBg: 'Upload Image, Meme or Animated GIF',
     lblCanvasFormat: 'Canvas Format:',
     btnTrueSize: '📐 True Size',
-    lblPopularTemplates: 'Popular Meme Templates:',
+    trueSize: '📐 True Size',
+    lblPopularTemplates: 'Default Fruits Templates:',
 
     secTitleFaces: '🍉 Fruits Faces',
     txtUploadFace: 'Upload Custom Fruit / Photo',
@@ -1636,7 +1709,8 @@ const i18n = {{
     txtUploadBg: 'رفع صورة أو ميم أو GIF متحرك',
     lblCanvasFormat: 'تنسيق الكانفاس:',
     btnTrueSize: '📐 الحجم الأصلي',
-    lblPopularTemplates: 'قوالب الميمز الشائعة:',
+    trueSize: '📐 الحجم الأصلي',
+    lblPopularTemplates: 'قوالب الفواكه الافتراضية:',
 
     secTitleFaces: '🍉 وجوه الفواكه',
     txtUploadFace: 'رفع فاكهة / صورة مخصصة',
@@ -1731,8 +1805,8 @@ function applyLanguage(lang) {{
   document.getElementById('secTitleBackdrop').innerText = t.secTitleBackdrop;
   document.getElementById('txtUploadBg').innerText = t.txtUploadBg;
   document.getElementById('lblCanvasFormat').innerText = t.lblCanvasFormat;
-  document.getElementById('btnTrueSize').innerText = t.trueSize;
-  document.getElementById('lblPopularTemplates').innerText = t.lblPopularTemplates;
+  if (document.getElementById('btnTrueSize')) document.getElementById('btnTrueSize').innerText = t.btnTrueSize || t.trueSize;
+  if (document.getElementById('lblPopularTemplates')) document.getElementById('lblPopularTemplates').innerText = t.lblPopularTemplates;
 
   document.getElementById('secTitleFaces').innerText = t.secTitleFaces;
   document.getElementById('txtUploadFace').innerText = t.txtUploadFace;
@@ -1779,10 +1853,6 @@ function applyLanguage(lang) {{
     document.getElementById('secTitleFilters').innerText = t.secTitleFilters;
     document.getElementById('resetFiltersBtn').innerText = t.resetFilters;
     document.getElementById('lblFilterTargetText').innerText = t.lblFilterTargetText;
-    document.getElementById('lblFilterTarget').innerText = t.lblFilterTarget;
-    document.getElementById('btnFilterBg').innerText = t.btnFilterBg;
-    document.getElementById('btnFilterFace').innerText = t.btnFilterFace;
-    document.getElementById('btnFilterAcc').innerText = t.btnFilterAcc;
     document.getElementById('lblFilterPresets').innerText = t.lblFilterPresets;
     document.getElementById('presetNormal').innerText = t.presetNormal;
     document.getElementById('presetBw').innerText = t.presetBw;
@@ -3098,7 +3168,32 @@ function initUIEvents() {{
     adminPwdInput.focus();
   }}
 
-  adminLockBtn.onclick = openAdminModal;
+  function switchAdminTab(tabName) {{
+    const isFaces = tabName === 'faces';
+    document.getElementById('adminTabFacesBtn').classList.toggle('active', isFaces);
+    document.getElementById('adminTabTemplatesBtn').classList.toggle('active', !isFaces);
+    document.getElementById('adminTabFacesPanel').style.display = isFaces ? 'flex' : 'none';
+    document.getElementById('adminTabTemplatesPanel').style.display = !isFaces ? 'flex' : 'none';
+    if (isFaces) renderAdminCatalog();
+    else renderAdminTemplatesCatalog();
+  }}
+
+  document.getElementById('adminTabFacesBtn').onclick = () => switchAdminTab('faces');
+  document.getElementById('adminTabTemplatesBtn').onclick = () => switchAdminTab('templates');
+
+  adminLockBtn.onclick = () => {{
+    openAdminModal();
+    switchAdminTab('faces');
+  }};
+
+  const adminTplLockBtn = document.getElementById('adminTplLockBtn');
+  if (adminTplLockBtn) {{
+    adminTplLockBtn.onclick = () => {{
+      openAdminModal();
+      switchAdminTab('templates');
+    }};
+  }}
+
   adminModalClose.onclick = () => {{ adminModal.style.display = 'none'; }};
 
   adminUnlockBtn.onclick = () => {{
@@ -3125,6 +3220,62 @@ function initUIEvents() {{
   }});
 
   // Admin upload to GitHub
+  // Template upload handler
+  const adminUploadTplBtn = document.getElementById('adminUploadTplBtn');
+  if (adminUploadTplBtn) {{
+    adminUploadTplBtn.onclick = () => {{
+      const name = (document.getElementById('adminNewTplName').value || '').trim();
+      const file = document.getElementById('adminNewTplFile').files[0];
+      const status = document.getElementById('adminUploadTplStatus');
+
+      if (!name || !file) {{
+        status.style.color = 'var(--ps-danger)';
+        status.innerText = '⚠️ Please enter a template name and select an image.';
+        return;
+      }}
+
+      status.style.color = 'var(--ps-blue)';
+      status.innerText = 'Processing template image...';
+
+      const reader = new FileReader();
+      reader.onload = (e) => {{
+        const b64 = e.target.result;
+        const filename = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+        const imgId = 'tpl_' + Date.now();
+
+        templates.push({{
+          id: imgId,
+          name: name,
+          file: filename,
+          src: b64
+        }});
+
+        const newImg = new Image();
+        newImg.src = b64;
+        loadedTemplates[imgId] = newImg;
+
+        initUIEvents();
+        renderAdminTemplatesCatalog();
+
+        status.style.color = 'var(--ps-green)';
+        status.innerText = '✅ Template added locally!';
+
+        if (GITHUB_TOKEN) {{
+          status.innerText = '🚀 Syncing template to storage repo...';
+          syncTemplateToGitHub(name, filename, b64)
+            .then(() => {{
+              status.innerText = '🎉 Successfully pushed to Templates in storage repo!';
+            }})
+            .catch(err => {{
+              status.style.color = 'var(--ps-yellow)';
+              status.innerText = '⚠️ Local added. GitHub sync error: ' + err.message;
+            }});
+        }}
+      }};
+      reader.readAsDataURL(file);
+    }};
+  }}
+
   document.getElementById('adminUploadBtn').onclick = () => {{
     const name = document.getElementById('adminNewFaceName').value.trim();
     const file = document.getElementById('adminNewFaceFile').files[0];
@@ -3310,6 +3461,153 @@ window.deleteAdminFace = function(idx) {{
     initUIEvents();
     renderAdminCatalog();
     render();
+  }}
+}};
+
+// GitHub API template sync helper with duplicate file renaming and manifest.json sync
+async function syncTemplateToGitHub(tplName, filename, base64Data) {{
+  const cleanB64 = base64Data.split(',')[1];
+  const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+  const folder = 'Templates';
+  const branch = 'main';
+
+  // 1. Check existing files in Templates/
+  let existingFiles = [];
+  try {{
+    const listRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}?ref=${{branch}}`, {{
+      headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+    }});
+    if (listRes.ok) existingFiles = await listRes.json();
+  }} catch (e) {{}}
+
+  // 2. Duplicate avoidance
+  const existingNames = new Set(existingFiles.map(f => (f.name || '').toLowerCase()));
+  let uniqueFilename = filename;
+  const dotIdx = filename.lastIndexOf('.');
+  const baseName = dotIdx !== -1 ? filename.substring(0, dotIdx) : filename;
+  const ext = dotIdx !== -1 ? filename.substring(dotIdx) : '';
+  let counter = 1;
+  while (existingNames.has(uniqueFilename.toLowerCase())) {{
+    uniqueFilename = `${{baseName}}_${{counter}}${{ext}}`;
+    counter++;
+  }}
+
+  // 3. Upload image
+  const filePutUrl = `https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{uniqueFilename}}`;
+  const filePutRes = await fetch(filePutUrl, {{
+    method: 'PUT',
+    headers: {{
+      'Authorization': 'Bearer ' + GITHUB_TOKEN,
+      'Content-Type': 'application/json',
+    }},
+    body: JSON.stringify({{
+      message: 'Add template image: ' + uniqueFilename,
+      content: cleanB64,
+      branch: branch
+    }})
+  }});
+  if (!filePutRes.ok) {{
+    const errObj = await filePutRes.json().catch(() => ({{}}));
+    throw new Error(errObj.message || ('Upload failed with HTTP ' + filePutRes.status));
+  }}
+
+  // 4. Update Templates/manifest.json
+  const manifestPath = `${{folder}}/manifest.json`;
+  const manifestUrl = `https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=${{branch}}`;
+  let manifestList = [];
+  let manifestSha = null;
+
+  try {{
+    const mRes = await fetch(manifestUrl, {{
+      headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+    }});
+    if (mRes.ok) {{
+      const mData = await mRes.json();
+      manifestSha = mData.sha;
+      const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
+      manifestList = JSON.parse(decoded);
+    }}
+  }} catch (e) {{}}
+
+  const tplId = 'tpl_' + Date.now();
+  manifestList.push({{
+    id: tplId,
+    name: tplName,
+    file: uniqueFilename
+  }});
+
+  const updatedManifestB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
+  const mPutBody = {{
+    message: 'Update Templates/manifest.json for ' + tplName,
+    content: updatedManifestB64,
+    branch: branch
+  }};
+  if (manifestSha) mPutBody.sha = manifestSha;
+
+  await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+    method: 'PUT',
+    headers: {{
+      'Authorization': 'Bearer ' + GITHUB_TOKEN,
+      'Content-Type': 'application/json',
+    }},
+    body: JSON.stringify(mPutBody)
+  }});
+
+  return {{ id: tplId, name: tplName, file: uniqueFilename }};
+}}
+
+function renderAdminTemplatesCatalog() {{
+  const list = document.getElementById('adminTemplatesCatalogList');
+  if (!list) return;
+  list.innerHTML = '';
+  if (templates.length === 0) {{
+    const emptyRow = document.createElement('div');
+    emptyRow.style = 'color:var(--ps-text-muted); font-size:12px; text-align:center; padding:12px;';
+    emptyRow.innerText = 'Templates catalog is empty. Add new templates using the form above!';
+    list.appendChild(emptyRow);
+  }}
+  templates.forEach((t, idx) => {{
+    const row = document.createElement('div');
+    row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:7px 10px; border-radius:6px; border:1px solid #1f2028;';
+    row.innerHTML = `
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img src="${{t.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
+        <span style="font-size:12.5px; font-weight:700; color:#fff;">${{t.name}}</span>
+      </div>
+      <button class="ps-opt-btn danger" style="padding:4px 8px; font-size:11px;" onclick="deleteAdminTemplate(${{idx}})">Remove</button>
+    `;
+    list.appendChild(row);
+  }});
+}}
+
+window.deleteAdminTemplate = function(idx) {{
+  if (confirm('Remove ' + templates[idx].name + ' from templates catalog?')) {{
+    const removed = templates.splice(idx, 1)[0];
+    delete loadedTemplates[removed.id];
+    initUIEvents();
+    renderAdminTemplatesCatalog();
+    render();
+
+    // Async sync deletion to Templates/manifest.json in storage repo
+    if (GITHUB_TOKEN) {{
+      const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+      const manifestPath = 'Templates/manifest.json';
+      fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main`, {{
+        headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+      }})
+      .then(r => r.json())
+      .then(mData => {{
+        const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
+        let manifestList = JSON.parse(decoded);
+        manifestList = manifestList.filter(item => item.id !== removed.id && item.file !== removed.file);
+        const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
+        return fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+          method: 'PUT',
+          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+          body: JSON.stringify({{ message: 'Remove template ' + removed.name, content: updatedB64, sha: mData.sha, branch: 'main' }})
+        }});
+      }}).catch(e => console.warn('Template deletion sync warning:', e));
+    }}
   }}
 }};
 
