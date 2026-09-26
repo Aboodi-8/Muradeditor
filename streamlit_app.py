@@ -1162,7 +1162,7 @@ const state = {{
 
   // Active Drag
   isDragging: false,
-  dragTarget: null, // { type: 'face'|'acc'|'text', idx: number }
+  dragTarget: null, // type: 'face' or 'acc' or 'text'
   dragStartX: 0,
   dragStartY: 0,
   initialTargetX: 0,
