@@ -30,7 +30,7 @@ st.markdown("""
         border: none !important;
     }
     .stApp {
-        background-color: #1e1e1e;
+        background-color: #1a1a1a;
         overflow: hidden;
     }
 </style>
@@ -155,13 +155,13 @@ html_app = f"""
     --ps-canvas-bg: #141414;
     --ps-input: #181818;
     --ps-border: #3c3c3c;
-    --ps-border-light: #484848;
+    --ps-border-light: #4c4c4c;
     --ps-blue: #007acc;
     --ps-blue-hover: #0e8ad6;
     --ps-blue-active: #005a9e;
     --ps-text: #cccccc;
     --ps-text-bright: #ffffff;
-    --ps-text-muted: #858585;
+    --ps-text-muted: #959595;
     --ps-danger: #f48771;
     --ps-green: #4ec9b0;
     --ps-yellow: #facc15;
@@ -180,7 +180,7 @@ html_app = f"""
     background: var(--ps-bg);
     color: var(--ps-text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 12px;
+    font-size: 13px;
     user-select: none;
     -webkit-user-select: none;
   }}
@@ -194,16 +194,16 @@ html_app = f"""
     overflow: hidden;
   }}
 
-  /* TOP OPTIONS BAR */
+  /* TOP OPTIONS BAR (SCALED UP) */
   .ps-topbar {{
-    height: 38px;
+    height: 44px;
     background: var(--ps-topbar);
     border-bottom: 1px solid var(--ps-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 10px;
-    gap: 12px;
+    padding: 0 14px;
+    gap: 14px;
     z-index: 100;
     flex-shrink: 0;
   }}
@@ -211,7 +211,7 @@ html_app = f"""
   .ps-brand {{
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     flex-shrink: 0;
   }}
 
@@ -219,26 +219,28 @@ html_app = f"""
     background: var(--ps-blue);
     color: #fff;
     font-weight: 900;
-    font-size: 13px;
-    padding: 2px 7px;
-    border-radius: 4px;
+    font-size: 15px;
+    padding: 3px 9px;
+    border-radius: 5px;
     letter-spacing: -0.5px;
-    box-shadow: 0 2px 5px rgba(0, 122, 204, 0.4);
+    box-shadow: 0 2px 6px rgba(0, 122, 204, 0.45);
   }}
 
   .ps-title {{
-    font-weight: 700;
-    font-size: 12.5px;
+    font-weight: 800;
+    font-size: 13.5px;
     color: var(--ps-text-bright);
     white-space: nowrap;
+    letter-spacing: 0.2px;
   }}
 
   .ps-doc-badge {{
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid var(--ps-border);
-    font-size: 10.5px;
-    padding: 2px 7px;
-    border-radius: 3px;
+    font-size: 11.5px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 4px;
     color: var(--ps-text-muted);
     white-space: nowrap;
   }}
@@ -247,15 +249,15 @@ html_app = f"""
   .ps-tool-options {{
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     flex: 1;
     overflow-x: auto;
-    padding: 0 4px;
+    padding: 0 6px;
   }}
 
   .ps-opt-label {{
     color: var(--ps-text-muted);
-    font-size: 11px;
+    font-size: 12px;
     white-space: nowrap;
   }}
 
@@ -263,39 +265,39 @@ html_app = f"""
     background: rgba(0, 122, 204, 0.2);
     border: 1px solid var(--ps-blue);
     color: #4dc2ff;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 3px 10px;
+    border-radius: 5px;
     font-weight: 700;
-    font-size: 11px;
+    font-size: 12px;
     white-space: nowrap;
   }}
 
   .ps-opt-group {{
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
     border-left: 1px solid var(--ps-border);
-    padding-left: 8px;
+    padding-left: 10px;
   }}
 
   .ps-opt-btn {{
     background: var(--ps-input);
     border: 1px solid var(--ps-border);
-    color: var(--ps-text);
-    padding: 3px 8px;
-    border-radius: 3px;
-    font-size: 11px;
+    color: var(--ps-text-bright);
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.1s ease;
+    transition: all 0.12s ease;
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
-    gap: 4px;
+    gap: 5px;
   }}
   .ps-opt-btn:hover {{
-    background: rgba(255, 255, 255, 0.08);
-    border-color: var(--ps-border-light);
+    background: rgba(255, 255, 255, 0.12);
+    border-color: #fff;
     color: #fff;
   }}
   .ps-opt-btn.danger:hover {{
@@ -308,7 +310,7 @@ html_app = f"""
   .ps-actions {{
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     flex-shrink: 0;
   }}
 
@@ -316,14 +318,14 @@ html_app = f"""
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid var(--ps-border);
     color: var(--ps-text-bright);
-    padding: 5px 12px;
-    border-radius: 4px;
-    font-size: 11.5px;
+    padding: 6px 14px;
+    border-radius: 5px;
+    font-size: 12.5px;
     font-weight: 700;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     transition: all 0.15s ease;
     white-space: nowrap;
   }}
@@ -334,70 +336,276 @@ html_app = f"""
   .ps-btn-primary {{
     background: var(--ps-blue);
     border-color: var(--ps-blue);
-    box-shadow: 0 2px 8px rgba(0, 122, 204, 0.35);
+    box-shadow: 0 2px 8px rgba(0, 122, 204, 0.4);
   }}
   .ps-btn-primary:hover {{
     background: var(--ps-blue-hover);
     border-color: var(--ps-blue-hover);
   }}
 
-  /* WORKSPACE BODY (TOOLBAR + CANVAS + PANELS) */
+  /* WORKSPACE BODY (LEFT SIDEBAR + CENTER CANVAS + RIGHT SIDEBAR) */
   .ps-body {{
     display: flex;
     flex: 1;
-    height: calc(100vh - 38px);
+    height: calc(100vh - 44px);
     overflow: hidden;
     position: relative;
   }}
 
-  /* SLIM LEFT TOOLBAR */
-  .ps-toolbar {{
-    width: 44px;
-    background: var(--ps-topbar);
+  /* SIDEBAR PANELS (LEFT & RIGHT) */
+  .ps-sidebar {{
+    width: 330px;
+    background: var(--ps-panel);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    height: 100%;
+    z-index: 50;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--ps-border-light) var(--ps-panel);
+  }}
+  .ps-sidebar-left {{
     border-right: 1px solid var(--ps-border);
+  }}
+  .ps-sidebar-right {{
+    border-left: 1px solid var(--ps-border);
+  }}
+  .ps-sidebar::-webkit-scrollbar {{
+    width: 6px;
+  }}
+  .ps-sidebar::-webkit-scrollbar-thumb {{
+    background: var(--ps-border-light);
+    border-radius: 3px;
+  }}
+
+  /* PANEL SECTIONS - OPEN & SPACIOUS */
+  .ps-panel-section {{
+    border-bottom: 1px solid var(--ps-border);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }}
+  .ps-panel-section:last-child {{
+    border-bottom: none;
+    padding-bottom: 30px;
+  }}
+
+  .panel-section-header {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--ps-topbar);
+    border: 1px solid var(--ps-border);
+    border-radius: 5px;
+    padding: 8px 12px;
+  }}
+  .panel-section-title {{
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--ps-text-bright);
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    letter-spacing: 0.2px;
+  }}
+
+  /* DISCRETE CORNER ADMIN LOCK BUTTON */
+  .admin-lock-btn {{
+    background: transparent;
+    border: 1px solid var(--ps-border);
+    border-radius: 4px;
+    color: var(--ps-text-muted);
+    cursor: pointer;
+    padding: 3px 8px;
+    font-size: 13px;
+    transition: all 0.15s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }}
+  .admin-lock-btn:hover {{
+    background: rgba(255, 255, 255, 0.1);
+    border-color: var(--ps-blue);
+    color: #fff;
+    transform: scale(1.08);
+  }}
+
+  /* DROP ZONES */
+  .ps-dropzone {{
+    border: 1.5px dashed var(--ps-blue);
+    background: rgba(0, 122, 204, 0.08);
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    display: block;
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+  }}
+  .ps-dropzone:hover {{
+    background: rgba(0, 122, 204, 0.18);
+    border-color: #fff;
+  }}
+  .ps-dropzone input {{ display: none; }}
+
+  /* GRID CARDS (FACES, TEMPLATES, EFFECTS) - SCALED UP */
+  .grid-cards {{
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }}
+  .grid-card {{
+    background: var(--ps-input);
+    border: 1px solid var(--ps-border);
+    border-radius: 6px;
+    padding: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 8px 0;
-    gap: 6px;
-    flex-shrink: 0;
-    z-index: 50;
+    cursor: pointer;
+    transition: all 0.12s ease;
+  }}
+  .grid-card:hover {{
+    border-color: var(--ps-border-light);
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.05);
+  }}
+  .grid-card.active {{
+    border-color: var(--ps-blue);
+    background: rgba(0, 122, 204, 0.22);
+    box-shadow: 0 0 0 1px var(--ps-blue);
+  }}
+  .grid-card img {{
+    width: 72px;
+    height: 72px;
+    border-radius: 5px;
+    object-fit: cover;
+    margin-bottom: 5px;
+  }}
+  .grid-card span {{
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ps-text);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
   }}
 
-  .tool-btn {{
-    width: 34px;
-    height: 34px;
+  /* BUTTON GROUPS & TOGGLES */
+  .btn-group {{
+    display: flex;
+    background: var(--ps-input);
+    border-radius: 6px;
+    padding: 3px;
+    border: 1px solid var(--ps-border);
+    gap: 3px;
+    flex-wrap: wrap;
+  }}
+  .btn-toggle {{
+    flex: 1 1 auto;
     background: transparent;
-    border: 1px solid transparent;
+    border: none;
+    color: var(--ps-text-muted);
+    font-size: 11.5px;
+    font-weight: 700;
+    padding: 6px 8px;
     border-radius: 4px;
-    color: var(--ps-text);
-    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    text-align: center;
+    white-space: nowrap;
+  }}
+  .btn-toggle:hover {{ color: #fff; }}
+  .btn-toggle.active {{
+    background: var(--ps-blue);
+    color: #fff;
+  }}
+
+  /* SLIDERS */
+  .slider-row {{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }}
+  .slider-row label {{
+    font-size: 11.5px;
+    color: var(--ps-text-muted);
+    display: flex;
+    justify-content: space-between;
+    font-weight: 700;
+  }}
+  .slider-row input[type="range"] {{
+    width: 100%;
+    accent-color: var(--ps-blue);
+    cursor: pointer;
+    height: 6px;
+  }}
+
+  /* INPUTS */
+  .ps-input {{
+    width: 100%;
+    background: var(--ps-input);
+    border: 1px solid var(--ps-border);
+    color: #fff;
+    font-size: 12.5px;
+    padding: 8px 12px;
+    border-radius: 5px;
+    outline: none;
+  }}
+  .ps-input:focus {{ border-color: var(--ps-blue); }}
+
+  /* LAYERS LIST */
+  .layers-list {{
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }}
+  .layer-item {{
+    background: var(--ps-input);
+    border: 1px solid var(--ps-border);
+    border-radius: 5px;
+    padding: 8px 10px;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: space-between;
     cursor: pointer;
-    transition: all 0.1s ease;
-    position: relative;
+    transition: all 0.12s ease;
   }}
-  .tool-btn:hover {{
-    background: rgba(255, 255, 255, 0.08);
-    color: #fff;
+  .layer-item:hover {{
+    border-color: var(--ps-border-light);
   }}
-  .tool-btn.active {{
-    background: rgba(0, 122, 204, 0.25);
+  .layer-item.active {{
     border-color: var(--ps-blue);
+    background: rgba(0, 122, 204, 0.2);
+  }}
+  .layer-title {{
+    font-weight: 700;
+    font-size: 12px;
     color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 7px;
   }}
-  .tool-btn.active::before {{
-    content: '';
-    position: absolute;
-    left: -4px;
-    top: 6px;
-    bottom: 6px;
-    width: 3px;
-    background: var(--ps-blue);
-    border-radius: 2px;
+  .layer-controls {{
+    display: flex;
+    gap: 4px;
   }}
+  .layer-btn {{
+    background: transparent;
+    border: none;
+    color: var(--ps-text-muted);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 3px 6px;
+    border-radius: 4px;
+  }}
+  .layer-btn:hover {{ color: #fff; background: rgba(255, 255, 255, 0.1); }}
 
   /* CENTER CANVAS VIEWPORT */
   .ps-canvas-viewport {{
@@ -421,260 +629,14 @@ html_app = f"""
   }}
 
   #mainCanvas {{
-    max-width: calc(100vw - 390px);
-    max-height: calc(100vh - 70px);
+    max-width: calc(100vw - 700px);
+    max-height: calc(100vh - 80px);
     border: 1px solid var(--ps-border);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+    box-shadow: 0 12px 45px rgba(0, 0, 0, 0.75);
     display: block;
     object-fit: contain;
     background: #000;
   }}
-
-  /* RIGHT DOCKED PANELS - ALL OPEN AND SCROLLABLE */
-  .ps-panels-sidebar {{
-    width: 330px;
-    background: var(--ps-panel);
-    border-left: 1px solid var(--ps-border);
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    height: 100%;
-    z-index: 50;
-    overflow-y: auto;
-    scrollbar-width: thin;
-    scrollbar-color: var(--ps-border-light) var(--ps-panel);
-  }}
-  .ps-panels-sidebar::-webkit-scrollbar {{
-    width: 6px;
-  }}
-  .ps-panels-sidebar::-webkit-scrollbar-thumb {{
-    background: var(--ps-border-light);
-    border-radius: 3px;
-  }}
-
-  .ps-panel-section {{
-    border-bottom: 1px solid var(--ps-border);
-    padding: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-  }}
-  .ps-panel-section:last-child {{
-    border-bottom: none;
-    padding-bottom: 28px;
-  }}
-
-  .panel-section-header {{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--ps-topbar);
-    border: 1px solid var(--ps-border);
-    border-radius: 4px;
-    padding: 6px 10px;
-  }}
-  .panel-section-title {{
-    font-weight: 800;
-    font-size: 11.5px;
-    color: var(--ps-text-bright);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }}
-
-  /* DISCRETE CORNER ADMIN LOCK BUTTON */
-  .admin-lock-btn {{
-    background: transparent;
-    border: 1px solid var(--ps-border);
-    border-radius: 4px;
-    color: var(--ps-text-muted);
-    cursor: pointer;
-    padding: 2px 6px;
-    font-size: 12px;
-    transition: all 0.15s ease;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-  }}
-  .admin-lock-btn:hover {{
-    background: rgba(255, 255, 255, 0.08);
-    border-color: var(--ps-blue);
-    color: #fff;
-    transform: scale(1.05);
-  }}
-
-  /* DROP ZONES */
-  .ps-dropzone {{
-    border: 1.5px dashed var(--ps-blue);
-    background: rgba(0, 122, 204, 0.08);
-    border-radius: 6px;
-    padding: 9px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    display: block;
-    color: #fff;
-    font-weight: 600;
-    font-size: 11px;
-  }}
-  .ps-dropzone:hover {{
-    background: rgba(0, 122, 204, 0.18);
-    border-color: #fff;
-  }}
-  .ps-dropzone input {{ display: none; }}
-
-  /* GRID CARDS (FACES, TEMPLATES, EFFECTS) */
-  .grid-cards {{
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 6px;
-  }}
-  .grid-card {{
-    background: var(--ps-input);
-    border: 1px solid var(--ps-border);
-    border-radius: 6px;
-    padding: 5px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    cursor: pointer;
-    transition: all 0.1s ease;
-  }}
-  .grid-card:hover {{
-    border-color: var(--ps-border-light);
-    transform: translateY(-1px);
-    background: rgba(255, 255, 255, 0.04);
-  }}
-  .grid-card.active {{
-    border-color: var(--ps-blue);
-    background: rgba(0, 122, 204, 0.2);
-  }}
-  .grid-card img {{
-    width: 58px;
-    height: 58px;
-    border-radius: 4px;
-    object-fit: cover;
-    margin-bottom: 4px;
-  }}
-  .grid-card span {{
-    font-size: 10px;
-    font-weight: 600;
-    color: var(--ps-text);
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100%;
-  }}
-
-  /* BUTTON GROUPS & TOGGLES */
-  .btn-group {{
-    display: flex;
-    background: var(--ps-input);
-    border-radius: 6px;
-    padding: 2px;
-    border: 1px solid var(--ps-border);
-    gap: 2px;
-    flex-wrap: wrap;
-  }}
-  .btn-toggle {{
-    flex: 1 1 auto;
-    background: transparent;
-    border: none;
-    color: var(--ps-text-muted);
-    font-size: 10.5px;
-    font-weight: 700;
-    padding: 5px 6px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.1s ease;
-    text-align: center;
-    white-space: nowrap;
-  }}
-  .btn-toggle:hover {{ color: #fff; }}
-  .btn-toggle.active {{
-    background: var(--ps-blue);
-    color: #fff;
-  }}
-
-  /* SLIDERS */
-  .slider-row {{
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }}
-  .slider-row label {{
-    font-size: 10.5px;
-    color: var(--ps-text-muted);
-    display: flex;
-    justify-content: space-between;
-    font-weight: 600;
-  }}
-  .slider-row input[type="range"] {{
-    width: 100%;
-    accent-color: var(--ps-blue);
-    cursor: pointer;
-  }}
-
-  /* INPUTS */
-  .ps-input {{
-    width: 100%;
-    background: var(--ps-input);
-    border: 1px solid var(--ps-border);
-    color: #fff;
-    font-size: 11.5px;
-    padding: 6px 10px;
-    border-radius: 4px;
-    outline: none;
-  }}
-  .ps-input:focus {{ border-color: var(--ps-blue); }}
-
-  /* LAYERS LIST */
-  .layers-list {{
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }}
-  .layer-item {{
-    background: var(--ps-input);
-    border: 1px solid var(--ps-border);
-    border-radius: 4px;
-    padding: 6px 8px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    cursor: pointer;
-    transition: all 0.1s ease;
-  }}
-  .layer-item:hover {{
-    border-color: var(--ps-border-light);
-  }}
-  .layer-item.active {{
-    border-color: var(--ps-blue);
-    background: rgba(0, 122, 204, 0.2);
-  }}
-  .layer-title {{
-    font-weight: 600;
-    font-size: 11px;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }}
-  .layer-controls {{
-    display: flex;
-    gap: 3px;
-  }}
-  .layer-btn {{
-    background: transparent;
-    border: none;
-    color: var(--ps-text-muted);
-    cursor: pointer;
-    font-size: 11px;
-    padding: 2px 4px;
-    border-radius: 3px;
-  }}
-  .layer-btn:hover {{ color: #fff; background: rgba(255, 255, 255, 0.1); }}
 
   /* FLOATING PROGRESS BAR */
   .progress-wrap {{
@@ -686,15 +648,15 @@ html_app = f"""
     backdrop-filter: blur(20px);
     border: 1px solid var(--ps-border);
     border-radius: 8px;
-    padding: 12px 18px;
-    width: 320px;
+    padding: 14px 20px;
+    width: 340px;
     box-shadow: 0 16px 40px rgba(0,0,0,0.7);
     z-index: 1000;
   }}
   .progress-track {{
-    height: 6px;
+    height: 7px;
     background: var(--ps-input);
-    border-radius: 3px;
+    border-radius: 4px;
     overflow: hidden;
   }}
   .progress-bar {{
@@ -704,10 +666,11 @@ html_app = f"""
     transition: width 0.1s linear;
   }}
   .progress-text {{
-    font-size: 11px;
-    color: var(--ps-text);
+    font-size: 12px;
+    color: var(--ps-text-bright);
     text-align: center;
-    margin-top: 6px;
+    margin-top: 8px;
+    font-weight: 600;
   }}
 
   /* ADMIN MODAL */
@@ -717,7 +680,7 @@ html_app = f"""
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.65);
+    background: rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(8px);
     display: none;
     align-items: center;
@@ -725,7 +688,7 @@ html_app = f"""
     z-index: 2000;
   }}
   .admin-modal {{
-    width: 420px;
+    width: 440px;
     max-width: 90vw;
     background: var(--ps-panel);
     border: 1px solid var(--ps-border-light);
@@ -738,59 +701,60 @@ html_app = f"""
   .admin-modal-header {{
     background: var(--ps-topbar);
     border-bottom: 1px solid var(--ps-border);
-    padding: 10px 14px;
+    padding: 12px 16px;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }}
   .admin-modal-title {{
     font-weight: 800;
-    font-size: 13px;
+    font-size: 14px;
     color: #fff;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
   }}
   .admin-modal-close {{
     background: transparent;
     border: none;
     color: var(--ps-text-muted);
-    font-size: 14px;
+    font-size: 16px;
     cursor: pointer;
   }}
   .admin-modal-close:hover {{ color: #fff; }}
   .admin-modal-body {{
-    padding: 14px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
     max-height: 70vh;
     overflow-y: auto;
   }}
 
   /* RESPONSIVE SCALING */
-  @media (max-width: 960px) {{
-    .ps-panels-sidebar {{
+  @media (max-width: 1200px) {{
+    .ps-sidebar {{
       width: 290px;
     }}
     #mainCanvas {{
-      max-width: calc(100vw - 350px);
+      max-width: calc(100vw - 620px);
     }}
   }}
-  @media (max-width: 760px) {{
+  @media (max-width: 900px) {{
     .ps-title, .ps-doc-badge {{
       display: none;
     }}
-    .ps-panels-sidebar {{
-      position: absolute;
-      right: 0;
-      top: 38px;
-      height: calc(100vh - 38px);
-      width: 300px;
-      box-shadow: -10px 0 30px rgba(0,0,0,0.8);
+    .ps-body {{
+      flex-direction: column;
+      overflow-y: auto;
+    }}
+    .ps-sidebar {{
+      width: 100%;
+      height: auto;
     }}
     #mainCanvas {{
-      max-width: calc(100vw - 64px);
+      max-width: 94vw;
+      max-height: 60vh;
     }}
   }}
 </style>
@@ -809,7 +773,7 @@ html_app = f"""
   <header class="ps-topbar">
     <div class="ps-brand">
       <span class="ps-logo">Ps</span>
-      <span class="ps-title">Murad Studio</span>
+      <span class="ps-title">Murad Photoshop Studio</span>
       <span class="ps-doc-badge" id="docSizeBadge">500 × 500 px</span>
     </div>
 
@@ -834,28 +798,11 @@ html_app = f"""
     </div>
   </header>
 
-  <!-- BODY (TOOLBAR + CANVAS + RIGHT PANELS) -->
+  <!-- BODY (LEFT MENUS + CENTER CANVAS + RIGHT MENUS) -->
   <div class="ps-body">
 
-    <!-- LEFT SLIM TOOLBAR (QUICK JUMP SCROLL ANCHORS) -->
-    <aside class="ps-toolbar">
-      <button class="tool-btn active" data-target="section-layers" title="Move & Active Layers (V)">↖️</button>
-      <button class="tool-btn" data-target="section-faces" title="Murad Faces (F)">🎭</button>
-      <button class="tool-btn" data-target="section-bg" title="Backdrop & Templates (B)">🖼️</button>
-      <button class="tool-btn" data-target="section-text" title="Meme Text (T)">✍️</button>
-      <button class="tool-btn" data-target="section-stickers" title="Custom Stickers (S)">🎀</button>
-      <button class="tool-btn" data-target="section-anim" title="Animation FX (A)">✨</button>
-    </aside>
-
-    <!-- CENTER CANVAS VIEWPORT -->
-    <main class="ps-canvas-viewport" id="canvasViewport">
-      <div class="canvas-stage">
-        <canvas id="mainCanvas" width="500" height="500"></canvas>
-      </div>
-    </main>
-
-    <!-- RIGHT DOCKED PANELS (ALL SECTIONS OPEN BY DEFAULT) -->
-    <aside class="ps-panels-sidebar" id="panelsSidebar">
+    <!-- LEFT SIDEBAR: FACES & BACKDROP (OPEN BY DEFAULT) -->
+    <aside class="ps-sidebar ps-sidebar-left" id="sidebarLeft">
 
       <!-- 1. SECTION: MURAD FACES -->
       <div class="ps-panel-section" id="section-faces">
@@ -871,13 +818,13 @@ html_app = f"""
         </label>
 
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:10.5px; color:var(--ps-text-muted); font-weight:700;">DEFAULT FACES:</span>
+          <span style="font-size:11px; color:var(--ps-text-muted); font-weight:700;">DEFAULT FACES:</span>
           <button id="addFaceBtn" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff;">➕ Add Face</button>
         </div>
-        <div class="grid-cards" id="facesGrid" style="max-height:180px; overflow-y:auto;"></div>
+        <div class="grid-cards" id="facesGrid" style="max-height:210px; overflow-y:auto;"></div>
 
-        <div style="display:flex; flex-direction:column; gap:4px; margin-top:2px;">
-          <span style="font-size:10.5px; color:var(--ps-text-muted); font-weight:700;">CUTOUT SHAPE:</span>
+        <div style="display:flex; flex-direction:column; gap:5px; margin-top:2px;">
+          <span style="font-size:11px; color:var(--ps-text-muted); font-weight:700;">CUTOUT SHAPE:</span>
           <div class="btn-group" id="maskGroup">
             <button class="btn-toggle active" data-mask="square">Full Frame</button>
             <button class="btn-toggle" data-mask="circle">Sticker Circle</button>
@@ -906,8 +853,8 @@ html_app = f"""
           <input type="file" id="bgFileInput" accept="image/*,.gif">
         </label>
 
-        <div style="display:flex; flex-direction:column; gap:4px;">
-          <span style="font-size:10.5px; color:var(--ps-text-muted); font-weight:700;">CANVAS RATIO:</span>
+        <div style="display:flex; flex-direction:column; gap:5px;">
+          <span style="font-size:11px; color:var(--ps-text-muted); font-weight:700;">CANVAS RATIO:</span>
           <div class="btn-group" id="canvasSizeGroup">
             <button class="btn-toggle active" data-size="true_size">📐 True Size</button>
             <button class="btn-toggle" data-size="square">⏹️ 1:1</button>
@@ -916,9 +863,21 @@ html_app = f"""
           </div>
         </div>
 
-        <span style="font-size:10.5px; color:var(--ps-text-muted); font-weight:700;">POPULAR TEMPLATES:</span>
+        <span style="font-size:11px; color:var(--ps-text-muted); font-weight:700;">POPULAR TEMPLATES:</span>
         <div class="grid-cards" id="bgPresetsRow" style="grid-template-columns: repeat(2, 1fr);"></div>
       </div>
+
+    </aside>
+
+    <!-- CENTER CANVAS VIEWPORT -->
+    <main class="ps-canvas-viewport" id="canvasViewport">
+      <div class="canvas-stage">
+        <canvas id="mainCanvas" width="500" height="500"></canvas>
+      </div>
+    </main>
+
+    <!-- RIGHT SIDEBAR: TEXT, STICKERS, FX & LAYERS (OPEN BY DEFAULT) -->
+    <aside class="ps-sidebar ps-sidebar-right" id="sidebarRight">
 
       <!-- 3. SECTION: MEME TEXT -->
       <div class="ps-panel-section" id="section-text">
@@ -926,13 +885,13 @@ html_app = f"""
           <span class="panel-section-title">✍️ Meme Text</span>
         </div>
 
-        <div style="display:flex; gap:4px;">
-          <button id="addTopTextBtn" class="ps-opt-btn" style="flex:1;">➕ Top</button>
-          <button id="addBottomTextBtn" class="ps-opt-btn" style="flex:1;">➕ Bottom</button>
-          <button id="addCustomTextBtn" class="ps-opt-btn" style="flex:1; background:var(--ps-blue); color:#fff; border-color:var(--ps-blue);">➕ Custom</button>
+        <div style="display:flex; gap:6px;">
+          <button id="addTopTextBtn" class="ps-opt-btn" style="flex:1; padding:6px;">➕ Top</button>
+          <button id="addBottomTextBtn" class="ps-opt-btn" style="flex:1; padding:6px;">➕ Bottom</button>
+          <button id="addCustomTextBtn" class="ps-opt-btn" style="flex:1; padding:6px; background:var(--ps-blue); color:#fff; border-color:var(--ps-blue);">➕ Custom</button>
         </div>
 
-        <div id="textEditorBox" style="display:flex; flex-direction:column; gap:8px;">
+        <div id="textEditorBox" style="display:flex; flex-direction:column; gap:9px;">
           <input type="text" id="activeTextInput" class="ps-input" placeholder="Type meme text here...">
 
           <div class="slider-row">
@@ -940,8 +899,8 @@ html_app = f"""
             <input type="range" id="textSizeSlider" min="14" max="90" step="2" value="38">
           </div>
 
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            <span style="font-size:10.5px; color:var(--ps-text-muted); font-weight:700;">COLOR:</span>
+          <div style="display:flex; flex-direction:column; gap:5px;">
+            <span style="font-size:11px; color:var(--ps-text-muted); font-weight:700;">COLOR:</span>
             <div class="btn-group" id="textColorGroup">
               <button class="btn-toggle active" data-color="#ffffff">White</button>
               <button class="btn-toggle" data-color="#facc15" style="color:#facc15;">Yellow</button>
@@ -964,7 +923,7 @@ html_app = f"""
           <input type="file" id="accFileInput" accept="image/*,.gif">
         </label>
 
-        <div id="accEditorBox" style="display:none; flex-direction:column; gap:8px;">
+        <div id="accEditorBox" style="display:none; flex-direction:column; gap:9px;">
           <div class="slider-row">
             <label>Sticker Size: <b id="accScaleVal">100%</b></label>
             <input type="range" id="accScaleSlider" min="0.1" max="3.0" step="0.05" value="1.0">
@@ -1023,36 +982,36 @@ html_app = f"""
       
       <!-- STEP 1: PASSWORD AUTH -->
       <div class="admin-modal-body" id="adminAuthBody">
-        <div style="text-align:center; padding: 10px 0;">
-          <div style="font-size:32px; margin-bottom:8px;">🔒</div>
-          <div style="font-weight:700; font-size:13px; color:#fff; margin-bottom:4px;">Enter Admin Password</div>
-          <div style="font-size:11px; color:var(--ps-text-muted); margin-bottom:12px;">Manage default catalog faces or push new ones to GitHub.</div>
-          <input type="password" id="adminPwdInput" class="ps-input" placeholder="Password..." style="margin-bottom:8px; text-align:center; width:220px; margin:0 auto 10px auto;">
-          <div id="adminAuthError" style="color:var(--ps-danger); font-size:11px; display:none; margin-bottom:8px;">❌ Incorrect Admin Password</div>
-          <button id="adminUnlockBtn" class="ps-btn ps-btn-primary" style="width:220px; margin:0 auto; justify-content:center;">Unlock</button>
+        <div style="text-align:center; padding: 12px 0;">
+          <div style="font-size:36px; margin-bottom:8px;">🔒</div>
+          <div style="font-weight:700; font-size:14px; color:#fff; margin-bottom:4px;">Enter Admin Password</div>
+          <div style="font-size:11.5px; color:var(--ps-text-muted); margin-bottom:14px;">Manage default catalog faces or push new ones to GitHub.</div>
+          <input type="password" id="adminPwdInput" class="ps-input" placeholder="Password..." style="margin-bottom:8px; text-align:center; width:240px; margin:0 auto 10px auto;">
+          <div id="adminAuthError" style="color:var(--ps-danger); font-size:11.5px; display:none; margin-bottom:8px;">❌ Incorrect Admin Password</div>
+          <button id="adminUnlockBtn" class="ps-btn ps-btn-primary" style="width:240px; margin:0 auto; justify-content:center;">Unlock</button>
         </div>
       </div>
 
       <!-- STEP 2: CATALOG MANAGEMENT -->
       <div class="admin-modal-body" id="adminManageBody" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="color:var(--ps-green); font-weight:700; font-size:11px;">✅ Admin Access Granted</span>
-          <button id="adminLockOutBtn" class="ps-opt-btn" style="font-size:10px;">Lock</button>
+          <span style="color:var(--ps-green); font-weight:700; font-size:12px;">✅ Admin Access Granted</span>
+          <button id="adminLockOutBtn" class="ps-opt-btn" style="font-size:11px;">Lock</button>
         </div>
 
-        <div style="border-top:1px solid var(--ps-border); padding-top:8px;">
-          <span style="font-size:11px; font-weight:700; color:#fff;">➕ ADD NEW FACE TO CATALOG:</span>
-          <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+        <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
+          <span style="font-size:11.5px; font-weight:700; color:#fff;">➕ ADD NEW FACE TO CATALOG:</span>
+          <div style="display:flex; flex-direction:column; gap:7px; margin-top:7px;">
             <input type="text" id="adminNewFaceName" class="ps-input" placeholder="Face Name & Emoji (e.g. Party Murad 🎉)">
-            <input type="file" id="adminNewFaceFile" accept="image/*" class="ps-input" style="padding:4px;">
+            <input type="file" id="adminNewFaceFile" accept="image/*" class="ps-input" style="padding:5px;">
             <button id="adminUploadBtn" class="ps-btn ps-btn-primary" style="justify-content:center;">🚀 Push to Catalog</button>
-            <div id="adminUploadStatus" style="font-size:10.5px; text-align:center;"></div>
+            <div id="adminUploadStatus" style="font-size:11px; text-align:center;"></div>
           </div>
         </div>
 
-        <div style="border-top:1px solid var(--ps-border); padding-top:8px;">
-          <span style="font-size:11px; font-weight:700; color:#fff;">🗑️ MANAGE DEFAULT FACES:</span>
-          <div id="adminFacesCatalogList" style="display:flex; flex-direction:column; gap:4px; max-height:180px; overflow-y:auto; margin-top:6px;"></div>
+        <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
+          <span style="font-size:11.5px; font-weight:700; color:#fff;">🗑️ MANAGE DEFAULT FACES:</span>
+          <div id="adminFacesCatalogList" style="display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-top:7px;"></div>
         </div>
       </div>
     </div>
@@ -1241,13 +1200,13 @@ function testHandlesHit(mx, my, layerData) {{
   const {{ cx, cy, hw, hh, rotation }} = layerData;
   const {{ lx, ly }} = toLocal(mx, my, cx, cy, rotation);
 
-  // 1. Rotation handle: at (0, -hh - 24)
-  const rotDist = Math.hypot(lx - 0, ly - (-hh - 24));
-  if (rotDist <= 14) {{
+  // 1. Rotation handle: at (0, -hh - 26)
+  const rotDist = Math.hypot(lx - 0, ly - (-hh - 26));
+  if (rotDist <= 16) {{
     return 'rot';
   }}
 
-  // 2. Corner handles (size 9x9, radius 10)
+  // 2. Corner handles (size 10x10, radius 12)
   const corners = [
     {{ name: 'tl', x: -hw, y: -hh }},
     {{ name: 'tr', x: hw, y: -hh }},
@@ -1255,7 +1214,7 @@ function testHandlesHit(mx, my, layerData) {{
     {{ name: 'br', x: hw, y: hh }}
   ];
   for (let c of corners) {{
-    if (Math.abs(lx - c.x) <= 10 && Math.abs(ly - c.y) <= 10) {{
+    if (Math.abs(lx - c.x) <= 12 && Math.abs(ly - c.y) <= 12) {{
       return c.name;
     }}
   }}
@@ -1446,7 +1405,7 @@ function render(offsetObj) {{
     ctx.restore();
   }});
 
-  // 5. Draw Photoshop Bounding Box & Free Transform Handles
+  // 5. Draw Photoshop Bounding Box & Free Transform Handles (Scaled for visibility)
   const active = getActiveLayerData();
   if (active) {{
     const {{ cx, cy, hw, hh, rotation }} = active;
@@ -1456,23 +1415,23 @@ function render(offsetObj) {{
 
     // Blue dashed bounding rectangle
     ctx.strokeStyle = '#007acc';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
     ctx.strokeRect(-hw, -hh, hw * 2, hh * 2);
 
     // Stem line to rotation handle
     ctx.setLineDash([]);
     ctx.beginPath();
     ctx.moveTo(0, -hh);
-    ctx.lineTo(0, -hh - 24);
+    ctx.lineTo(0, -hh - 26);
     ctx.stroke();
 
     // Top circular rotation handle
     ctx.fillStyle = '#ffffff';
     ctx.strokeStyle = '#007acc';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = 2.5;
     ctx.beginPath();
-    ctx.arc(0, -hh - 24, 6, 0, Math.PI * 2);
+    ctx.arc(0, -hh - 26, 7, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
@@ -1483,11 +1442,11 @@ function render(offsetObj) {{
       [-hw, hh],
       [hw, hh]
     ];
-    const hSize = 8;
+    const hSize = 9;
     corners.forEach(([x, y]) => {{
       ctx.fillStyle = '#ffffff';
       ctx.strokeStyle = '#007acc';
-      ctx.lineWidth = 1.5;
+      ctx.lineWidth = 2;
       ctx.fillRect(x - hSize / 2, y - hSize / 2, hSize, hSize);
       ctx.strokeRect(x - hSize / 2, y - hSize / 2, hSize, hSize);
     }});
@@ -1715,7 +1674,7 @@ function updateLayersList() {{
   }});
 
   if (all.length === 0) {{
-    list.innerHTML = '<div style="color:var(--ps-text-muted); font-size:11px; text-align:center; padding:12px;">No layers on canvas yet.</div>';
+    list.innerHTML = '<div style="color:var(--ps-text-muted); font-size:11.5px; text-align:center; padding:12px;">No layers on canvas yet.</div>';
     return;
   }}
 
@@ -1773,17 +1732,6 @@ function deleteLayer(type, idx) {{
   render();
 }}
 
-// Scroll directly to a section when toolbar icon clicked
-function scrollToSection(sectionId) {{
-  const el = document.getElementById(sectionId);
-  if (el) {{
-    el.scrollIntoView({{ behavior: 'smooth', block: 'start' }});
-  }}
-  document.querySelectorAll('.tool-btn').forEach(btn => {{
-    btn.classList.toggle('active', btn.dataset.target === sectionId);
-  }});
-}}
-
 // Build catalog grids
 function buildFacesUI() {{
   const grid = document.getElementById('facesGrid');
@@ -1833,11 +1781,6 @@ function initUIEvents() {{
   buildTemplatesUI();
   updateLayersList();
   updateOptionsBar();
-
-  // Toolbar icons scroll to section
-  document.querySelectorAll('.tool-btn').forEach(btn => {{
-    btn.onclick = () => scrollToSection(btn.dataset.target);
-  }});
 
   // Topbar Options buttons
   document.getElementById('optFlipBtn').onclick = () => {{
@@ -1980,7 +1923,7 @@ function initUIEvents() {{
 
   // Text tools
   document.getElementById('addTopTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'TOP TEXT', x: 0, y: -canvas.height / 2 + 35, size: 36, color: '#ffffff', rotation: 0 }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'TOP TEXT', x: 0, y: -canvas.height / 2 + 40, size: 38, color: '#ffffff', rotation: 0 }});
     state.selectedTextIdx = state.texts.length - 1;
     state.selectedFaceIdx = -1;
     state.selectedAccIdx = -1;
@@ -1990,7 +1933,7 @@ function initUIEvents() {{
     render();
   }};
   document.getElementById('addBottomTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: canvas.height / 2 - 35, size: 36, color: '#ffffff', rotation: 0 }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: canvas.height / 2 - 40, size: 38, color: '#ffffff', rotation: 0 }});
     state.selectedTextIdx = state.texts.length - 1;
     state.selectedFaceIdx = -1;
     state.selectedAccIdx = -1;
@@ -2000,7 +1943,7 @@ function initUIEvents() {{
     render();
   }};
   document.getElementById('addCustomTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'MEME TEXT', x: 0, y: 0, size: 38, color: '#facc15', rotation: 0 }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'MEME TEXT', x: 0, y: 0, size: 40, color: '#facc15', rotation: 0 }});
     state.selectedTextIdx = state.texts.length - 1;
     state.selectedFaceIdx = -1;
     state.selectedAccIdx = -1;
@@ -2278,13 +2221,13 @@ function renderAdminCatalog() {{
   list.innerHTML = '';
   faces.forEach((f, idx) => {{
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:var(--ps-input); padding:4px 8px; border-radius:4px;';
+    row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:var(--ps-input); padding:6px 10px; border-radius:5px;';
     row.innerHTML = `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <img src="${{f.src}}" style="width:28px; height:28px; border-radius:3px; object-fit:cover;">
-        <span style="font-weight:600; color:#fff; font-size:11px;">${{f.name}}</span>
+      <div style="display:flex; align-items:center; gap:9px;">
+        <img src="${{f.src}}" style="width:34px; height:34px; border-radius:4px; object-fit:cover;">
+        <span style="font-weight:700; color:#fff; font-size:12px;">${{f.name}}</span>
       </div>
-      <button class="ps-opt-btn danger" style="padding:2px 6px; font-size:10px;">🗑️ Delete</button>
+      <button class="ps-opt-btn danger" style="padding:3px 8px; font-size:11px;">🗑️ Delete</button>
     `;
     row.querySelector('button').onclick = () => {{
       if (confirm('Delete ' + f.name + ' from catalog?')) {{
@@ -2356,14 +2299,14 @@ function generateDiscordGif() {{
 
 function getAnimOffset(anim, progress) {{
   const t = progress * Math.PI * 2;
-  if (anim === 'bob') return {{ x: 0, y: Math.sin(t) * 12, rot: 0, scale: 1.0 }};
-  if (anim === 'shake') return {{ x: (Math.random() - 0.5) * 14, y: (Math.random() - 0.5) * 14, rot: (Math.random() - 0.5) * 8, scale: 1.0 }};
+  if (anim === 'bob') return {{ x: 0, y: Math.sin(t) * 14, rot: 0, scale: 1.0 }};
+  if (anim === 'shake') return {{ x: (Math.random() - 0.5) * 16, y: (Math.random() - 0.5) * 16, rot: (Math.random() - 0.5) * 10, scale: 1.0 }};
   if (anim === 'spin') return {{ x: 0, y: 0, rot: progress * 360, scale: 1.0 }};
-  if (anim === 'petpet') return {{ x: 0, y: Math.abs(Math.sin(t)) * 14, rot: 0, scale: 1.0 - Math.abs(Math.sin(t)) * 0.15 }};
-  if (anim === 'zoom') return {{ x: 0, y: 0, rot: 0, scale: 1.0 + Math.sin(t) * 0.18 }};
-  if (anim === 'pulse') return {{ x: 0, y: 0, rot: 0, scale: 1.0 + Math.sin(t * 2) * 0.12 }};
-  if (anim === 'wobble') return {{ x: Math.sin(t) * 10, y: 0, rot: Math.sin(t) * 12, scale: 1.0 }};
-  if (anim === 'disco') return {{ x: Math.sin(t) * 8, y: Math.cos(t) * 8, rot: Math.sin(t) * 14, scale: 1.0 + Math.sin(t) * 0.1 }};
+  if (anim === 'petpet') return {{ x: 0, y: Math.abs(Math.sin(t)) * 16, rot: 0, scale: 1.0 - Math.abs(Math.sin(t)) * 0.16 }};
+  if (anim === 'zoom') return {{ x: 0, y: 0, rot: 0, scale: 1.0 + Math.sin(t) * 0.2 }};
+  if (anim === 'pulse') return {{ x: 0, y: 0, rot: 0, scale: 1.0 + Math.sin(t * 2) * 0.14 }};
+  if (anim === 'wobble') return {{ x: Math.sin(t) * 12, y: 0, rot: Math.sin(t) * 14, scale: 1.0 }};
+  if (anim === 'disco') return {{ x: Math.sin(t) * 10, y: Math.cos(t) * 10, rot: Math.sin(t) * 16, scale: 1.0 + Math.sin(t) * 0.12 }};
   return {{ x: 0, y: 0, rot: 0, scale: 1.0 }};
 }}
 
