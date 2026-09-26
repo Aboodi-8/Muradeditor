@@ -104,18 +104,25 @@ def load_faces_catalog():
         if hasattr(st, "secrets") and "GITHUB_TOKEN" in st.secrets and "PRIVATE_FACES_REPO" in st.secrets:
             token = st.secrets["GITHUB_TOKEN"]
             repo_name = st.secrets["PRIVATE_FACES_REPO"]
-            folder = st.secrets.get("PRIVATE_FACES_FOLDER", "faces")
-            api_url = f"https://api.github.com/repos/{repo_name}/contents/{folder}"
-            req = urllib.request.Request(
-                api_url,
-                headers={
-                    "Authorization": f"Bearer {token}",
-                    "Accept": "application/vnd.github.v3+json",
-                    "User-Agent": "Frutisator-App"
-                }
-            )
-            with urllib.request.urlopen(req, timeout=5) as resp:
-                items = json.loads(resp.read().decode("utf-8"))
+            user_folder = st.secrets.get("PRIVATE_FACES_FOLDER", "Faces")
+            items = []
+            for folder_candidate in [user_folder, user_folder.capitalize(), user_folder.lower(), "Faces", "faces"]:
+                try:
+                    api_url = f"https://api.github.com/repos/{repo_name}/contents/{folder_candidate}"
+                    req = urllib.request.Request(
+                        api_url,
+                        headers={
+                            "Authorization": f"Bearer {token}",
+                            "Accept": "application/vnd.github.v3+json",
+                            "User-Agent": "Frutisator-App"
+                        }
+                    )
+                    with urllib.request.urlopen(req, timeout=5) as resp:
+                        items = json.loads(resp.read().decode("utf-8"))
+                        if items:
+                            break
+                except Exception:
+                    continue
                 for item in items:
                     if item.get("type") == "file" and item["name"].lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
                         f_req = urllib.request.Request(
@@ -221,7 +228,7 @@ except Exception:
 
 private_folder_secret = ""
 try:
-    private_folder_secret = st.secrets.get("PRIVATE_FACES_FOLDER", "faces" if private_repo_secret else "assets")
+    private_folder_secret = st.secrets.get("PRIVATE_FACES_FOLDER", "Faces" if private_repo_secret else "assets")
 except Exception:
     private_folder_secret = "faces" if private_repo_secret else "assets"
 
