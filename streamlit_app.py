@@ -143,7 +143,7 @@ if not expected_pwd:
 gh_token_json = json.dumps(token_secret)
 admin_pwd_json = json.dumps(expected_pwd)
 
-# --- EMBEDDED PHOTOSHOP WEB STUDIO (DEEP OLED OBSIDIAN DARK & DOMINANT SCREEN-FIT CANVAS) ---
+# --- EMBEDDED PHOTOSHOP WEB STUDIO (WIDER MENUS, HIGH VISIBILITY & SCREEN-FITTING CANVAS) ---
 html_app = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -155,18 +155,19 @@ html_app = f"""
   :root {{
     --ps-bg: #000000;             /* Pure Obsidian Black */
     --ps-topbar: #070709;         /* Ultra dark sleek bar */
-    --ps-panel: #0a0b0e;          /* Pitch dark sidebars */
+    --ps-panel: #0b0c10;          /* Sleek dark sidebars with high contrast */
     --ps-canvas-bg: #030304;      /* Deep black void behind canvas */
-    --ps-card: #0e0f14;           /* Rich dark card background */
-    --ps-input: #111217;          /* Clean dark input background */
-    --ps-border: #181920;         /* Subtle dark border */
-    --ps-border-light: #262936;   /* Crisp hover border */
+    --ps-card: #12141c;           /* Rich card background */
+    --ps-card-hover: #181b26;
+    --ps-input: #12141c;          /* Clean input background */
+    --ps-border: #1e212d;         /* High-visibility crisp border */
+    --ps-border-light: #2c3042;   /* Distinct hover border */
     --ps-blue: #0084ff;           /* High-energy electric Photoshop blue */
     --ps-blue-hover: #1a94ff;
     --ps-blue-active: #0066cc;
     --ps-text: #e2e4ea;           /* High contrast crisp white-gray */
     --ps-text-bright: #ffffff;
-    --ps-text-muted: #787e91;
+    --ps-text-muted: #959cb0;     /* Clear readable muted text */
     --ps-danger: #ff4d4f;
     --ps-green: #10b981;
     --ps-yellow: #fbbf24;
@@ -200,7 +201,7 @@ html_app = f"""
     background: #000000;
   }}
 
-  /* TOP OPTIONS BAR (PROMINENT & HIGH-CONTRAST) */
+  /* TOP OPTIONS BAR (HIGH CONTRAST & CLEAN) */
   .ps-topbar {{
     height: 52px;
     background: var(--ps-topbar);
@@ -241,13 +242,13 @@ html_app = f"""
   }}
 
   .ps-doc-badge {{
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.06);
     border: 1px solid var(--ps-border);
     font-size: 12.5px;
     font-weight: 700;
     padding: 4px 10px;
     border-radius: 5px;
-    color: var(--ps-text-muted);
+    color: #b0b7c9;
     white-space: nowrap;
   }}
 
@@ -303,7 +304,7 @@ html_app = f"""
     gap: 6px;
   }}
   .ps-opt-btn:hover {{
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.14);
     border-color: #fff;
     color: #fff;
   }}
@@ -350,7 +351,7 @@ html_app = f"""
     border-color: var(--ps-blue-hover);
   }}
 
-  /* WORKSPACE BODY (LEFT SIDEBAR + DOMINANT CENTER CANVAS + RIGHT SIDEBAR) */
+  /* WORKSPACE BODY (SPACIOUS WIDER SIDEBARS + DOMINANT CENTER CANVAS) */
   .ps-body {{
     display: flex;
     flex: 1;
@@ -360,9 +361,9 @@ html_app = f"""
     background: #000000;
   }}
 
-  /* SIDEBAR PANELS (LEFT & RIGHT) */
+  /* SIDEBAR PANELS (WIDER FOR MAXIMUM VISIBILITY & EASY SELECTION) */
   .ps-sidebar {{
-    width: 285px;
+    width: 340px;
     background: var(--ps-panel);
     display: flex;
     flex-direction: column;
@@ -372,58 +373,69 @@ html_app = f"""
     overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--ps-border-light) var(--ps-panel);
+    box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
   }}
   .ps-sidebar-left {{
+    width: 340px;
     border-right: 1px solid var(--ps-border);
   }}
   .ps-sidebar-right {{
-    width: 295px;
+    width: 350px;
     border-left: 1px solid var(--ps-border);
   }}
   .ps-sidebar::-webkit-scrollbar {{
-    width: 6px;
+    width: 7px;
   }}
   .ps-sidebar::-webkit-scrollbar-thumb {{
     background: var(--ps-border-light);
-    border-radius: 3px;
+    border-radius: 4px;
   }}
 
-  /* PANEL SECTIONS - ALWAYS OPEN & PROPORTIONAL */
+  /* PANEL SECTIONS - VISIBLE, SPACIOUS & HIGH CONTRAST */
   .ps-panel-section {{
     border-bottom: 1px solid var(--ps-border);
-    padding: 14px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
   }}
   .ps-panel-section:last-child {{
     border-bottom: none;
-    padding-bottom: 30px;
+    padding-bottom: 35px;
   }}
 
   .panel-section-header {{
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: #0d0e13;
-    border: 1px solid var(--ps-border);
-    border-radius: 7px;
-    padding: 10px 14px;
+    background: #12141c;
+    border: 1px solid #222533;
+    border-radius: 8px;
+    padding: 11px 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
   }}
   .panel-section-title {{
     font-weight: 800;
-    font-size: 14px;
+    font-size: 14.5px;
     color: var(--ps-text-bright);
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 9px;
     letter-spacing: 0.2px;
+  }}
+
+  .section-label {{
+    font-size: 12px;
+    color: #a0a6b8;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
   }}
 
   /* DISCRETE CORNER ADMIN LOCK BUTTON */
   .admin-lock-btn {{
     background: transparent;
-    border: 1px solid var(--ps-border);
+    border: 1px solid #262938;
     border-radius: 6px;
     color: var(--ps-text-muted);
     cursor: pointer;
@@ -435,7 +447,7 @@ html_app = f"""
     justify-content: center;
   }}
   .admin-lock-btn:hover {{
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.14);
     border-color: var(--ps-blue);
     color: #fff;
     transform: scale(1.08);
@@ -445,59 +457,61 @@ html_app = f"""
   .ps-dropzone {{
     border: 2px dashed var(--ps-blue);
     background: rgba(0, 132, 255, 0.08);
-    border-radius: 8px;
-    padding: 14px;
+    border-radius: 9px;
+    padding: 16px;
     text-align: center;
     cursor: pointer;
     transition: all 0.15s ease;
     display: block;
     color: #fff;
     font-weight: 800;
-    font-size: 13px;
+    font-size: 13.5px;
   }}
   .ps-dropzone:hover {{
     background: rgba(0, 132, 255, 0.2);
     border-color: #fff;
+    box-shadow: 0 0 16px rgba(0, 132, 255, 0.35);
   }}
   .ps-dropzone input {{ display: none; }}
 
-  /* GRID CARDS (FACES, TEMPLATES, EFFECTS) - 2-COLUMN BIG THUMBNAILS */
+  /* GRID CARDS (FACES, TEMPLATES, EFFECTS) - WIDE & EASY TO SEE */
   .grid-cards-faces {{
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
+    gap: 12px;
   }}
   .grid-card {{
     background: var(--ps-card);
     border: 1px solid var(--ps-border);
-    border-radius: 8px;
-    padding: 8px;
+    border-radius: 9px;
+    padding: 9px;
     display: flex;
     flex-direction: column;
     align-items: center;
     cursor: pointer;
-    transition: all 0.12s ease;
+    transition: all 0.14s ease;
   }}
   .grid-card:hover {{
     border-color: var(--ps-border-light);
     transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.07);
+    background: var(--ps-card-hover);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
   }}
   .grid-card.active {{
     border-color: var(--ps-blue);
     background: rgba(0, 132, 255, 0.22);
-    box-shadow: 0 0 0 2px var(--ps-blue);
+    box-shadow: 0 0 0 2px var(--ps-blue), 0 4px 15px rgba(0, 132, 255, 0.3);
   }}
   .grid-card img {{
     width: 100%;
-    height: 110px;
-    border-radius: 6px;
+    height: 125px;
+    border-radius: 7px;
     object-fit: cover;
-    margin-bottom: 6px;
+    margin-bottom: 7px;
     background: #000;
   }}
   .grid-card span {{
-    font-size: 12px;
+    font-size: 12.5px;
     font-weight: 700;
     color: var(--ps-text-bright);
     text-align: center;
@@ -511,10 +525,10 @@ html_app = f"""
   .btn-group {{
     display: flex;
     background: var(--ps-card);
-    border-radius: 6px;
-    padding: 3px;
+    border-radius: 7px;
+    padding: 4px;
     border: 1px solid var(--ps-border);
-    gap: 3px;
+    gap: 4px;
     flex-wrap: wrap;
   }}
   .btn-toggle {{
@@ -524,8 +538,8 @@ html_app = f"""
     color: var(--ps-text-muted);
     font-size: 12.5px;
     font-weight: 700;
-    padding: 8px 10px;
-    border-radius: 5px;
+    padding: 8px 12px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.12s ease;
     text-align: center;
@@ -535,6 +549,7 @@ html_app = f"""
   .btn-toggle.active {{
     background: var(--ps-blue);
     color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 132, 255, 0.4);
   }}
 
   /* SLIDERS */
@@ -552,6 +567,10 @@ html_app = f"""
   }}
   .slider-row label b {{
     color: var(--ps-text-bright);
+    background: #171924;
+    padding: 2px 7px;
+    border-radius: 4px;
+    border: 1px solid #232736;
   }}
   .slider-row input[type="range"] {{
     width: 100%;
@@ -566,12 +585,16 @@ html_app = f"""
     background: var(--ps-card);
     border: 1px solid var(--ps-border);
     color: #fff;
-    font-size: 13.5px;
-    padding: 10px 14px;
-    border-radius: 7px;
+    font-size: 14px;
+    padding: 11px 15px;
+    border-radius: 8px;
     outline: none;
+    transition: border-color 0.15s ease;
   }}
-  .ps-input:focus {{ border-color: var(--ps-blue); }}
+  .ps-input:focus {{
+    border-color: var(--ps-blue);
+    box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.3);
+  }}
 
   /* LAYERS LIST */
   .layers-list {{
@@ -582,8 +605,8 @@ html_app = f"""
   .layer-item {{
     background: var(--ps-card);
     border: 1px solid var(--ps-border);
-    border-radius: 7px;
-    padding: 10px 14px;
+    border-radius: 8px;
+    padding: 11px 15px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -592,18 +615,20 @@ html_app = f"""
   }}
   .layer-item:hover {{
     border-color: var(--ps-border-light);
+    background: var(--ps-card-hover);
   }}
   .layer-item.active {{
     border-color: var(--ps-blue);
     background: rgba(0, 132, 255, 0.22);
+    box-shadow: 0 0 0 1.5px var(--ps-blue);
   }}
   .layer-title {{
     font-weight: 700;
-    font-size: 13px;
+    font-size: 13.5px;
     color: #fff;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 9px;
   }}
   .layer-controls {{
     display: flex;
@@ -614,8 +639,8 @@ html_app = f"""
     border: none;
     color: var(--ps-text-muted);
     cursor: pointer;
-    font-size: 15px;
-    padding: 3px 6px;
+    font-size: 16px;
+    padding: 4px 7px;
     border-radius: 4px;
   }}
   .layer-btn:hover {{ color: #fff; background: rgba(255, 255, 255, 0.14); }}
@@ -746,9 +771,12 @@ html_app = f"""
   }}
 
   /* RESPONSIVE SCALING */
-  @media (max-width: 1100px) {{
-    .ps-sidebar {{
-      width: 250px;
+  @media (max-width: 1250px) {{
+    .ps-sidebar-left {{
+      width: 290px;
+    }}
+    .ps-sidebar-right {{
+      width: 300px;
     }}
   }}
   @media (max-width: 860px) {{
@@ -760,7 +788,7 @@ html_app = f"""
       overflow-y: auto;
     }}
     .ps-sidebar {{
-      width: 100%;
+      width: 100% !important;
       height: auto;
     }}
   }}
@@ -826,13 +854,13 @@ html_app = f"""
         </label>
 
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:12px; color:var(--ps-text-muted); font-weight:700;">DEFAULT FACES:</span>
-          <button id="addFaceBtn" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff;">➕ Add Face</button>
+          <span class="section-label">Default Faces:</span>
+          <button id="addFaceBtn" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff; padding:5px 12px;">➕ Add Face</button>
         </div>
-        <div class="grid-cards-faces" id="facesGrid" style="max-height:240px; overflow-y:auto;"></div>
+        <div class="grid-cards-faces" id="facesGrid" style="max-height:270px; overflow-y:auto;"></div>
 
-        <div style="display:flex; flex-direction:column; gap:6px; margin-top:2px;">
-          <span style="font-size:12px; color:var(--ps-text-muted); font-weight:700;">CUTOUT SHAPE:</span>
+        <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
+          <span class="section-label">Cutout Shape:</span>
           <div class="btn-group" id="maskGroup">
             <button class="btn-toggle active" data-mask="square">Full Frame</button>
             <button class="btn-toggle" data-mask="circle">Sticker Circle</button>
@@ -841,11 +869,11 @@ html_app = f"""
         </div>
 
         <div class="slider-row">
-          <label>Scale: <b id="faceScaleVal">100%</b></label>
+          <label>Face Scale: <b id="faceScaleVal">100%</b></label>
           <input type="range" id="faceScaleSlider" min="0.1" max="3.0" step="0.05" value="1.0">
         </div>
         <div class="slider-row">
-          <label>Opacity: <b id="faceOpacityVal">100%</b></label>
+          <label>Face Opacity: <b id="faceOpacityVal">100%</b></label>
           <input type="range" id="faceOpacitySlider" min="0.1" max="1.0" step="0.05" value="1.0">
         </div>
       </div>
@@ -862,7 +890,7 @@ html_app = f"""
         </label>
 
         <div style="display:flex; flex-direction:column; gap:6px;">
-          <span style="font-size:12px; color:var(--ps-text-muted); font-weight:700;">CANVAS RATIO:</span>
+          <span class="section-label">Canvas Format:</span>
           <div class="btn-group" id="canvasSizeGroup">
             <button class="btn-toggle active" data-size="true_size">📐 True Size</button>
             <button class="btn-toggle" data-size="square">⏹️ 1:1</button>
@@ -871,8 +899,8 @@ html_app = f"""
           </div>
         </div>
 
-        <span style="font-size:12px; color:var(--ps-text-muted); font-weight:700;">POPULAR TEMPLATES:</span>
-        <div class="grid-cards-faces" id="bgPresetsRow" style="max-height:200px; overflow-y:auto;"></div>
+        <span class="section-label">Popular Meme Templates:</span>
+        <div class="grid-cards-faces" id="bgPresetsRow" style="max-height:230px; overflow-y:auto;"></div>
       </div>
 
     </aside>
@@ -893,14 +921,14 @@ html_app = f"""
           <span class="panel-section-title">✍️ Meme Text</span>
         </div>
 
-        <div style="display:flex; gap:6px;">
-          <button id="addTopTextBtn" class="ps-opt-btn" style="flex:1; padding:8px;">➕ Top</button>
-          <button id="addBottomTextBtn" class="ps-opt-btn" style="flex:1; padding:8px;">➕ Bottom</button>
-          <button id="addCustomTextBtn" class="ps-opt-btn" style="flex:1; padding:8px; background:var(--ps-blue); color:#fff; border-color:var(--ps-blue);">➕ Custom</button>
+        <div style="display:flex; gap:8px;">
+          <button id="addTopTextBtn" class="ps-opt-btn" style="flex:1; padding:9px; justify-content:center;">➕ Top</button>
+          <button id="addBottomTextBtn" class="ps-opt-btn" style="flex:1; padding:9px; justify-content:center;">➕ Bottom</button>
+          <button id="addCustomTextBtn" class="ps-opt-btn" style="flex:1; padding:9px; justify-content:center; background:var(--ps-blue); color:#fff; border-color:var(--ps-blue);">➕ Custom</button>
         </div>
 
-        <div id="textEditorBox" style="display:flex; flex-direction:column; gap:10px;">
-          <input type="text" id="activeTextInput" class="ps-input" placeholder="Type meme text here...">
+        <div id="textEditorBox" style="display:flex; flex-direction:column; gap:12px;">
+          <input type="text" id="activeTextInput" class="ps-input" placeholder="Click + Top/Bottom or type meme text...">
 
           <div class="slider-row">
             <label>Font Size: <b id="textSizeVal">48px</b></label>
@@ -908,7 +936,7 @@ html_app = f"""
           </div>
 
           <div style="display:flex; flex-direction:column; gap:6px;">
-            <span style="font-size:12px; color:var(--ps-text-muted); font-weight:700;">COLOR:</span>
+            <span class="section-label">Text Color:</span>
             <div class="btn-group" id="textColorGroup">
               <button class="btn-toggle active" data-color="#ffffff">White</button>
               <button class="btn-toggle" data-color="#facc15" style="color:#facc15;">Yellow</button>
@@ -949,16 +977,16 @@ html_app = f"""
           <span class="panel-section-title">✨ Discord GIF Effects</span>
         </div>
 
-        <div class="grid-cards-faces" id="animGrid" style="grid-template-columns:repeat(3, 1fr); gap:6px;">
-          <div class="grid-card active" data-anim="none"><span style="font-size:22px;">🖼️</span><span>Still</span></div>
-          <div class="grid-card" data-anim="bob"><span style="font-size:22px;">🕺</span><span>Head Bob</span></div>
-          <div class="grid-card" data-anim="shake"><span style="font-size:22px;">💢</span><span>Shake</span></div>
-          <div class="grid-card" data-anim="spin"><span style="font-size:22px;">🌀</span><span>Speen 360°</span></div>
-          <div class="grid-card" data-anim="petpet"><span style="font-size:22px;">👋</span><span>Petpet</span></div>
-          <div class="grid-card" data-anim="zoom"><span style="font-size:22px;">💥</span><span>Bass Pulse</span></div>
-          <div class="grid-card" data-anim="pulse"><span style="font-size:22px;">💓</span><span>Heartbeat</span></div>
-          <div class="grid-card" data-anim="wobble"><span style="font-size:22px;">🌊</span><span>Wobble</span></div>
-          <div class="grid-card" data-anim="disco"><span style="font-size:22px;">🪩</span><span>Disco</span></div>
+        <div class="grid-cards-faces" id="animGrid" style="grid-template-columns:repeat(3, 1fr); gap:8px;">
+          <div class="grid-card active" data-anim="none"><span style="font-size:24px;">🖼️</span><span>Still</span></div>
+          <div class="grid-card" data-anim="bob"><span style="font-size:24px;">🕺</span><span>Bob</span></div>
+          <div class="grid-card" data-anim="shake"><span style="font-size:24px;">💢</span><span>Shake</span></div>
+          <div class="grid-card" data-anim="spin"><span style="font-size:24px;">🌀</span><span>Spin 360°</span></div>
+          <div class="grid-card" data-anim="petpet"><span style="font-size:24px;">👋</span><span>Petpet</span></div>
+          <div class="grid-card" data-anim="zoom"><span style="font-size:24px;">💥</span><span>Bass Pulse</span></div>
+          <div class="grid-card" data-anim="pulse"><span style="font-size:24px;">💓</span><span>Heartbeat</span></div>
+          <div class="grid-card" data-anim="wobble"><span style="font-size:24px;">🌊</span><span>Wobble</span></div>
+          <div class="grid-card" data-anim="disco"><span style="font-size:24px;">🪩</span><span>Disco</span></div>
         </div>
       </div>
 
@@ -1038,7 +1066,7 @@ function makeFaceLayer(faceIndex, x, y, scale) {{
     id: 'layer_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
     faceIndex: faceIndex !== undefined ? faceIndex : 0,
     x: x !== undefined ? x : 0,
-    y: y !== undefined ? y : -70,
+    y: y !== undefined ? y : -50,
     scale: scale !== undefined ? scale : 1.0,
     rotation: 0,
     flipH: 1,
@@ -1048,8 +1076,9 @@ function makeFaceLayer(faceIndex, x, y, scale) {{
   }};
 }}
 
+// DEFAULT STATE: CLEAN CANVAS WITHOUT DEFAULT "WHEN MURAD" / "APPROVES THE CODE" TEXT LAYERS
 const state = {{
-  facesOnCanvas: [makeFaceLayer(0, 0, -70, 1.0)],
+  facesOnCanvas: [makeFaceLayer(0, 0, -50, 1.0)],
   selectedFaceIdx: 0,
 
   bgType: 'template',
@@ -1061,11 +1090,8 @@ const state = {{
 
   canvasSizeMode: 'true_size',
 
-  texts: [
-    {{ id: 't_top', text: 'WHEN MURAD', x: 0, y: -260, size: 52, color: '#ffffff', rotation: 0 }},
-    {{ id: 't_bot', text: 'APPROVES THE CODE', x: 0, y: 260, size: 52, color: '#ffffff', rotation: 0 }}
-  ],
-  selectedTextIdx: 0,
+  texts: [],
+  selectedTextIdx: -1,
 
   accessoriesOnCanvas: [],
   selectedAccIdx: -1,
@@ -1406,7 +1432,7 @@ function render(offsetObj) {{
     ctx.restore();
   }});
 
-  // 4. Draw Meme Text
+  // 4. Draw Meme Text (if any)
   state.texts.forEach((t, idx) => {{
     ctx.save();
     const cx = canvas.width / 2 + t.x;
@@ -1664,7 +1690,7 @@ function initUIEvents() {{
 
   // Add Face Button
   document.getElementById('addFaceBtn').onclick = () => {{
-    state.facesOnCanvas.push(makeFaceLayer(0, Math.floor((Math.random() - 0.5) * 100), Math.floor((Math.random() - 0.5) * 100), 1.0));
+    state.facesOnCanvas.push(makeFaceLayer(0, Math.floor((Math.random() - 0.5) * 80), Math.floor((Math.random() - 0.5) * 80), 1.0));
     state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
     render();
     syncLayersUI();
@@ -1812,33 +1838,56 @@ function initUIEvents() {{
     fitCanvasToScreen();
   }};
 
-  // 3. Text Controls
+  // 3. Text Controls (Top, Bottom, Custom)
   document.getElementById('addTopTextBtn').onclick = () => {{
     state.texts.push({{ id: 't_' + Date.now(), text: 'TOP TEXT', x: 0, y: -Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', rotation: 0 }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
+    state.selectedTextIdx = state.texts.length - 1;
+    document.getElementById('activeTextInput').value = 'TOP TEXT';
     render();
     syncLayersUI();
   }};
   document.getElementById('addBottomTextBtn').onclick = () => {{
     state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', rotation: 0 }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
+    state.selectedTextIdx = state.texts.length - 1;
+    document.getElementById('activeTextInput').value = 'BOTTOM TEXT';
     render();
     syncLayersUI();
   }};
   document.getElementById('addCustomTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'MEME VIBES', x: 0, y: 0, size: 52, color: '#ffffff', rotation: 0 }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'YOUR TEXT', x: 0, y: 0, size: 52, color: '#ffffff', rotation: 0 }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
+    state.selectedTextIdx = state.texts.length - 1;
+    document.getElementById('activeTextInput').value = 'YOUR TEXT';
     render();
     syncLayersUI();
   }};
 
   const textInput = document.getElementById('activeTextInput');
   textInput.oninput = (e) => {{
-    const active = getActiveLayerData();
-    if (active && active.type === 'text') {{
-      active.obj.text = e.target.value.toUpperCase();
-      render();
+    let active = getActiveLayerData();
+    if (!active || active.type !== 'text') {{
+      if (e.target.value.trim() !== '') {{
+        state.texts.push({{
+          id: 't_' + Date.now(),
+          text: e.target.value.toUpperCase(),
+          x: 0,
+          y: 0,
+          size: 52,
+          color: '#ffffff',
+          rotation: 0
+        }});
+        state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
+        state.selectedTextIdx = state.texts.length - 1;
+        render();
+        syncLayersUI();
+      }}
+      return;
     }}
+    active.obj.text = e.target.value.toUpperCase();
+    render();
+    syncLayersUI();
   }};
 
   document.getElementById('textSizeSlider').oninput = (e) => {{
@@ -1927,6 +1976,7 @@ function initUIEvents() {{
       state.accessoriesOnCanvas.splice(active.idx, 1);
     }} else if (active.type === 'text') {{
       state.texts.splice(active.idx, 1);
+      document.getElementById('activeTextInput').value = '';
     }}
     state.activeTransformTarget = null;
     render();
@@ -2047,13 +2097,13 @@ function renderAdminCatalog() {{
   list.innerHTML = '';
   faces.forEach((f, idx) => {{
     const row = document.createElement('div');
-    row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:6px 10px; border-radius:6px; border:1px solid #1f2028;';
+    row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:8px 12px; border-radius:6px; border:1px solid #1f2028;';
     row.innerHTML = `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <img src="${{f.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
-        <span style="font-size:12.5px; font-weight:700; color:#fff;">${{f.name}}</span>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <img src="${{f.src}}" style="width:34px; height:34px; border-radius:5px; object-fit:cover;">
+        <span style="font-size:13px; font-weight:700; color:#fff;">${{f.name}}</span>
       </div>
-      <button class="ps-opt-btn danger" style="padding:4px 8px; font-size:11px;" onclick="deleteAdminFace(${{idx}})">Remove</button>
+      <button class="ps-opt-btn danger" style="padding:4px 10px; font-size:11.5px;" onclick="deleteAdminFace(${{idx}})">Remove</button>
     `;
     list.appendChild(row);
   }});
@@ -2153,7 +2203,7 @@ function syncLayersUI() {{
     item.innerHTML = `
       <div class="layer-title">
         <span>✍️</span>
-        <span>"${{t.text.substring(0, 14)}}"</span>
+        <span>"${{t.text.substring(0, 16)}}"</span>
       </div>
       <div class="layer-controls">
         <button class="layer-btn" title="Delete Layer" onclick="event.stopPropagation(); deleteTextLayer(${{idx}})">🗑️</button>
@@ -2184,6 +2234,7 @@ window.deleteAccLayer = function(idx) {{
 window.deleteTextLayer = function(idx) {{
   state.texts.splice(idx, 1);
   state.activeTransformTarget = null;
+  document.getElementById('activeTextInput').value = '';
   render();
   syncLayersUI();
 }};
