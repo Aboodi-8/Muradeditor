@@ -22,16 +22,18 @@ st.markdown("""
     .block-container {
         padding: 0 !important;
         max-width: 100% !important;
+        margin: 0 !important;
     }
     iframe {
         width: 100% !important;
-        min-height: 94vh !important;
-        height: 96vh !important;
+        min-height: 98vh !important;
+        height: 98vh !important;
         border: none !important;
+        display: block !important;
     }
     .stApp {
-        background-color: #1a1a1a;
-        overflow: hidden;
+        background-color: #000000 !important;
+        overflow: hidden !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -93,25 +95,27 @@ def load_templates_catalog():
         {"id": "gigachad", "name": "🗿 Gigachad", "file": "gigachad.webp"},
         {"id": "throne", "name": "👑 King Throne", "file": "king_throne.jpg"},
         {"id": "astronaut", "name": "🚀 Space", "file": "space.jpg"},
-        {"id": "doge", "name": "🐕 Doge", "file": "dog.jpg"},
     ]
     tpl_list = []
-    for item in tpl_defs:
-        p = TEMPLATES_DIR / item["file"]
-        if p.exists():
+    for t in tpl_defs:
+        img_p = TEMPLATES_DIR / t["file"]
+        if img_p.exists():
             tpl_list.append({
-                "id": item["id"],
-                "name": item["name"],
-                "src": get_base64_data_uri(p)
+                "id": t["id"],
+                "name": t["name"],
+                "src": get_base64_data_uri(img_p)
             })
     return tpl_list
 
-# Read local libraries
-with open(ASSETS_DIR / "gifshot.min.js", "r", encoding="utf-8") as f:
-    gifshot_script = f.read()
+# Load GIF libraries
+gifshot_path = ASSETS_DIR / "gifshot.min.js"
+gifshot_script = ""
+if gifshot_path.exists():
+    with open(gifshot_path, "r", encoding="utf-8") as f:
+        gifshot_script = f.read()
 
+gifuct_path = ASSETS_DIR / "gifuct-js.min.js"
 gifuct_script = ""
-gifuct_path = ASSETS_DIR / "gifuct-js.js"
 if gifuct_path.exists():
     with open(gifuct_path, "r", encoding="utf-8") as f:
         gifuct_script = f.read()
@@ -139,7 +143,7 @@ if not expected_pwd:
 gh_token_json = json.dumps(token_secret)
 admin_pwd_json = json.dumps(expected_pwd)
 
-# --- EMBEDDED PHOTOSHOP WEB STUDIO ---
+# --- EMBEDDED PHOTOSHOP WEB STUDIO (DEEP OLED OBSIDIAN DARK & DOMINANT SCREEN-FIT CANVAS) ---
 html_app = f"""
 <!DOCTYPE html>
 <html lang="en">
@@ -149,22 +153,23 @@ html_app = f"""
 <title>Murad Photoshop Studio</title>
 <style>
   :root {{
-    --ps-bg: #1e1e1e;
-    --ps-topbar: #2d2d30;
-    --ps-panel: #252526;
-    --ps-canvas-bg: #141414;
-    --ps-input: #181818;
-    --ps-border: #3c3c3c;
-    --ps-border-light: #4c4c4c;
-    --ps-blue: #007acc;
-    --ps-blue-hover: #0e8ad6;
-    --ps-blue-active: #005a9e;
-    --ps-text: #cccccc;
+    --ps-bg: #000000;             /* Pure Obsidian Black */
+    --ps-topbar: #070709;         /* Ultra dark sleek bar */
+    --ps-panel: #0a0b0e;          /* Pitch dark sidebars */
+    --ps-canvas-bg: #030304;      /* Deep black void behind canvas */
+    --ps-card: #0e0f14;           /* Rich dark card background */
+    --ps-input: #111217;          /* Clean dark input background */
+    --ps-border: #181920;         /* Subtle dark border */
+    --ps-border-light: #262936;   /* Crisp hover border */
+    --ps-blue: #0084ff;           /* High-energy electric Photoshop blue */
+    --ps-blue-hover: #1a94ff;
+    --ps-blue-active: #0066cc;
+    --ps-text: #e2e4ea;           /* High contrast crisp white-gray */
     --ps-text-bright: #ffffff;
-    --ps-text-muted: #959595;
-    --ps-danger: #f48771;
-    --ps-green: #4ec9b0;
-    --ps-yellow: #facc15;
+    --ps-text-muted: #787e91;
+    --ps-danger: #ff4d4f;
+    --ps-green: #10b981;
+    --ps-yellow: #fbbf24;
   }}
 
   * {{
@@ -180,7 +185,7 @@ html_app = f"""
     background: var(--ps-bg);
     color: var(--ps-text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    font-size: 13px;
+    font-size: 14px;
     user-select: none;
     -webkit-user-select: none;
   }}
@@ -192,18 +197,19 @@ html_app = f"""
     width: 100vw;
     height: 100vh;
     overflow: hidden;
+    background: #000000;
   }}
 
-  /* TOP OPTIONS BAR (SCALED UP) */
+  /* TOP OPTIONS BAR (PROMINENT & HIGH-CONTRAST) */
   .ps-topbar {{
-    height: 44px;
+    height: 52px;
     background: var(--ps-topbar);
     border-bottom: 1px solid var(--ps-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 14px;
-    gap: 14px;
+    padding: 0 16px;
+    gap: 16px;
     z-index: 100;
     flex-shrink: 0;
   }}
@@ -211,7 +217,7 @@ html_app = f"""
   .ps-brand {{
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     flex-shrink: 0;
   }}
 
@@ -219,28 +225,28 @@ html_app = f"""
     background: var(--ps-blue);
     color: #fff;
     font-weight: 900;
-    font-size: 15px;
-    padding: 3px 9px;
-    border-radius: 5px;
+    font-size: 17px;
+    padding: 5px 12px;
+    border-radius: 6px;
     letter-spacing: -0.5px;
-    box-shadow: 0 2px 6px rgba(0, 122, 204, 0.45);
+    box-shadow: 0 2px 10px rgba(0, 132, 255, 0.45);
   }}
 
   .ps-title {{
     font-weight: 800;
-    font-size: 13.5px;
+    font-size: 15px;
     color: var(--ps-text-bright);
     white-space: nowrap;
     letter-spacing: 0.2px;
   }}
 
   .ps-doc-badge {{
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--ps-border);
-    font-size: 11.5px;
-    font-weight: 600;
-    padding: 3px 9px;
-    border-radius: 4px;
+    font-size: 12.5px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 5px;
     color: var(--ps-text-muted);
     white-space: nowrap;
   }}
@@ -252,48 +258,49 @@ html_app = f"""
     gap: 12px;
     flex: 1;
     overflow-x: auto;
-    padding: 0 6px;
+    padding: 0 8px;
   }}
 
   .ps-opt-label {{
     color: var(--ps-text-muted);
-    font-size: 12px;
+    font-size: 13px;
+    font-weight: 600;
     white-space: nowrap;
   }}
 
   .ps-opt-badge {{
-    background: rgba(0, 122, 204, 0.2);
+    background: rgba(0, 132, 255, 0.18);
     border: 1px solid var(--ps-blue);
-    color: #4dc2ff;
-    padding: 3px 10px;
-    border-radius: 5px;
-    font-weight: 700;
-    font-size: 12px;
+    color: #60c5ff;
+    padding: 5px 14px;
+    border-radius: 6px;
+    font-weight: 800;
+    font-size: 13px;
     white-space: nowrap;
   }}
 
   .ps-opt-group {{
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
     border-left: 1px solid var(--ps-border);
-    padding-left: 10px;
+    padding-left: 12px;
   }}
 
   .ps-opt-btn {{
-    background: var(--ps-input);
+    background: var(--ps-card);
     border: 1px solid var(--ps-border);
     color: var(--ps-text-bright);
-    padding: 4px 10px;
-    border-radius: 4px;
-    font-size: 12px;
-    font-weight: 600;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 700;
     cursor: pointer;
     transition: all 0.12s ease;
     white-space: nowrap;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
   }}
   .ps-opt-btn:hover {{
     background: rgba(255, 255, 255, 0.12);
@@ -310,7 +317,7 @@ html_app = f"""
   .ps-actions {{
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     flex-shrink: 0;
   }}
 
@@ -318,14 +325,14 @@ html_app = f"""
     background: rgba(255, 255, 255, 0.08);
     border: 1px solid var(--ps-border);
     color: var(--ps-text-bright);
-    padding: 6px 14px;
-    border-radius: 5px;
-    font-size: 12.5px;
-    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: 7px;
+    font-size: 13.5px;
+    font-weight: 800;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
     transition: all 0.15s ease;
     white-space: nowrap;
   }}
@@ -336,25 +343,26 @@ html_app = f"""
   .ps-btn-primary {{
     background: var(--ps-blue);
     border-color: var(--ps-blue);
-    box-shadow: 0 2px 8px rgba(0, 122, 204, 0.4);
+    box-shadow: 0 2px 12px rgba(0, 132, 255, 0.5);
   }}
   .ps-btn-primary:hover {{
     background: var(--ps-blue-hover);
     border-color: var(--ps-blue-hover);
   }}
 
-  /* WORKSPACE BODY (LEFT SIDEBAR + CENTER CANVAS + RIGHT SIDEBAR) */
+  /* WORKSPACE BODY (LEFT SIDEBAR + DOMINANT CENTER CANVAS + RIGHT SIDEBAR) */
   .ps-body {{
     display: flex;
     flex: 1;
-    height: calc(100vh - 44px);
+    height: calc(100vh - 52px);
     overflow: hidden;
     position: relative;
+    background: #000000;
   }}
 
   /* SIDEBAR PANELS (LEFT & RIGHT) */
   .ps-sidebar {{
-    width: 330px;
+    width: 285px;
     background: var(--ps-panel);
     display: flex;
     flex-direction: column;
@@ -369,6 +377,7 @@ html_app = f"""
     border-right: 1px solid var(--ps-border);
   }}
   .ps-sidebar-right {{
+    width: 295px;
     border-left: 1px solid var(--ps-border);
   }}
   .ps-sidebar::-webkit-scrollbar {{
@@ -379,7 +388,7 @@ html_app = f"""
     border-radius: 3px;
   }}
 
-  /* PANEL SECTIONS - OPEN & SPACIOUS */
+  /* PANEL SECTIONS - ALWAYS OPEN & PROPORTIONAL */
   .ps-panel-section {{
     border-bottom: 1px solid var(--ps-border);
     padding: 14px;
@@ -396,18 +405,18 @@ html_app = f"""
     display: flex;
     align-items: center;
     justify-content: space-between;
-    background: var(--ps-topbar);
+    background: #0d0e13;
     border: 1px solid var(--ps-border);
-    border-radius: 5px;
-    padding: 8px 12px;
+    border-radius: 7px;
+    padding: 10px 14px;
   }}
   .panel-section-title {{
     font-weight: 800;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--ps-text-bright);
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
     letter-spacing: 0.2px;
   }}
 
@@ -415,18 +424,18 @@ html_app = f"""
   .admin-lock-btn {{
     background: transparent;
     border: 1px solid var(--ps-border);
-    border-radius: 4px;
+    border-radius: 6px;
     color: var(--ps-text-muted);
     cursor: pointer;
-    padding: 3px 8px;
-    font-size: 13px;
+    padding: 4px 10px;
+    font-size: 14px;
     transition: all 0.15s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
   }}
   .admin-lock-btn:hover {{
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.12);
     border-color: var(--ps-blue);
     color: #fff;
     transform: scale(1.08);
@@ -434,35 +443,35 @@ html_app = f"""
 
   /* DROP ZONES */
   .ps-dropzone {{
-    border: 1.5px dashed var(--ps-blue);
-    background: rgba(0, 122, 204, 0.08);
-    border-radius: 6px;
-    padding: 12px;
+    border: 2px dashed var(--ps-blue);
+    background: rgba(0, 132, 255, 0.08);
+    border-radius: 8px;
+    padding: 14px;
     text-align: center;
     cursor: pointer;
     transition: all 0.15s ease;
     display: block;
     color: #fff;
-    font-weight: 700;
-    font-size: 12px;
+    font-weight: 800;
+    font-size: 13px;
   }}
   .ps-dropzone:hover {{
-    background: rgba(0, 122, 204, 0.18);
+    background: rgba(0, 132, 255, 0.2);
     border-color: #fff;
   }}
   .ps-dropzone input {{ display: none; }}
 
-  /* GRID CARDS (FACES, TEMPLATES, EFFECTS) - SCALED UP */
-  .grid-cards {{
+  /* GRID CARDS (FACES, TEMPLATES, EFFECTS) - 2-COLUMN BIG THUMBNAILS */
+  .grid-cards-faces {{
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
   }}
   .grid-card {{
-    background: var(--ps-input);
+    background: var(--ps-card);
     border: 1px solid var(--ps-border);
-    border-radius: 6px;
-    padding: 6px;
+    border-radius: 8px;
+    padding: 8px;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -472,24 +481,25 @@ html_app = f"""
   .grid-card:hover {{
     border-color: var(--ps-border-light);
     transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(255, 255, 255, 0.07);
   }}
   .grid-card.active {{
     border-color: var(--ps-blue);
-    background: rgba(0, 122, 204, 0.22);
-    box-shadow: 0 0 0 1px var(--ps-blue);
+    background: rgba(0, 132, 255, 0.22);
+    box-shadow: 0 0 0 2px var(--ps-blue);
   }}
   .grid-card img {{
-    width: 72px;
-    height: 72px;
-    border-radius: 5px;
+    width: 100%;
+    height: 110px;
+    border-radius: 6px;
     object-fit: cover;
-    margin-bottom: 5px;
+    margin-bottom: 6px;
+    background: #000;
   }}
   .grid-card span {{
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 700;
-    color: var(--ps-text);
+    color: var(--ps-text-bright);
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
@@ -500,7 +510,7 @@ html_app = f"""
   /* BUTTON GROUPS & TOGGLES */
   .btn-group {{
     display: flex;
-    background: var(--ps-input);
+    background: var(--ps-card);
     border-radius: 6px;
     padding: 3px;
     border: 1px solid var(--ps-border);
@@ -512,10 +522,10 @@ html_app = f"""
     background: transparent;
     border: none;
     color: var(--ps-text-muted);
-    font-size: 11.5px;
+    font-size: 12.5px;
     font-weight: 700;
-    padding: 6px 8px;
-    border-radius: 4px;
+    padding: 8px 10px;
+    border-radius: 5px;
     cursor: pointer;
     transition: all 0.12s ease;
     text-align: center;
@@ -531,31 +541,34 @@ html_app = f"""
   .slider-row {{
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 6px;
   }}
   .slider-row label {{
-    font-size: 11.5px;
+    font-size: 12.5px;
     color: var(--ps-text-muted);
     display: flex;
     justify-content: space-between;
     font-weight: 700;
   }}
+  .slider-row label b {{
+    color: var(--ps-text-bright);
+  }}
   .slider-row input[type="range"] {{
     width: 100%;
     accent-color: var(--ps-blue);
     cursor: pointer;
-    height: 6px;
+    height: 8px;
   }}
 
   /* INPUTS */
   .ps-input {{
     width: 100%;
-    background: var(--ps-input);
+    background: var(--ps-card);
     border: 1px solid var(--ps-border);
     color: #fff;
-    font-size: 12.5px;
-    padding: 8px 12px;
-    border-radius: 5px;
+    font-size: 13.5px;
+    padding: 10px 14px;
+    border-radius: 7px;
     outline: none;
   }}
   .ps-input:focus {{ border-color: var(--ps-blue); }}
@@ -564,13 +577,13 @@ html_app = f"""
   .layers-list {{
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
   }}
   .layer-item {{
-    background: var(--ps-input);
+    background: var(--ps-card);
     border: 1px solid var(--ps-border);
-    border-radius: 5px;
-    padding: 8px 10px;
+    border-radius: 7px;
+    padding: 10px 14px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -582,60 +595,61 @@ html_app = f"""
   }}
   .layer-item.active {{
     border-color: var(--ps-blue);
-    background: rgba(0, 122, 204, 0.2);
+    background: rgba(0, 132, 255, 0.22);
   }}
   .layer-title {{
     font-weight: 700;
-    font-size: 12px;
+    font-size: 13px;
     color: #fff;
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
   }}
   .layer-controls {{
     display: flex;
-    gap: 4px;
+    gap: 6px;
   }}
   .layer-btn {{
     background: transparent;
     border: none;
     color: var(--ps-text-muted);
     cursor: pointer;
-    font-size: 13px;
+    font-size: 15px;
     padding: 3px 6px;
     border-radius: 4px;
   }}
-  .layer-btn:hover {{ color: #fff; background: rgba(255, 255, 255, 0.1); }}
+  .layer-btn:hover {{ color: #fff; background: rgba(255, 255, 255, 0.14); }}
 
-  /* CENTER CANVAS VIEWPORT */
+  /* CENTER CANVAS VIEWPORT (DOMINANT & AUTO-FITS SCREEN) */
   .ps-canvas-viewport {{
     flex: 1;
-    background: var(--ps-canvas-bg);
+    background-color: #030304;
+    background-image: radial-gradient(circle, #1a1c24 1.2px, transparent 1.2px);
+    background-size: 26px 26px;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
     overflow: hidden;
-    padding: 16px;
+    padding: 14px;
+    height: 100%;
   }}
 
   .canvas-stage {{
     position: relative;
-    max-width: 100%;
-    max-height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 100%;
+    height: 100%;
   }}
 
   #mainCanvas {{
-    max-width: calc(100vw - 700px);
-    max-height: calc(100vh - 80px);
-    border: 1px solid var(--ps-border);
-    box-shadow: 0 12px 45px rgba(0, 0, 0, 0.75);
-    display: block;
-    object-fit: contain;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.98), 0 0 0 1px rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
     background: #000;
+    display: block;
+    cursor: default;
   }}
 
   /* FLOATING PROGRESS BAR */
@@ -644,17 +658,17 @@ html_app = f"""
     bottom: 24px;
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(37, 37, 38, 0.95);
+    background: rgba(14, 15, 20, 0.96);
     backdrop-filter: blur(20px);
-    border: 1px solid var(--ps-border);
+    border: 1px solid var(--ps-border-light);
     border-radius: 8px;
-    padding: 14px 20px;
-    width: 340px;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.7);
+    padding: 16px 24px;
+    width: 380px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.9);
     z-index: 1000;
   }}
   .progress-track {{
-    height: 7px;
+    height: 8px;
     background: var(--ps-input);
     border-radius: 4px;
     overflow: hidden;
@@ -666,11 +680,11 @@ html_app = f"""
     transition: width 0.1s linear;
   }}
   .progress-text {{
-    font-size: 12px;
+    font-size: 13px;
     color: var(--ps-text-bright);
     text-align: center;
     margin-top: 8px;
-    font-weight: 600;
+    font-weight: 700;
   }}
 
   /* ADMIN MODAL */
@@ -680,7 +694,7 @@ html_app = f"""
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.82);
     backdrop-filter: blur(8px);
     display: none;
     align-items: center;
@@ -689,11 +703,11 @@ html_app = f"""
   }}
   .admin-modal {{
     width: 440px;
-    max-width: 90vw;
+    max-width: 92vw;
     background: var(--ps-panel);
     border: 1px solid var(--ps-border-light);
     border-radius: 8px;
-    box-shadow: 0 25px 60px rgba(0,0,0,0.85);
+    box-shadow: 0 30px 70px rgba(0,0,0,0.95);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -701,29 +715,29 @@ html_app = f"""
   .admin-modal-header {{
     background: var(--ps-topbar);
     border-bottom: 1px solid var(--ps-border);
-    padding: 12px 16px;
+    padding: 14px 18px;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }}
   .admin-modal-title {{
     font-weight: 800;
-    font-size: 14px;
+    font-size: 15px;
     color: #fff;
     display: flex;
     align-items: center;
-    gap: 7px;
+    gap: 8px;
   }}
   .admin-modal-close {{
     background: transparent;
     border: none;
     color: var(--ps-text-muted);
-    font-size: 16px;
+    font-size: 18px;
     cursor: pointer;
   }}
   .admin-modal-close:hover {{ color: #fff; }}
   .admin-modal-body {{
-    padding: 16px;
+    padding: 18px;
     display: flex;
     flex-direction: column;
     gap: 14px;
@@ -732,15 +746,12 @@ html_app = f"""
   }}
 
   /* RESPONSIVE SCALING */
-  @media (max-width: 1200px) {{
+  @media (max-width: 1100px) {{
     .ps-sidebar {{
-      width: 290px;
-    }}
-    #mainCanvas {{
-      max-width: calc(100vw - 620px);
+      width: 250px;
     }}
   }}
-  @media (max-width: 900px) {{
+  @media (max-width: 860px) {{
     .ps-title, .ps-doc-badge {{
       display: none;
     }}
@@ -751,10 +762,6 @@ html_app = f"""
     .ps-sidebar {{
       width: 100%;
       height: auto;
-    }}
-    #mainCanvas {{
-      max-width: 94vw;
-      max-height: 60vh;
     }}
   }}
 </style>
@@ -774,11 +781,12 @@ html_app = f"""
     <div class="ps-brand">
       <span class="ps-logo">Ps</span>
       <span class="ps-title">Murad Photoshop Studio</span>
-      <span class="ps-doc-badge" id="docSizeBadge">500 × 500 px</span>
+      <span class="ps-doc-badge" id="docSizeBadge">800 × 800 px</span>
     </div>
 
     <!-- CONTEXT TOOL OPTIONS -->
     <div class="ps-tool-options" id="toolOptions">
+      <button id="fitScreenBtn" class="ps-opt-btn" title="Auto Fit Canvas to Viewport">🔍 Fit Screen</button>
       <span class="ps-opt-label">Transform:</span>
       <span class="ps-opt-badge" id="optLayerName">No layer selected</span>
       <div class="ps-opt-group" id="optActionGroup" style="display:none;">
@@ -798,7 +806,7 @@ html_app = f"""
     </div>
   </header>
 
-  <!-- BODY (LEFT MENUS + CENTER CANVAS + RIGHT MENUS) -->
+  <!-- BODY (LEFT MENUS + DOMINANT CENTER CANVAS + RIGHT MENUS) -->
   <div class="ps-body">
 
     <!-- LEFT SIDEBAR: FACES & BACKDROP (OPEN BY DEFAULT) -->
@@ -818,13 +826,13 @@ html_app = f"""
         </label>
 
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:11px; color:var(--ps-text-muted); font-weight:700;">DEFAULT FACES:</span>
+          <span style="font-size:12px; color:var(--ps-text-muted); font-weight:700;">DEFAULT FACES:</span>
           <button id="addFaceBtn" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff;">➕ Add Face</button>
         </div>
-        <div class="grid-cards" id="facesGrid" style="max-height:210px; overflow-y:auto;"></div>
+        <div class="grid-cards-faces" id="facesGrid" style="max-height:240px; overflow-y:auto;"></div>
 
-        <div style="display:flex; flex-direction:column; gap:5px; margin-top:2px;">
-          <span style="font-size:11px; color:var(--ps-text-muted); font-weight:700;">CUTOUT SHAPE:</span>
+        <div style="display:flex; flex-direction:column; gap:6px; margin-top:2px;">
+          <span style="font-size:12px; color:var(--ps-text-muted); font-weight:700;">CUTOUT SHAPE:</span>
           <div class="btn-group" id="maskGroup">
             <button class="btn-toggle active" data-mask="square">Full Frame</button>
             <button class="btn-toggle" data-mask="circle">Sticker Circle</button>
@@ -853,8 +861,8 @@ html_app = f"""
           <input type="file" id="bgFileInput" accept="image/*,.gif">
         </label>
 
-        <div style="display:flex; flex-direction:column; gap:5px;">
-          <span style="font-size:11px; color:var(--ps-text-muted); font-weight:700;">CANVAS RATIO:</span>
+        <div style="display:flex; flex-direction:column; gap:6px;">
+          <span style="font-size:12px; color:var(--ps-text-muted); font-weight:700;">CANVAS RATIO:</span>
           <div class="btn-group" id="canvasSizeGroup">
             <button class="btn-toggle active" data-size="true_size">📐 True Size</button>
             <button class="btn-toggle" data-size="square">⏹️ 1:1</button>
@@ -863,16 +871,16 @@ html_app = f"""
           </div>
         </div>
 
-        <span style="font-size:11px; color:var(--ps-text-muted); font-weight:700;">POPULAR TEMPLATES:</span>
-        <div class="grid-cards" id="bgPresetsRow" style="grid-template-columns: repeat(2, 1fr);"></div>
+        <span style="font-size:12px; color:var(--ps-text-muted); font-weight:700;">POPULAR TEMPLATES:</span>
+        <div class="grid-cards-faces" id="bgPresetsRow" style="max-height:200px; overflow-y:auto;"></div>
       </div>
 
     </aside>
 
-    <!-- CENTER CANVAS VIEWPORT -->
+    <!-- CENTER CANVAS VIEWPORT (MASSIVE & AUTO-FITS SCREEN) -->
     <main class="ps-canvas-viewport" id="canvasViewport">
       <div class="canvas-stage">
-        <canvas id="mainCanvas" width="500" height="500"></canvas>
+        <canvas id="mainCanvas" width="800" height="800"></canvas>
       </div>
     </main>
 
@@ -886,21 +894,21 @@ html_app = f"""
         </div>
 
         <div style="display:flex; gap:6px;">
-          <button id="addTopTextBtn" class="ps-opt-btn" style="flex:1; padding:6px;">➕ Top</button>
-          <button id="addBottomTextBtn" class="ps-opt-btn" style="flex:1; padding:6px;">➕ Bottom</button>
-          <button id="addCustomTextBtn" class="ps-opt-btn" style="flex:1; padding:6px; background:var(--ps-blue); color:#fff; border-color:var(--ps-blue);">➕ Custom</button>
+          <button id="addTopTextBtn" class="ps-opt-btn" style="flex:1; padding:8px;">➕ Top</button>
+          <button id="addBottomTextBtn" class="ps-opt-btn" style="flex:1; padding:8px;">➕ Bottom</button>
+          <button id="addCustomTextBtn" class="ps-opt-btn" style="flex:1; padding:8px; background:var(--ps-blue); color:#fff; border-color:var(--ps-blue);">➕ Custom</button>
         </div>
 
-        <div id="textEditorBox" style="display:flex; flex-direction:column; gap:9px;">
+        <div id="textEditorBox" style="display:flex; flex-direction:column; gap:10px;">
           <input type="text" id="activeTextInput" class="ps-input" placeholder="Type meme text here...">
 
           <div class="slider-row">
-            <label>Font Size: <b id="textSizeVal">38px</b></label>
-            <input type="range" id="textSizeSlider" min="14" max="90" step="2" value="38">
+            <label>Font Size: <b id="textSizeVal">48px</b></label>
+            <input type="range" id="textSizeSlider" min="16" max="130" step="2" value="48">
           </div>
 
-          <div style="display:flex; flex-direction:column; gap:5px;">
-            <span style="font-size:11px; color:var(--ps-text-muted); font-weight:700;">COLOR:</span>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <span style="font-size:12px; color:var(--ps-text-muted); font-weight:700;">COLOR:</span>
             <div class="btn-group" id="textColorGroup">
               <button class="btn-toggle active" data-color="#ffffff">White</button>
               <button class="btn-toggle" data-color="#facc15" style="color:#facc15;">Yellow</button>
@@ -923,7 +931,7 @@ html_app = f"""
           <input type="file" id="accFileInput" accept="image/*,.gif">
         </label>
 
-        <div id="accEditorBox" style="display:none; flex-direction:column; gap:9px;">
+        <div id="accEditorBox" style="display:none; flex-direction:column; gap:10px;">
           <div class="slider-row">
             <label>Sticker Size: <b id="accScaleVal">100%</b></label>
             <input type="range" id="accScaleSlider" min="0.1" max="3.0" step="0.05" value="1.0">
@@ -941,16 +949,16 @@ html_app = f"""
           <span class="panel-section-title">✨ Discord GIF Effects</span>
         </div>
 
-        <div class="grid-cards" id="animGrid" style="grid-template-columns:repeat(3, 1fr);">
-          <div class="grid-card active" data-anim="none"><span>🖼️</span><span>Still</span></div>
-          <div class="grid-card" data-anim="bob"><span>🕺</span><span>Head Bob</span></div>
-          <div class="grid-card" data-anim="shake"><span>💢</span><span>Shake</span></div>
-          <div class="grid-card" data-anim="spin"><span>🌀</span><span>Speen 360°</span></div>
-          <div class="grid-card" data-anim="petpet"><span>👋</span><span>Petpet</span></div>
-          <div class="grid-card" data-anim="zoom"><span>💥</span><span>Bass Pulse</span></div>
-          <div class="grid-card" data-anim="pulse"><span>💓</span><span>Heartbeat</span></div>
-          <div class="grid-card" data-anim="wobble"><span>🌊</span><span>Wobble</span></div>
-          <div class="grid-card" data-anim="disco"><span>🪩</span><span>Disco</span></div>
+        <div class="grid-cards-faces" id="animGrid" style="grid-template-columns:repeat(3, 1fr); gap:6px;">
+          <div class="grid-card active" data-anim="none"><span style="font-size:22px;">🖼️</span><span>Still</span></div>
+          <div class="grid-card" data-anim="bob"><span style="font-size:22px;">🕺</span><span>Head Bob</span></div>
+          <div class="grid-card" data-anim="shake"><span style="font-size:22px;">💢</span><span>Shake</span></div>
+          <div class="grid-card" data-anim="spin"><span style="font-size:22px;">🌀</span><span>Speen 360°</span></div>
+          <div class="grid-card" data-anim="petpet"><span style="font-size:22px;">👋</span><span>Petpet</span></div>
+          <div class="grid-card" data-anim="zoom"><span style="font-size:22px;">💥</span><span>Bass Pulse</span></div>
+          <div class="grid-card" data-anim="pulse"><span style="font-size:22px;">💓</span><span>Heartbeat</span></div>
+          <div class="grid-card" data-anim="wobble"><span style="font-size:22px;">🌊</span><span>Wobble</span></div>
+          <div class="grid-card" data-anim="disco"><span style="font-size:22px;">🪩</span><span>Disco</span></div>
         </div>
       </div>
 
@@ -982,12 +990,12 @@ html_app = f"""
       
       <!-- STEP 1: PASSWORD AUTH -->
       <div class="admin-modal-body" id="adminAuthBody">
-        <div style="text-align:center; padding: 12px 0;">
-          <div style="font-size:36px; margin-bottom:8px;">🔒</div>
-          <div style="font-weight:700; font-size:14px; color:#fff; margin-bottom:4px;">Enter Admin Password</div>
-          <div style="font-size:11.5px; color:var(--ps-text-muted); margin-bottom:14px;">Manage default catalog faces or push new ones to GitHub.</div>
+        <div style="text-align:center; padding: 14px 0;">
+          <div style="font-size:38px; margin-bottom:10px;">🔒</div>
+          <div style="font-weight:800; font-size:15px; color:#fff; margin-bottom:5px;">Enter Admin Password</div>
+          <div style="font-size:12.5px; color:var(--ps-text-muted); margin-bottom:14px;">Manage default catalog faces or push new ones to GitHub.</div>
           <input type="password" id="adminPwdInput" class="ps-input" placeholder="Password..." style="margin-bottom:8px; text-align:center; width:240px; margin:0 auto 10px auto;">
-          <div id="adminAuthError" style="color:var(--ps-danger); font-size:11.5px; display:none; margin-bottom:8px;">❌ Incorrect Admin Password</div>
+          <div id="adminAuthError" style="color:var(--ps-danger); font-size:12px; display:none; margin-bottom:8px;">❌ Incorrect Admin Password</div>
           <button id="adminUnlockBtn" class="ps-btn ps-btn-primary" style="width:240px; margin:0 auto; justify-content:center;">Unlock</button>
         </div>
       </div>
@@ -995,22 +1003,22 @@ html_app = f"""
       <!-- STEP 2: CATALOG MANAGEMENT -->
       <div class="admin-modal-body" id="adminManageBody" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="color:var(--ps-green); font-weight:700; font-size:12px;">✅ Admin Access Granted</span>
+          <span style="color:var(--ps-green); font-weight:800; font-size:12.5px;">✅ Admin Access Granted</span>
           <button id="adminLockOutBtn" class="ps-opt-btn" style="font-size:11px;">Lock</button>
         </div>
 
         <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
-          <span style="font-size:11.5px; font-weight:700; color:#fff;">➕ ADD NEW FACE TO CATALOG:</span>
+          <span style="font-size:12px; font-weight:800; color:#fff;">➕ ADD NEW FACE TO CATALOG:</span>
           <div style="display:flex; flex-direction:column; gap:7px; margin-top:7px;">
             <input type="text" id="adminNewFaceName" class="ps-input" placeholder="Face Name & Emoji (e.g. Party Murad 🎉)">
-            <input type="file" id="adminNewFaceFile" accept="image/*" class="ps-input" style="padding:5px;">
+            <input type="file" id="adminNewFaceFile" accept="image/*" class="ps-input" style="padding:6px;">
             <button id="adminUploadBtn" class="ps-btn ps-btn-primary" style="justify-content:center;">🚀 Push to Catalog</button>
-            <div id="adminUploadStatus" style="font-size:11px; text-align:center;"></div>
+            <div id="adminUploadStatus" style="font-size:11.5px; text-align:center;"></div>
           </div>
         </div>
 
         <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
-          <span style="font-size:11.5px; font-weight:700; color:#fff;">🗑️ MANAGE DEFAULT FACES:</span>
+          <span style="font-size:12px; font-weight:800; color:#fff;">🗑️ MANAGE DEFAULT FACES:</span>
           <div id="adminFacesCatalogList" style="display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-top:7px;"></div>
         </div>
       </div>
@@ -1030,7 +1038,7 @@ function makeFaceLayer(faceIndex, x, y, scale) {{
     id: 'layer_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
     faceIndex: faceIndex !== undefined ? faceIndex : 0,
     x: x !== undefined ? x : 0,
-    y: y !== undefined ? y : -50,
+    y: y !== undefined ? y : -70,
     scale: scale !== undefined ? scale : 1.0,
     rotation: 0,
     flipH: 1,
@@ -1041,84 +1049,95 @@ function makeFaceLayer(faceIndex, x, y, scale) {{
 }}
 
 const state = {{
+  facesOnCanvas: [makeFaceLayer(0, 0, -70, 1.0)],
+  selectedFaceIdx: 0,
+
   bgType: 'template',
-  bgTemplateId: templates.length > 0 ? templates[0].id : 'suit',
+  bgTemplateId: 'suit',
   bgCustomImg: null,
+  bgIsGif: false,
   bgGifFrames: [],
   bgGifIndex: 0,
-  bgGifDelay: 100,
-  bgIsGif: false,
+
   canvasSizeMode: 'true_size',
-  
-  facesOnCanvas: [makeFaceLayer(0, 0, -60, 1.0)],
-  selectedFaceIdx: 0,
+
+  texts: [
+    {{ id: 't_top', text: 'WHEN MURAD', x: 0, y: -260, size: 52, color: '#ffffff', rotation: 0 }},
+    {{ id: 't_bot', text: 'APPROVES THE CODE', x: 0, y: 260, size: 52, color: '#ffffff', rotation: 0 }}
+  ],
+  selectedTextIdx: 0,
 
   accessoriesOnCanvas: [],
   selectedAccIdx: -1,
 
-  texts: [],
-  selectedTextIdx: -1,
-
   animation: 'none',
-  animSpeed: 1.0,
-  animIntensity: 1.0,
 
-  transformState: {{
-    mode: null, // 'drag', 'scale', 'rotate'
-    targetType: null, // 'face', 'acc', 'text'
-    targetIdx: -1,
-    startX: 0,
-    startY: 0,
-    initialX: 0,
-    initialY: 0,
-    initialScale: 1.0,
-    initialRotation: 0,
-    initialDist: 1.0,
-    initialAngle: 0,
-    activeHandle: null
-  }}
+  activeTransformTarget: {{ type: 'face', idx: 0 }},
+  dragTarget: null
 }};
 
-// Preload templates
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = 800;
+canvas.height = 800;
+
+// Preload face images
+const loadedFaces = {{}};
+faces.forEach((f, idx) => {{
+  const img = new Image();
+  img.src = f.src;
+  img.onload = () => {{
+    render();
+  }};
+  loadedFaces[idx] = img;
+}});
+
+// Preload template images
 const loadedTemplates = {{}};
 templates.forEach(t => {{
   const img = new Image();
   img.src = t.src;
+  img.onload = () => {{
+    render();
+  }};
   loadedTemplates[t.id] = img;
 }});
 
-// Preload faces
-const loadedFaces = [];
-function preloadFacesCatalog() {{
-  faces.forEach((f, idx) => {{
-    const img = new Image();
-    img.src = f.src;
-    loadedFaces[idx] = img;
-  }});
+// --- AUTO FIT CANVAS TO SCREEN VIEWPORT ---
+function fitCanvasToScreen() {{
+  const vp = document.getElementById('canvasViewport');
+  if (!vp || !canvas) return;
+  const pad = 24;
+  const availW = Math.max(280, vp.clientWidth - pad);
+  const availH = Math.max(280, vp.clientHeight - pad);
+  const aspect = (canvas.width || 800) / (canvas.height || 800);
+
+  let w = availW;
+  let h = w / aspect;
+  if (h > availH) {{
+    h = availH;
+    w = h * aspect;
+  }}
+  canvas.style.width = Math.round(w) + 'px';
+  canvas.style.height = Math.round(h) + 'px';
 }}
-preloadFacesCatalog();
+window.addEventListener('resize', fitCanvasToScreen);
 
-const canvas = document.getElementById('mainCanvas');
-const ctx = canvas.getContext('2d');
-
-// --- COORDINATES & BOUNDING BOX CALCULATION ---
+// --- ACTIVE LAYER GETTER ---
 function getActiveLayerData() {{
-  if (state.selectedFaceIdx >= 0 && state.selectedFaceIdx < state.facesOnCanvas.length) {{
-    const face = state.facesOnCanvas[state.selectedFaceIdx];
-    let img = null;
-    if (face.customImg) {{
-      img = face.customImg;
-    }} else if (loadedFaces[face.faceIndex]) {{
-      img = loadedFaces[face.faceIndex];
-    }}
+  const t = state.activeTransformTarget;
+  if (!t) return null;
+  if (t.type === 'face' && state.facesOnCanvas[t.idx]) {{
+    const face = state.facesOnCanvas[t.idx];
+    let img = face.customImg || loadedFaces[face.faceIndex];
     const aspect = (img && img.naturalHeight) ? (img.naturalHeight / img.naturalWidth) : 1.0;
-    const baseW = 120;
-    const baseH = 120 * aspect;
+    const baseW = 200;
+    const baseH = 200 * aspect;
     const hw = (baseW * face.scale) / 2;
     const hh = (baseH * face.scale) / 2;
     return {{
       type: 'face',
-      idx: state.selectedFaceIdx,
+      idx: t.idx,
       obj: face,
       cx: canvas.width / 2 + face.x,
       cy: canvas.height / 2 + face.y,
@@ -1128,16 +1147,16 @@ function getActiveLayerData() {{
       scale: face.scale || 1.0
     }};
   }}
-  if (state.selectedAccIdx >= 0 && state.selectedAccIdx < state.accessoriesOnCanvas.length) {{
-    const acc = state.accessoriesOnCanvas[state.selectedAccIdx];
+  if (t.type === 'acc' && state.accessoriesOnCanvas[t.idx]) {{
+    const acc = state.accessoriesOnCanvas[t.idx];
     const aspect = (acc.img && acc.img.naturalHeight) ? (acc.img.naturalHeight / acc.img.naturalWidth) : 1.0;
-    const baseW = 100;
-    const baseH = 100 * aspect;
+    const baseW = 180;
+    const baseH = 180 * aspect;
     const hw = (baseW * acc.scale) / 2;
     const hh = (baseH * acc.scale) / 2;
     return {{
       type: 'acc',
-      idx: state.selectedAccIdx,
+      idx: t.idx,
       obj: acc,
       cx: canvas.width / 2 + acc.x,
       cy: canvas.height / 2 + acc.y,
@@ -1147,23 +1166,23 @@ function getActiveLayerData() {{
       scale: acc.scale || 1.0
     }};
   }}
-  if (state.selectedTextIdx >= 0 && state.selectedTextIdx < state.texts.length) {{
-    const t = state.texts[state.selectedTextIdx];
-    ctx.font = '900 ' + t.size + 'px Impact, sans-serif';
-    const metrics = ctx.measureText(t.text || ' ');
-    const bw = metrics.width + 24;
-    const bh = t.size + 14;
+  if (t.type === 'text' && state.texts[t.idx]) {{
+    const txt = state.texts[t.idx];
+    ctx.font = '900 ' + txt.size + 'px Impact, sans-serif';
+    const metrics = ctx.measureText(txt.text || ' ');
+    const bw = metrics.width + 32;
+    const bh = txt.size + 20;
     const hw = bw / 2;
     const hh = bh / 2;
     return {{
       type: 'text',
-      idx: state.selectedTextIdx,
-      obj: t,
-      cx: canvas.width / 2 + t.x,
-      cy: canvas.height / 2 + t.y,
+      idx: t.idx,
+      obj: txt,
+      cx: canvas.width / 2 + txt.x,
+      cy: canvas.height / 2 + txt.y,
       hw: hw,
       hh: hh,
-      rotation: t.rotation || 0,
+      rotation: txt.rotation || 0,
       scale: 1.0
     }};
   }}
@@ -1200,13 +1219,13 @@ function testHandlesHit(mx, my, layerData) {{
   const {{ cx, cy, hw, hh, rotation }} = layerData;
   const {{ lx, ly }} = toLocal(mx, my, cx, cy, rotation);
 
-  // 1. Rotation handle: at (0, -hh - 26)
-  const rotDist = Math.hypot(lx - 0, ly - (-hh - 26));
-  if (rotDist <= 16) {{
+  // 1. Rotation handle: at (0, -hh - 32)
+  const rotDist = Math.hypot(lx - 0, ly - (-hh - 32));
+  if (rotDist <= 22) {{
     return 'rot';
   }}
 
-  // 2. Corner handles (size 10x10, radius 12)
+  // 2. Corner scale handles: tl, tr, bl, br
   const corners = [
     {{ name: 'tl', x: -hw, y: -hh }},
     {{ name: 'tr', x: hw, y: -hh }},
@@ -1214,7 +1233,7 @@ function testHandlesHit(mx, my, layerData) {{
     {{ name: 'br', x: hw, y: hh }}
   ];
   for (let c of corners) {{
-    if (Math.abs(lx - c.x) <= 12 && Math.abs(ly - c.y) <= 12) {{
+    if (Math.abs(lx - c.x) <= 18 && Math.abs(ly - c.y) <= 18) {{
       return c.name;
     }}
   }}
@@ -1236,13 +1255,13 @@ function findLayerAt(mx, my) {{
     if (h) return {{ handle: h, layer: active }};
   }}
 
-  // Test other faces from top to bottom
+  // Test faces from top to bottom
   for (let i = state.facesOnCanvas.length - 1; i >= 0; i--) {{
     const f = state.facesOnCanvas[i];
     let img = f.customImg || loadedFaces[f.faceIndex];
     const aspect = (img && img.naturalHeight) ? (img.naturalHeight / img.naturalWidth) : 1.0;
-    const hw = (120 * f.scale) / 2;
-    const hh = (120 * aspect * f.scale) / 2;
+    const hw = (200 * f.scale) / 2;
+    const hh = (200 * aspect * f.scale) / 2;
     const cx = canvas.width / 2 + f.x;
     const cy = canvas.height / 2 + f.y;
     const {{ lx, ly }} = toLocal(mx, my, cx, cy, f.rotation || 0);
@@ -1255,8 +1274,8 @@ function findLayerAt(mx, my) {{
   for (let i = state.accessoriesOnCanvas.length - 1; i >= 0; i--) {{
     const a = state.accessoriesOnCanvas[i];
     const aspect = (a.img && a.img.naturalHeight) ? (a.img.naturalHeight / a.img.naturalWidth) : 1.0;
-    const hw = (100 * a.scale) / 2;
-    const hh = (100 * aspect * a.scale) / 2;
+    const hw = (180 * a.scale) / 2;
+    const hh = (180 * aspect * a.scale) / 2;
     const cx = canvas.width / 2 + a.x;
     const cy = canvas.height / 2 + a.y;
     const {{ lx, ly }} = toLocal(mx, my, cx, cy, a.rotation || 0);
@@ -1270,8 +1289,8 @@ function findLayerAt(mx, my) {{
     const t = state.texts[i];
     ctx.font = '900 ' + t.size + 'px Impact, sans-serif';
     const metrics = ctx.measureText(t.text || ' ');
-    const hw = (metrics.width + 24) / 2;
-    const hh = (t.size + 14) / 2;
+    const hw = (metrics.width + 32) / 2;
+    const hh = (t.size + 20) / 2;
     const cx = canvas.width / 2 + t.x;
     const cy = canvas.height / 2 + t.y;
     const {{ lx, ly }} = toLocal(mx, my, cx, cy, t.rotation || 0);
@@ -1283,7 +1302,7 @@ function findLayerAt(mx, my) {{
   return null;
 }}
 
-// --- RENDER CANVAS ---
+// --- RENDER CANVAS (LARGE & CRISP RESOLUTION) ---
 function render(offsetObj) {{
   const animOff = offsetObj || {{ x: 0, y: 0, rot: 0, scale: 1.0 }};
 
@@ -1297,15 +1316,16 @@ function render(offsetObj) {{
     bgImg = loadedTemplates[state.bgTemplateId];
   }}
 
-  let cw = 500, ch = 500;
+  // High-def canvas resolution
+  let cw = 800, ch = 800;
   if (state.canvasSizeMode === 'square') {{
-    cw = 500; ch = 500;
+    cw = 800; ch = 800;
   }} else if (state.canvasSizeMode === 'landscape') {{
-    cw = 560; ch = 315;
+    cw = 960; ch = 540;
   }} else if (state.canvasSizeMode === 'portrait') {{
-    cw = 315; ch = 560;
+    cw = 540; ch = 960;
   }} else if (state.canvasSizeMode === 'true_size' && bgImg && bgImg.naturalWidth) {{
-    const maxDim = 560;
+    const maxDim = 1000;
     const nw = bgImg.naturalWidth;
     const nh = bgImg.naturalHeight;
     const ratio = Math.min(maxDim / nw, maxDim / nh, 1.0);
@@ -1317,6 +1337,7 @@ function render(offsetObj) {{
     canvas.width = cw;
     canvas.height = ch;
     document.getElementById('docSizeBadge').innerText = cw + ' × ' + ch + ' px';
+    fitCanvasToScreen();
   }}
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1325,7 +1346,7 @@ function render(offsetObj) {{
   if (bgImg) {{
     ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
   }} else {{
-    ctx.fillStyle = '#222';
+    ctx.fillStyle = '#060608';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }}
 
@@ -1343,8 +1364,8 @@ function render(offsetObj) {{
     ctx.globalAlpha = face.opacity !== undefined ? face.opacity : 1.0;
 
     const aspect = (img.naturalHeight || 1) / (img.naturalWidth || 1);
-    const baseW = 120;
-    const baseH = 120 * aspect;
+    const baseW = 200;
+    const baseH = 200 * aspect;
     const w = baseW * face.scale * animOff.scale;
     const h = baseH * face.scale * animOff.scale;
 
@@ -1376,8 +1397,8 @@ function render(offsetObj) {{
     ctx.globalAlpha = acc.opacity !== undefined ? acc.opacity : 1.0;
 
     const aspect = (acc.img.naturalHeight || 1) / (acc.img.naturalWidth || 1);
-    const baseW = 100;
-    const baseH = 100 * aspect;
+    const baseW = 180;
+    const baseH = 180 * aspect;
     const w = baseW * acc.scale;
     const h = baseH * acc.scale;
 
@@ -1396,7 +1417,7 @@ function render(offsetObj) {{
     ctx.font = '900 ' + t.size + 'px Impact, -apple-system, sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.lineWidth = Math.max(3, Math.round(t.size / 8));
+    ctx.lineWidth = Math.max(5, Math.round(t.size / 6.5));
     ctx.strokeStyle = '#000000';
     ctx.fillStyle = t.color || '#ffffff';
 
@@ -1405,7 +1426,7 @@ function render(offsetObj) {{
     ctx.restore();
   }});
 
-  // 5. Draw Photoshop Bounding Box & Free Transform Handles (Scaled for visibility)
+  // 5. Draw Photoshop Bounding Box & Free Transform Handles
   const active = getActiveLayerData();
   if (active) {{
     const {{ cx, cy, hw, hh, rotation }} = active;
@@ -1414,24 +1435,24 @@ function render(offsetObj) {{
     ctx.rotate((rotation * Math.PI) / 180);
 
     // Blue dashed bounding rectangle
-    ctx.strokeStyle = '#007acc';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = '#0084ff';
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([7, 6]);
     ctx.strokeRect(-hw, -hh, hw * 2, hh * 2);
 
     // Stem line to rotation handle
     ctx.setLineDash([]);
     ctx.beginPath();
     ctx.moveTo(0, -hh);
-    ctx.lineTo(0, -hh - 26);
+    ctx.lineTo(0, -hh - 32);
     ctx.stroke();
 
     // Top circular rotation handle
     ctx.fillStyle = '#ffffff';
-    ctx.strokeStyle = '#007acc';
-    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#0084ff';
+    ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.arc(0, -hh - 26, 7, 0, Math.PI * 2);
+    ctx.arc(0, -hh - 32, 8, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
@@ -1442,408 +1463,241 @@ function render(offsetObj) {{
       [-hw, hh],
       [hw, hh]
     ];
-    const hSize = 9;
-    corners.forEach(([x, y]) => {{
+    corners.forEach(([kx, ky]) => {{
       ctx.fillStyle = '#ffffff';
-      ctx.strokeStyle = '#007acc';
-      ctx.lineWidth = 2;
-      ctx.fillRect(x - hSize / 2, y - hSize / 2, hSize, hSize);
-      ctx.strokeRect(x - hSize / 2, y - hSize / 2, hSize, hSize);
+      ctx.strokeStyle = '#0084ff';
+      ctx.lineWidth = 2.5;
+      ctx.fillRect(kx - 6, ky - 6, 12, 12);
+      ctx.strokeRect(kx - 6, ky - 6, 12, 12);
     }});
 
     ctx.restore();
   }}
+
+  updateTopbarToolOptions();
 }}
 
-// --- INTERACTIVE FREE TRANSFORM EVENT LISTENERS ---
+// Update context options in topbar
+function updateTopbarToolOptions() {{
+  const active = getActiveLayerData();
+  const nameBadge = document.getElementById('optLayerName');
+  const actionGroup = document.getElementById('optActionGroup');
+  const scaleVal = document.getElementById('optScaleVal');
+  const rotVal = document.getElementById('optRotVal');
+
+  if (!active) {{
+    nameBadge.innerText = 'No layer selected';
+    actionGroup.style.display = 'none';
+    return;
+  }}
+
+  actionGroup.style.display = 'inline-flex';
+  let title = 'Layer';
+  if (active.type === 'face') {{
+    const f = faces[active.obj.faceIndex];
+    title = f ? f.name : 'Custom Face';
+    scaleVal.innerText = Math.round(active.obj.scale * 100) + '%';
+    rotVal.innerText = Math.round(active.obj.rotation) + '°';
+  }} else if (active.type === 'acc') {{
+    title = 'Sticker / Acc';
+    scaleVal.innerText = Math.round(active.obj.scale * 100) + '%';
+    rotVal.innerText = Math.round(active.obj.rotation) + '°';
+  }} else if (active.type === 'text') {{
+    title = '"' + active.obj.text.substring(0, 16) + '"';
+    scaleVal.innerText = active.obj.size + 'px';
+    rotVal.innerText = Math.round(active.obj.rotation) + '°';
+  }}
+  nameBadge.innerText = title;
+}}
+
+// --- INTERACTIVE DRAG & FREE TRANSFORM EVENTS ---
 function initCanvasEvents() {{
-  const ts = state.transformState;
+  let isDragging = false;
+  let dragHandle = null;
+  let startX = 0, startY = 0;
+  let origObjState = {{}};
 
   function onPointerDown(e) {{
-    const pt = getCanvasPointer(e);
-    const hit = findLayerAt(pt.x, pt.y);
+    const {{ x: mx, y: my }} = getCanvasPointer(e);
+    const hit = findLayerAt(mx, my);
 
     if (hit) {{
-      // Select layer
+      isDragging = true;
+      dragHandle = hit.handle;
+      startX = mx;
+      startY = my;
+
       if (hit.layer.type === 'face') {{
+        state.activeTransformTarget = {{ type: 'face', idx: hit.layer.idx }};
         state.selectedFaceIdx = hit.layer.idx;
-        state.selectedAccIdx = -1;
-        state.selectedTextIdx = -1;
+        const obj = state.facesOnCanvas[hit.layer.idx];
+        origObjState = {{ x: obj.x, y: obj.y, scale: obj.scale, rotation: obj.rotation }};
       }} else if (hit.layer.type === 'acc') {{
+        state.activeTransformTarget = {{ type: 'acc', idx: hit.layer.idx }};
         state.selectedAccIdx = hit.layer.idx;
-        state.selectedFaceIdx = -1;
-        state.selectedTextIdx = -1;
+        const obj = state.accessoriesOnCanvas[hit.layer.idx];
+        origObjState = {{ x: obj.x, y: obj.y, scale: obj.scale, rotation: obj.rotation }};
       }} else if (hit.layer.type === 'text') {{
+        state.activeTransformTarget = {{ type: 'text', idx: hit.layer.idx }};
         state.selectedTextIdx = hit.layer.idx;
-        state.selectedFaceIdx = -1;
-        state.selectedAccIdx = -1;
+        const obj = state.texts[hit.layer.idx];
+        origObjState = {{ x: obj.x, y: obj.y, size: obj.size, rotation: obj.rotation }};
+        document.getElementById('activeTextInput').value = obj.text;
       }}
 
-      updateOptionsBar();
-      updatePanelInputs();
       render();
-
-      const active = getActiveLayerData();
-      if (!active) return;
-
-      const handle = testHandlesHit(pt.x, pt.y, active);
-      if (handle === 'rot') {{
-        ts.mode = 'rotate';
-        ts.targetType = active.type;
-        ts.targetIdx = active.idx;
-        ts.initialAngle = Math.atan2(pt.y - active.cy, pt.x - active.cx);
-        ts.initialRotation = active.rotation;
-      }} else if (handle === 'tl' || handle === 'tr' || handle === 'bl' || handle === 'br') {{
-        ts.mode = 'scale';
-        ts.targetType = active.type;
-        ts.targetIdx = active.idx;
-        ts.activeHandle = handle;
-        ts.initialDist = Math.hypot(pt.x - active.cx, pt.y - active.cy);
-        ts.initialScale = active.type === 'text' ? active.obj.size : active.scale;
-      }} else if (handle === 'body') {{
-        ts.mode = 'drag';
-        ts.targetType = active.type;
-        ts.targetIdx = active.idx;
-        ts.startX = pt.x;
-        ts.startY = pt.y;
-        ts.initialX = active.obj.x;
-        ts.initialY = active.obj.y;
-      }}
+      syncLayersUI();
     }} else {{
-      // Clicked on empty canvas -> clear selection
-      state.selectedFaceIdx = -1;
-      state.selectedAccIdx = -1;
-      state.selectedTextIdx = -1;
-      updateOptionsBar();
+      state.activeTransformTarget = null;
       render();
+      syncLayersUI();
     }}
   }}
 
   function onPointerMove(e) {{
-    const pt = getCanvasPointer(e);
-    const active = getActiveLayerData();
+    const {{ x: mx, y: my }} = getCanvasPointer(e);
 
-    if (ts.mode === 'rotate' && active) {{
-      const currentAngle = Math.atan2(pt.y - active.cy, pt.x - active.cx);
-      let deg = Math.round((currentAngle + Math.PI / 2) * (180 / Math.PI));
-      deg = (deg % 360 + 360) % 360;
-      active.obj.rotation = deg;
-      updateOptionsBar();
-      render();
-    }} else if (ts.mode === 'scale' && active) {{
-      const curDist = Math.hypot(pt.x - active.cx, pt.y - active.cy);
-      if (active.type === 'text') {{
-        const newSize = Math.max(14, Math.min(90, Math.round((curDist / ts.initialDist) * ts.initialScale)));
-        active.obj.size = newSize;
-        document.getElementById('textSizeSlider').value = newSize;
-        document.getElementById('textSizeVal').innerText = newSize + 'px';
-      }} else {{
-        const newScale = Math.max(0.15, Math.min(3.5, (curDist / ts.initialDist) * ts.initialScale));
-        active.obj.scale = parseFloat(newScale.toFixed(2));
-        if (active.type === 'face') {{
-          document.getElementById('faceScaleSlider').value = active.obj.scale;
-          document.getElementById('faceScaleVal').innerText = Math.round(active.obj.scale * 100) + '%';
-        }} else if (active.type === 'acc') {{
-          document.getElementById('accScaleSlider').value = active.obj.scale;
-          document.getElementById('accScaleVal').innerText = Math.round(active.obj.scale * 100) + '%';
-        }}
-      }}
-      updateOptionsBar();
-      render();
-    }} else if (ts.mode === 'drag' && active) {{
-      const dx = pt.x - ts.startX;
-      const dy = pt.y - ts.startY;
-      active.obj.x = ts.initialX + dx;
-      active.obj.y = ts.initialY + dy;
-      render();
-    }} else if (ts.mode === null) {{
-      // Update cursor
-      if (active) {{
-        const h = testHandlesHit(pt.x, pt.y, active);
-        if (h === 'rot') {{
-          canvas.style.cursor = 'crosshair';
-        }} else if (h === 'tl' || h === 'br') {{
-          canvas.style.cursor = 'nwse-resize';
-        }} else if (h === 'tr' || h === 'bl') {{
-          canvas.style.cursor = 'nesw-resize';
-        }} else if (h === 'body') {{
-          canvas.style.cursor = 'move';
-        }} else {{
-          canvas.style.cursor = 'default';
-        }}
-      }} else {{
+    if (!isDragging) {{
+      const hit = findLayerAt(mx, my);
+      if (!hit) {{
         canvas.style.cursor = 'default';
+      }} else if (hit.handle === 'rot') {{
+        canvas.style.cursor = 'grab';
+      }} else if (hit.handle === 'tl' || hit.handle === 'br') {{
+        canvas.style.cursor = 'nwse-resize';
+      }} else if (hit.handle === 'tr' || hit.handle === 'bl') {{
+        canvas.style.cursor = 'nesw-resize';
+      }} else {{
+        canvas.style.cursor = 'move';
       }}
+      return;
+    }}
+
+    const active = getActiveLayerData();
+    if (!active) return;
+
+    if (dragHandle === 'body') {{
+      const dx = mx - startX;
+      const dy = my - startY;
+      active.obj.x = origObjState.x + dx;
+      active.obj.y = origObjState.y + dy;
+      render();
+    }} else if (dragHandle === 'rot') {{
+      const rad = Math.atan2(my - active.cy, mx - active.cx);
+      let deg = (rad * 180) / Math.PI + 90;
+      while (deg < -180) deg += 360;
+      while (deg > 180) deg -= 360;
+      active.obj.rotation = Math.round(deg);
+      render();
+    }} else if (dragHandle) {{
+      const initialDist = Math.hypot(startX - active.cx, startY - active.cy);
+      const currentDist = Math.hypot(mx - active.cx, my - active.cy);
+      const factor = currentDist / Math.max(initialDist, 1);
+      
+      if (active.type === 'text') {{
+        active.obj.size = Math.max(16, Math.min(130, Math.round(origObjState.size * factor)));
+      }} else {{
+        active.obj.scale = Math.max(0.15, Math.min(3.5, Number((origObjState.scale * factor).toFixed(2))));
+      }}
+      render();
     }}
   }}
 
   function onPointerUp() {{
-    ts.mode = null;
-    ts.activeHandle = null;
-    updateLayersList();
+    isDragging = false;
+    dragHandle = null;
+    canvas.style.cursor = 'default';
   }}
 
-  // Mouse events
   canvas.addEventListener('mousedown', onPointerDown);
   window.addEventListener('mousemove', onPointerMove);
   window.addEventListener('mouseup', onPointerUp);
 
-  // Touch events for iPad/tablet/mobile
-  canvas.addEventListener('touchstart', (e) => {{ e.preventDefault(); onPointerDown(e); }}, {{ passive: false }});
-  window.addEventListener('touchmove', (e) => {{ if (ts.mode) e.preventDefault(); onPointerMove(e); }}, {{ passive: false }});
+  canvas.addEventListener('touchstart', (e) => {{
+    if (e.touches.length === 1) onPointerDown(e);
+  }}, {{ passive: false }});
+  window.addEventListener('touchmove', (e) => {{
+    if (isDragging && e.touches.length === 1) onPointerMove(e);
+  }}, {{ passive: false }});
   window.addEventListener('touchend', onPointerUp);
-}}
 
-// --- UPDATE UI PANELS & TOPBAR OPTIONS ---
-function updateOptionsBar() {{
-  const active = getActiveLayerData();
-  const optName = document.getElementById('optLayerName');
-  const optGroup = document.getElementById('optActionGroup');
-  const optScale = document.getElementById('optScaleVal');
-  const optRot = document.getElementById('optRotVal');
-
-  if (!active) {{
-    optName.innerText = 'No layer selected';
-    optName.style.borderColor = 'var(--ps-border)';
-    optName.style.background = 'transparent';
-    optName.style.color = 'var(--ps-text-muted)';
-    optGroup.style.display = 'none';
-  }} else {{
-    let label = '';
-    if (active.type === 'face') label = '🎭 Face #' + (active.idx + 1);
-    else if (active.type === 'acc') label = '🎀 Sticker #' + (active.idx + 1);
-    else if (active.type === 'text') label = '✍️ Text: "' + (active.obj.text || '') + '"';
-
-    optName.innerText = label;
-    optName.style.borderColor = 'var(--ps-blue)';
-    optName.style.background = 'rgba(0, 122, 204, 0.2)';
-    optName.style.color = '#4dc2ff';
-    optGroup.style.display = 'flex';
-
+  // Wheel to scale active layer
+  canvas.addEventListener('wheel', (e) => {{
+    e.preventDefault();
+    const active = getActiveLayerData();
+    if (!active) return;
+    const delta = e.deltaY < 0 ? 0.05 : -0.05;
     if (active.type === 'text') {{
-      optScale.innerText = 'Size: ' + active.obj.size + 'px';
+      active.obj.size = Math.max(16, Math.min(130, active.obj.size + (delta > 0 ? 3 : -3)));
     }} else {{
-      optScale.innerText = 'Scale: ' + Math.round(active.obj.scale * 100) + '%';
+      active.obj.scale = Math.max(0.2, Math.min(3.5, Number((active.obj.scale + delta).toFixed(2))));
     }}
-    optRot.innerText = 'Angle: ' + Math.round(active.rotation) + '°';
-  }}
+    render();
+  }}, {{ passive: false }});
 }}
 
-function updatePanelInputs() {{
-  const active = getActiveLayerData();
-  if (!active) return;
-
-  if (active.type === 'face') {{
-    document.getElementById('faceScaleSlider').value = active.obj.scale;
-    document.getElementById('faceScaleVal').innerText = Math.round(active.obj.scale * 100) + '%';
-    document.getElementById('faceOpacitySlider').value = active.obj.opacity !== undefined ? active.obj.opacity : 1.0;
-    document.getElementById('faceOpacityVal').innerText = Math.round((active.obj.opacity || 1.0) * 100) + '%';
-
-    document.querySelectorAll('#maskGroup .btn-toggle').forEach(btn => {{
-      btn.classList.toggle('active', btn.dataset.mask === (active.obj.maskShape || 'square'));
-    }});
-  }} else if (active.type === 'acc') {{
-    document.getElementById('accEditorBox').style.display = 'flex';
-    document.getElementById('accScaleSlider').value = active.obj.scale;
-    document.getElementById('accScaleVal').innerText = Math.round(active.obj.scale * 100) + '%';
-    document.getElementById('accOpacitySlider').value = active.obj.opacity !== undefined ? active.obj.opacity : 1.0;
-    document.getElementById('accOpacityVal').innerText = Math.round((active.obj.opacity || 1.0) * 100) + '%';
-  }} else if (active.type === 'text') {{
-    document.getElementById('activeTextInput').value = active.obj.text;
-    document.getElementById('textSizeSlider').value = active.obj.size;
-    document.getElementById('textSizeVal').innerText = active.obj.size + 'px';
-    document.querySelectorAll('#textColorGroup .btn-toggle').forEach(btn => {{
-      btn.classList.toggle('active', btn.dataset.color === active.obj.color);
-    }});
-  }}
-}}
-
-function updateLayersList() {{
-  const list = document.getElementById('layersList');
-  list.innerHTML = '';
-
-  const all = [];
-  state.facesOnCanvas.forEach((f, idx) => {{
-    all.push({{ type: 'face', idx: idx, name: '🎭 Face #' + (idx + 1), isSelected: state.selectedFaceIdx === idx }});
-  }});
-  state.accessoriesOnCanvas.forEach((a, idx) => {{
-    all.push({{ type: 'acc', idx: idx, name: '🎀 Sticker #' + (idx + 1), isSelected: state.selectedAccIdx === idx }});
-  }});
-  state.texts.forEach((t, idx) => {{
-    all.push({{ type: 'text', idx: idx, name: '✍️ "' + (t.text || 'Text') + '"', isSelected: state.selectedTextIdx === idx }});
-  }});
-
-  if (all.length === 0) {{
-    list.innerHTML = '<div style="color:var(--ps-text-muted); font-size:11.5px; text-align:center; padding:12px;">No layers on canvas yet.</div>';
-    return;
-  }}
-
-  all.forEach(item => {{
-    const el = document.createElement('div');
-    el.className = 'layer-item' + (item.isSelected ? ' active' : '');
-    el.innerHTML = `
-      <span class="layer-title">${{item.name}}</span>
-      <div class="layer-controls">
-        <button class="layer-btn del-btn" title="Delete">🗑️</button>
-      </div>
-    `;
-
-    el.onclick = (e) => {{
-      if (e.target.classList.contains('del-btn')) {{
-        deleteLayer(item.type, item.idx);
-        return;
-      }}
-      if (item.type === 'face') {{
-        state.selectedFaceIdx = item.idx;
-        state.selectedAccIdx = -1;
-        state.selectedTextIdx = -1;
-      }} else if (item.type === 'acc') {{
-        state.selectedAccIdx = item.idx;
-        state.selectedFaceIdx = -1;
-        state.selectedTextIdx = -1;
-      }} else if (item.type === 'text') {{
-        state.selectedTextIdx = item.idx;
-        state.selectedFaceIdx = -1;
-        state.selectedAccIdx = -1;
-      }}
-      updateOptionsBar();
-      updatePanelInputs();
-      updateLayersList();
-      render();
-    }};
-
-    list.appendChild(el);
-  }});
-}}
-
-function deleteLayer(type, idx) {{
-  if (type === 'face') {{
-    state.facesOnCanvas.splice(idx, 1);
-    state.selectedFaceIdx = state.facesOnCanvas.length - 1;
-  }} else if (type === 'acc') {{
-    state.accessoriesOnCanvas.splice(idx, 1);
-    state.selectedAccIdx = state.accessoriesOnCanvas.length - 1;
-  }} else if (type === 'text') {{
-    state.texts.splice(idx, 1);
-    state.selectedTextIdx = state.texts.length - 1;
-  }}
-  updateOptionsBar();
-  updateLayersList();
-  render();
-}}
-
-// Build catalog grids
-function buildFacesUI() {{
-  const grid = document.getElementById('facesGrid');
-  grid.innerHTML = '';
+// --- POPULATE SIDEBARS & EVENTS ---
+function initUIEvents() {{
+  // 1. Populate Faces Grid
+  const facesGrid = document.getElementById('facesGrid');
+  facesGrid.innerHTML = '';
   faces.forEach((f, idx) => {{
     const card = document.createElement('div');
-    const isActive = (state.facesOnCanvas[state.selectedFaceIdx] && state.facesOnCanvas[state.selectedFaceIdx].faceIndex === idx);
-    card.className = 'grid-card' + (isActive ? ' active' : '');
-    card.innerHTML = `<img src="${{f.src}}"><span>${{f.name}}</span>`;
+    card.className = 'grid-card' + (idx === 0 ? ' active' : '');
+    card.innerHTML = `<img src="${{f.src}}" alt="${{f.name}}"><span>${{f.name}}</span>`;
     card.onclick = () => {{
-      if (state.selectedFaceIdx >= 0 && state.facesOnCanvas[state.selectedFaceIdx]) {{
-        state.facesOnCanvas[state.selectedFaceIdx].faceIndex = idx;
-        state.facesOnCanvas[state.selectedFaceIdx].customImg = null;
+      document.querySelectorAll('#facesGrid .grid-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      const active = getActiveLayerData();
+      if (active && active.type === 'face') {{
+        active.obj.faceIndex = idx;
+        active.obj.customImg = null;
       }} else {{
-        state.facesOnCanvas.push(makeFaceLayer(idx, 0, -40, 1.0));
-        state.selectedFaceIdx = state.facesOnCanvas.length - 1;
+        state.facesOnCanvas.push(makeFaceLayer(idx, 0, 0, 1.0));
+        state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
       }}
-      buildFacesUI();
-      updateOptionsBar();
       render();
+      syncLayersUI();
     }};
-    grid.appendChild(card);
+    facesGrid.appendChild(card);
   }});
-}}
 
-function buildTemplatesUI() {{
-  const grid = document.getElementById('bgPresetsRow');
-  grid.innerHTML = '';
-  templates.forEach(t => {{
-    const card = document.createElement('div');
-    card.className = 'grid-card' + (state.bgTemplateId === t.id && state.bgType === 'template' ? ' active' : '');
-    card.innerHTML = `<img src="${{t.src}}"><span>${{t.name}}</span>`;
-    card.onclick = () => {{
-      state.bgType = 'template';
-      state.bgTemplateId = t.id;
-      state.bgIsGif = false;
-      buildTemplatesUI();
-      render();
-    }};
-    grid.appendChild(card);
-  }});
-}}
-
-// Setup all click/change handlers
-function initUIEvents() {{
-  buildFacesUI();
-  buildTemplatesUI();
-  updateLayersList();
-  updateOptionsBar();
-
-  // Topbar Options buttons
-  document.getElementById('optFlipBtn').onclick = () => {{
-    const a = getActiveLayerData();
-    if (a && a.obj.flipH !== undefined) {{
-      a.obj.flipH = a.obj.flipH === 1 ? -1 : 1;
-      render();
-    }}
-  }};
-  document.getElementById('optCenterBtn').onclick = () => {{
-    const a = getActiveLayerData();
-    if (a) {{
-      a.obj.x = 0;
-      a.obj.y = (a.type === 'face' ? -50 : 0);
-      render();
-    }}
-  }};
-  document.getElementById('optDeleteBtn').onclick = () => {{
-    const a = getActiveLayerData();
-    if (a) deleteLayer(a.type, a.idx);
-  }};
-
-  // Add face button
+  // Add Face Button
   document.getElementById('addFaceBtn').onclick = () => {{
-    state.facesOnCanvas.push(makeFaceLayer(0, (Math.random() - 0.5) * 60, -50, 0.9));
-    state.selectedFaceIdx = state.facesOnCanvas.length - 1;
-    state.selectedAccIdx = -1;
-    state.selectedTextIdx = -1;
-    updateOptionsBar();
-    updateLayersList();
+    state.facesOnCanvas.push(makeFaceLayer(0, Math.floor((Math.random() - 0.5) * 100), Math.floor((Math.random() - 0.5) * 100), 1.0));
+    state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
     render();
+    syncLayersUI();
   }};
 
-  // Face Photo Upload
+  // Custom Face Upload
   document.getElementById('faceFileInput').onchange = (e) => {{
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (re) => {{
+    reader.onload = (ev) => {{
       const img = new Image();
+      img.src = ev.target.result;
       img.onload = () => {{
-        if (state.selectedFaceIdx >= 0 && state.facesOnCanvas[state.selectedFaceIdx]) {{
-          state.facesOnCanvas[state.selectedFaceIdx].customImg = img;
-        }} else {{
-          const nf = makeFaceLayer(0, 0, -40, 1.0);
-          nf.customImg = img;
-          state.facesOnCanvas.push(nf);
-          state.selectedFaceIdx = state.facesOnCanvas.length - 1;
-        }}
+        const newLayer = makeFaceLayer(0, 0, 0, 1.0);
+        newLayer.customImg = img;
+        state.facesOnCanvas.push(newLayer);
+        state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
         render();
+        syncLayersUI();
       }};
-      img.src = re.target.result;
     }};
     reader.readAsDataURL(file);
   }};
 
-  // Mask cutouts
+  // Mask Shape Toggles
   document.querySelectorAll('#maskGroup .btn-toggle').forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll('#maskGroup .btn-toggle').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      if (state.selectedFaceIdx >= 0 && state.facesOnCanvas[state.selectedFaceIdx]) {{
-        state.facesOnCanvas[state.selectedFaceIdx].maskShape = btn.dataset.mask;
+      const active = getActiveLayerData();
+      if (active && active.type === 'face') {{
+        active.obj.maskShape = btn.dataset.mask;
         render();
       }}
     }};
@@ -1853,22 +1707,97 @@ function initUIEvents() {{
   document.getElementById('faceScaleSlider').oninput = (e) => {{
     const val = parseFloat(e.target.value);
     document.getElementById('faceScaleVal').innerText = Math.round(val * 100) + '%';
-    if (state.selectedFaceIdx >= 0 && state.facesOnCanvas[state.selectedFaceIdx]) {{
-      state.facesOnCanvas[state.selectedFaceIdx].scale = val;
-      updateOptionsBar();
+    const active = getActiveLayerData();
+    if (active && active.type === 'face') {{
+      active.obj.scale = val;
       render();
     }}
   }};
   document.getElementById('faceOpacitySlider').oninput = (e) => {{
     const val = parseFloat(e.target.value);
     document.getElementById('faceOpacityVal').innerText = Math.round(val * 100) + '%';
-    if (state.selectedFaceIdx >= 0 && state.facesOnCanvas[state.selectedFaceIdx]) {{
-      state.facesOnCanvas[state.selectedFaceIdx].opacity = val;
+    const active = getActiveLayerData();
+    if (active && active.type === 'face') {{
+      active.obj.opacity = val;
       render();
     }}
   }};
 
-  // Canvas aspect ratios
+  // 2. Populate Templates Grid
+  const bgGrid = document.getElementById('bgPresetsRow');
+  bgGrid.innerHTML = '';
+  templates.forEach(t => {{
+    const card = document.createElement('div');
+    card.className = 'grid-card' + (t.id === 'suit' ? ' active' : '');
+    card.innerHTML = `<img src="${{t.src}}" alt="${{t.name}}"><span>${{t.name}}</span>`;
+    card.onclick = () => {{
+      document.querySelectorAll('#bgPresetsRow .grid-card').forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      state.bgType = 'template';
+      state.bgTemplateId = t.id;
+      state.bgCustomImg = null;
+      state.bgIsGif = false;
+      render();
+    }};
+    bgGrid.appendChild(card);
+  }});
+
+  // Backdrop Custom File Upload
+  document.getElementById('bgFileInput').onchange = (e) => {{
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.name.toLowerCase().endsWith('.gif')) {{
+      const reader = new FileReader();
+      reader.onload = (ev) => {{
+        try {{
+          const parsed = window.gifuct ? window.gifuct.parseGIF(ev.target.result) : null;
+          const frames = parsed ? window.gifuct.decompressFrames(parsed, true) : null;
+          if (frames && frames.length > 0) {{
+            const tmpCanv = document.createElement('canvas');
+            const tmpCtx = tmpCanv.getContext('2d');
+            tmpCanv.width = frames[0].dims.width;
+            tmpCanv.height = frames[0].dims.height;
+
+            const loadedFrames = [];
+            frames.forEach(f => {{
+              const fData = tmpCtx.createImageData(f.dims.width, f.dims.height);
+              fData.data.set(f.patch);
+              tmpCtx.putImageData(fData, f.dims.left, f.dims.top);
+              const img = new Image();
+              img.src = tmpCanv.toDataURL();
+              loadedFrames.push(img);
+            }});
+
+            state.bgIsGif = true;
+            state.bgGifFrames = loadedFrames;
+            state.bgGifIndex = 0;
+            state.bgType = 'gif';
+            render();
+            return;
+          }}
+        }} catch (err) {{
+          console.error(err);
+        }}
+      }};
+      reader.readAsArrayBuffer(file);
+    }} else {{
+      const reader = new FileReader();
+      reader.onload = (ev) => {{
+        const img = new Image();
+        img.src = ev.target.result;
+        img.onload = () => {{
+          state.bgType = 'custom';
+          state.bgCustomImg = img;
+          state.bgIsGif = false;
+          render();
+        }};
+      }};
+      reader.readAsDataURL(file);
+    }}
+  }};
+
+  // Canvas Size Mode Toggles
   document.querySelectorAll('#canvasSizeGroup .btn-toggle').forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll('#canvasSizeGroup .btn-toggle').forEach(b => b.classList.remove('active'));
@@ -1878,115 +1807,70 @@ function initUIEvents() {{
     }};
   }});
 
-  // Background file upload (Image or animated GIF)
-  document.getElementById('bgFileInput').onchange = (e) => {{
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.name.toLowerCase().endsWith('.gif')) {{
-      const reader = new FileReader();
-      reader.onload = (re) => {{
-        const parsed = window.gifuct ? window.gifuct.parseGIF(re.target.result) : null;
-        if (parsed) {{
-          const frames = window.gifuct.decompressFrames(parsed, true);
-          state.bgGifFrames = [];
-          frames.forEach(f => {{
-            const fc = document.createElement('canvas');
-            fc.width = f.dims.width;
-            fc.height = f.dims.height;
-            const fctx = fc.getContext('2d');
-            const imgData = fctx.createImageData(f.dims.width, f.dims.height);
-            imgData.data.set(f.patch);
-            fctx.putImageData(imgData, 0, 0);
-            state.bgGifFrames.push(fc);
-          }});
-          state.bgIsGif = true;
-          state.bgType = 'custom';
-          render();
-        }}
-      }};
-      reader.readAsArrayBuffer(file);
-    }} else {{
-      const reader = new FileReader();
-      reader.onload = (re) => {{
-        const img = new Image();
-        img.onload = () => {{
-          state.bgCustomImg = img;
-          state.bgType = 'custom';
-          state.bgIsGif = false;
-          render();
-        }};
-        img.src = re.target.result;
-      }};
-      reader.readAsDataURL(file);
+  // Fit Screen Button in topbar
+  document.getElementById('fitScreenBtn').onclick = () => {{
+    fitCanvasToScreen();
+  }};
+
+  // 3. Text Controls
+  document.getElementById('addTopTextBtn').onclick = () => {{
+    state.texts.push({{ id: 't_' + Date.now(), text: 'TOP TEXT', x: 0, y: -Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', rotation: 0 }});
+    state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
+    render();
+    syncLayersUI();
+  }};
+  document.getElementById('addBottomTextBtn').onclick = () => {{
+    state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', rotation: 0 }});
+    state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
+    render();
+    syncLayersUI();
+  }};
+  document.getElementById('addCustomTextBtn').onclick = () => {{
+    state.texts.push({{ id: 't_' + Date.now(), text: 'MEME VIBES', x: 0, y: 0, size: 52, color: '#ffffff', rotation: 0 }});
+    state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
+    render();
+    syncLayersUI();
+  }};
+
+  const textInput = document.getElementById('activeTextInput');
+  textInput.oninput = (e) => {{
+    const active = getActiveLayerData();
+    if (active && active.type === 'text') {{
+      active.obj.text = e.target.value.toUpperCase();
+      render();
     }}
   }};
 
-  // Text tools
-  document.getElementById('addTopTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'TOP TEXT', x: 0, y: -canvas.height / 2 + 40, size: 38, color: '#ffffff', rotation: 0 }});
-    state.selectedTextIdx = state.texts.length - 1;
-    state.selectedFaceIdx = -1;
-    state.selectedAccIdx = -1;
-    updatePanelInputs();
-    updateOptionsBar();
-    updateLayersList();
-    render();
-  }};
-  document.getElementById('addBottomTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: canvas.height / 2 - 40, size: 38, color: '#ffffff', rotation: 0 }});
-    state.selectedTextIdx = state.texts.length - 1;
-    state.selectedFaceIdx = -1;
-    state.selectedAccIdx = -1;
-    updatePanelInputs();
-    updateOptionsBar();
-    updateLayersList();
-    render();
-  }};
-  document.getElementById('addCustomTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'MEME TEXT', x: 0, y: 0, size: 40, color: '#facc15', rotation: 0 }});
-    state.selectedTextIdx = state.texts.length - 1;
-    state.selectedFaceIdx = -1;
-    state.selectedAccIdx = -1;
-    updatePanelInputs();
-    updateOptionsBar();
-    updateLayersList();
-    render();
-  }};
-  document.getElementById('activeTextInput').oninput = (e) => {{
-    if (state.selectedTextIdx >= 0 && state.texts[state.selectedTextIdx]) {{
-      state.texts[state.selectedTextIdx].text = e.target.value;
-      updateOptionsBar();
-      updateLayersList();
-      render();
-    }}
-  }};
   document.getElementById('textSizeSlider').oninput = (e) => {{
     const val = parseInt(e.target.value);
     document.getElementById('textSizeVal').innerText = val + 'px';
-    if (state.selectedTextIdx >= 0 && state.texts[state.selectedTextIdx]) {{
-      state.texts[state.selectedTextIdx].size = val;
-      updateOptionsBar();
+    const active = getActiveLayerData();
+    if (active && active.type === 'text') {{
+      active.obj.size = val;
       render();
     }}
   }};
+
   document.querySelectorAll('#textColorGroup .btn-toggle').forEach(btn => {{
     btn.onclick = () => {{
       document.querySelectorAll('#textColorGroup .btn-toggle').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      if (state.selectedTextIdx >= 0 && state.texts[state.selectedTextIdx]) {{
-        state.texts[state.selectedTextIdx].color = btn.dataset.color;
+      const active = getActiveLayerData();
+      if (active && active.type === 'text') {{
+        active.obj.color = btn.dataset.color;
         render();
       }}
     }};
   }});
 
-  // Custom Sticker Upload
+  // 4. Custom Sticker Upload
   document.getElementById('accFileInput').onchange = (e) => {{
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (re) => {{
+    reader.onload = (ev) => {{
       const img = new Image();
+      img.src = ev.target.result;
       img.onload = () => {{
         state.accessoriesOnCanvas.push({{
           id: 'acc_' + Date.now(),
@@ -1998,293 +1882,393 @@ function initUIEvents() {{
           flipH: 1,
           opacity: 1.0
         }});
-        state.selectedAccIdx = state.accessoriesOnCanvas.length - 1;
-        state.selectedFaceIdx = -1;
-        state.selectedTextIdx = -1;
-        updatePanelInputs();
-        updateOptionsBar();
-        updateLayersList();
+        state.activeTransformTarget = {{ type: 'acc', idx: state.accessoriesOnCanvas.length - 1 }};
         render();
+        syncLayersUI();
       }};
-      img.src = re.target.result;
     }};
     reader.readAsDataURL(file);
   }};
 
-  document.getElementById('accScaleSlider').oninput = (e) => {{
-    const val = parseFloat(e.target.value);
-    document.getElementById('accScaleVal').innerText = Math.round(val * 100) + '%';
-    if (state.selectedAccIdx >= 0 && state.accessoriesOnCanvas[state.selectedAccIdx]) {{
-      state.accessoriesOnCanvas[state.selectedAccIdx].scale = val;
-      updateOptionsBar();
-      render();
-    }}
-  }};
-  document.getElementById('accOpacitySlider').oninput = (e) => {{
-    const val = parseFloat(e.target.value);
-    document.getElementById('accOpacityVal').innerText = Math.round(val * 100) + '%';
-    if (state.selectedAccIdx >= 0 && state.accessoriesOnCanvas[state.selectedAccIdx]) {{
-      state.accessoriesOnCanvas[state.selectedAccIdx].opacity = val;
-      render();
-    }}
-  }};
-
-  // Animation FX Grid
+  // 5. Animation Grid
   document.querySelectorAll('#animGrid .grid-card').forEach(card => {{
     card.onclick = () => {{
       document.querySelectorAll('#animGrid .grid-card').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
       state.animation = card.dataset.anim;
+      render();
     }};
   }});
 
-  // Admin Modal Trigger
-  document.getElementById('adminLockBtn').onclick = () => {{
-    document.getElementById('adminModal').style.display = 'flex';
-  }};
-  document.getElementById('adminModalClose').onclick = () => {{
-    document.getElementById('adminModal').style.display = 'none';
-  }};
-
-  // Admin Auth Logic
-  document.getElementById('adminUnlockBtn').onclick = () => {{
-    const entered = document.getElementById('adminPwdInput').value;
-    if (entered === EXPECTED_ADMIN_PWD) {{
-      document.getElementById('adminAuthBody').style.display = 'none';
-      document.getElementById('adminManageBody').style.display = 'flex';
-      renderAdminCatalog();
-    }} else {{
-      const err = document.getElementById('adminAuthError');
-      err.style.display = 'block';
-      setTimeout(() => {{ err.style.display = 'none'; }}, 3000);
+  // 6. Topbar Context Tool Actions (Flip, Center, Delete)
+  document.getElementById('optFlipBtn').onclick = () => {{
+    const active = getActiveLayerData();
+    if (!active) return;
+    if (active.type === 'face' || active.type === 'acc') {{
+      active.obj.flipH = (active.obj.flipH || 1) * -1;
+      render();
     }}
   }};
-  document.getElementById('adminLockOutBtn').onclick = () => {{
-    document.getElementById('adminAuthBody').style.display = 'flex';
-    document.getElementById('adminManageBody').style.display = 'none';
-    document.getElementById('adminPwdInput').value = '';
+
+  document.getElementById('optCenterBtn').onclick = () => {{
+    const active = getActiveLayerData();
+    if (!active) return;
+    active.obj.x = 0;
+    active.obj.y = 0;
+    render();
   }};
 
-  // Admin Upload New Face via GitHub API
-  document.getElementById('adminUploadBtn').onclick = async () => {{
+  document.getElementById('optDeleteBtn').onclick = () => {{
+    const active = getActiveLayerData();
+    if (!active) return;
+    if (active.type === 'face') {{
+      state.facesOnCanvas.splice(active.idx, 1);
+    }} else if (active.type === 'acc') {{
+      state.accessoriesOnCanvas.splice(active.idx, 1);
+    }} else if (active.type === 'text') {{
+      state.texts.splice(active.idx, 1);
+    }}
+    state.activeTransformTarget = null;
+    render();
+    syncLayersUI();
+  }};
+
+  // 7. Topbar Export Buttons
+  document.getElementById('btnExportPng').onclick = exportPng;
+  document.getElementById('btnExportGif').onclick = exportGif;
+  document.getElementById('btnCopyDiscord').onclick = copyToClipboard;
+
+  // 8. Admin Modal
+  const adminModal = document.getElementById('adminModal');
+  const adminLockBtn = document.getElementById('adminLockBtn');
+  const adminModalClose = document.getElementById('adminModalClose');
+  const adminUnlockBtn = document.getElementById('adminUnlockBtn');
+  const adminPwdInput = document.getElementById('adminPwdInput');
+  const adminAuthError = document.getElementById('adminAuthError');
+  const adminAuthBody = document.getElementById('adminAuthBody');
+  const adminManageBody = document.getElementById('adminManageBody');
+  const adminLockOutBtn = document.getElementById('adminLockOutBtn');
+
+  function openAdminModal() {{
+    adminModal.style.display = 'flex';
+    adminAuthError.style.display = 'none';
+    adminPwdInput.value = '';
+    adminPwdInput.focus();
+  }}
+
+  adminLockBtn.onclick = openAdminModal;
+  adminModalClose.onclick = () => {{ adminModal.style.display = 'none'; }};
+
+  adminUnlockBtn.onclick = () => {{
+    if (adminPwdInput.value === EXPECTED_ADMIN_PWD) {{
+      adminAuthBody.style.display = 'none';
+      adminManageBody.style.display = 'flex';
+      renderAdminCatalog();
+    }} else {{
+      adminAuthError.style.display = 'block';
+    }}
+  }};
+
+  adminLockOutBtn.onclick = () => {{
+    adminManageBody.style.display = 'none';
+    adminAuthBody.style.display = 'block';
+    adminModal.style.display = 'none';
+  }};
+
+  // Secret Hotkey Ctrl+Shift+A
+  window.addEventListener('keydown', (e) => {{
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {{
+      openAdminModal();
+    }}
+  }});
+
+  // Admin upload to GitHub
+  document.getElementById('adminUploadBtn').onclick = () => {{
     const name = document.getElementById('adminNewFaceName').value.trim();
-    const fileInput = document.getElementById('adminNewFaceFile');
+    const file = document.getElementById('adminNewFaceFile').files[0];
     const status = document.getElementById('adminUploadStatus');
 
-    if (!name || !fileInput.files[0]) {{
-      status.innerText = '⚠️ Please enter face name and choose an image file.';
-      status.style.color = 'var(--ps-yellow)';
+    if (!name || !file) {{
+      status.style.color = 'var(--ps-danger)';
+      status.innerText = '⚠️ Please enter a face name and select an image.';
       return;
     }}
 
-    status.innerText = '⏳ Processing image and pushing to GitHub...';
     status.style.color = 'var(--ps-blue)';
+    status.innerText = '⏳ Encoding image...';
 
-    const file = fileInput.files[0];
     const reader = new FileReader();
-    reader.onload = async (re) => {{
-      const dataUri = re.target.result;
-      const base64Data = dataUri.split(',')[1];
-      const cleanName = name.split(' ')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_');
-      const filename = 'murad_' + cleanName + '.png';
-      const faceId = 'murad_' + cleanName;
+    reader.onload = (ev) => {{
+      const b64 = ev.target.result;
+      const imgId = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
+      const filename = imgId + '.png';
 
-      // Add to runtime faces array
       faces.push({{
-        id: faceId,
+        id: imgId,
         name: name,
         file: filename,
-        src: dataUri
+        src: b64
       }});
 
-      // Preload image
+      const idx = faces.length - 1;
       const newImg = new Image();
-      newImg.src = dataUri;
-      loadedFaces.push(newImg);
+      newImg.src = b64;
+      loadedFaces[idx] = newImg;
 
-      buildFacesUI();
+      initUIEvents();
       renderAdminCatalog();
 
-      // Push to GitHub if token available
+      status.style.color = 'var(--ps-green)';
+      status.innerText = '✅ Face added locally!';
+
       if (GITHUB_TOKEN) {{
-        try {{
-          await fetch(`https://api.github.com/repos/Aboodi-8/Muradeditor/contents/assets/${{filename}}`, {{
-            method: 'PUT',
-            headers: {{
-              'Authorization': 'Bearer ' + GITHUB_TOKEN,
-              'Content-Type': 'application/json'
-            }},
-            body: JSON.stringify({{
-              message: 'Add catalog face: ' + name,
-              content: base64Data
-            }})
+        status.innerText = '🚀 Syncing to GitHub repo...';
+        syncFaceToGitHub(name, filename, b64)
+          .then(() => {{
+            status.innerText = '🎉 Successfully pushed to GitHub repo!';
+          }})
+          .catch(err => {{
+            status.style.color = 'var(--ps-yellow)';
+            status.innerText = '⚠️ Local added. GitHub sync error: ' + err.message;
           }});
-
-          // Update manifest
-          const manifestPayload = faces.map(f => ({{ id: f.id, name: f.name, file: f.file || (f.id + '.png') }}));
-          const manifestBase64 = btoa(JSON.stringify(manifestPayload, null, 2));
-
-          // Get manifest SHA
-          const getRes = await fetch('https://api.github.com/repos/Aboodi-8/Muradeditor/contents/assets/manifest.json', {{
-            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-          }});
-          const getData = await getRes.json();
-
-          await fetch('https://api.github.com/repos/Aboodi-8/Muradeditor/contents/assets/manifest.json', {{
-            method: 'PUT',
-            headers: {{
-              'Authorization': 'Bearer ' + GITHUB_TOKEN,
-              'Content-Type': 'application/json'
-            }},
-            body: JSON.stringify({{
-              message: 'Update manifest for: ' + name,
-              content: manifestBase64,
-              sha: getData.sha
-            }})
-          }});
-
-          status.innerText = '✅ Successfully pushed to GitHub catalog!';
-          status.style.color = 'var(--ps-green)';
-        }} catch (err) {{
-          status.innerText = '✅ Added locally (GitHub sync notice: ' + err.message + ')';
-          status.style.color = 'var(--ps-green)';
-        }}
-      }} else {{
-        status.innerText = '✅ Added to active studio catalog!';
-        status.style.color = 'var(--ps-green)';
       }}
-
-      document.getElementById('adminNewFaceName').value = '';
-      fileInput.value = '';
     }};
     reader.readAsDataURL(file);
   }};
 
-  // Export buttons
-  document.getElementById('btnExportPng').onclick = () => {{
-    const prevFace = state.selectedFaceIdx;
-    const prevAcc = state.selectedAccIdx;
-    const prevText = state.selectedTextIdx;
-    state.selectedFaceIdx = -1;
-    state.selectedAccIdx = -1;
-    state.selectedTextIdx = -1;
-    render();
-
-    const link = document.createElement('a');
-    link.download = 'murad_meme.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-
-    state.selectedFaceIdx = prevFace;
-    state.selectedAccIdx = prevAcc;
-    state.selectedTextIdx = prevText;
-    render();
-  }};
-
-  document.getElementById('btnCopyDiscord').onclick = async () => {{
-    const prevFace = state.selectedFaceIdx;
-    const prevAcc = state.selectedAccIdx;
-    const prevText = state.selectedTextIdx;
-    state.selectedFaceIdx = -1;
-    state.selectedAccIdx = -1;
-    state.selectedTextIdx = -1;
-    render();
-
-    canvas.toBlob(async (blob) => {{
-      try {{
-        await navigator.clipboard.write([new ClipboardItem({{ 'image/png': blob }})]);
-        const btn = document.getElementById('btnCopyDiscord');
-        const orig = btn.innerText;
-        btn.innerText = '✅ Copied!';
-        btn.style.color = 'var(--ps-green)';
-        setTimeout(() => {{
-          btn.innerText = orig;
-          btn.style.color = '';
-        }}, 2000);
-      }} catch (err) {{
-        alert('Clipboard write permissions needed or browser unsupported.');
-      }}
-      state.selectedFaceIdx = prevFace;
-      state.selectedAccIdx = prevAcc;
-      state.selectedTextIdx = prevText;
-      render();
-    }});
-  }};
-
-  document.getElementById('btnExportGif').onclick = () => {{
-    generateDiscordGif();
-  }};
+  fitCanvasToScreen();
+  syncLayersUI();
 }}
 
+// Sync Admin Catalog List
 function renderAdminCatalog() {{
   const list = document.getElementById('adminFacesCatalogList');
+  if (!list) return;
   list.innerHTML = '';
   faces.forEach((f, idx) => {{
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex; justify-content:space-between; align-items:center; background:var(--ps-input); padding:6px 10px; border-radius:5px;';
+    row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:6px 10px; border-radius:6px; border:1px solid #1f2028;';
     row.innerHTML = `
-      <div style="display:flex; align-items:center; gap:9px;">
-        <img src="${{f.src}}" style="width:34px; height:34px; border-radius:4px; object-fit:cover;">
-        <span style="font-weight:700; color:#fff; font-size:12px;">${{f.name}}</span>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <img src="${{f.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
+        <span style="font-size:12.5px; font-weight:700; color:#fff;">${{f.name}}</span>
       </div>
-      <button class="ps-opt-btn danger" style="padding:3px 8px; font-size:11px;">🗑️ Delete</button>
+      <button class="ps-opt-btn danger" style="padding:4px 8px; font-size:11px;" onclick="deleteAdminFace(${{idx}})">Remove</button>
     `;
-    row.querySelector('button').onclick = () => {{
-      if (confirm('Delete ' + f.name + ' from catalog?')) {{
-        faces.splice(idx, 1);
-        loadedFaces.splice(idx, 1);
-        buildFacesUI();
-        renderAdminCatalog();
-      }}
-    }};
     list.appendChild(row);
   }});
 }}
 
-// Discord GIF generator
-function generateDiscordGif() {{
+window.deleteAdminFace = function(idx) {{
+  if (confirm('Remove ' + faces[idx].name + ' from catalog?')) {{
+    faces.splice(idx, 1);
+    delete loadedFaces[idx];
+    initUIEvents();
+    renderAdminCatalog();
+    render();
+  }}
+}};
+
+// GitHub API face sync helper
+async function syncFaceToGitHub(faceName, filename, base64Data) {{
+  const cleanB64 = base64Data.split(',')[1];
+  const repo = '3bood011/Muradeditor';
+  const branch = 'main';
+
+  // 1. Upload image file
+  const filePath = 'assets/' + filename;
+  const putUrl = `https://api.github.com/repos/${{repo}}/contents/${{filePath}}`;
+  
+  await fetch(putUrl, {{
+    method: 'PUT',
+    headers: {{
+      'Authorization': 'token ' + GITHUB_TOKEN,
+      'Content-Type': 'application/json',
+    }},
+    body: JSON.stringify({{
+      message: 'Add face: ' + faceName,
+      content: cleanB64,
+      branch: branch
+    }})
+  }});
+}}
+
+// Sync active layers inspector in right sidebar
+function syncLayersUI() {{
+  const list = document.getElementById('layersList');
+  list.innerHTML = '';
+
+  const active = getActiveLayerData();
+
+  // Face layers
+  state.facesOnCanvas.forEach((f, idx) => {{
+    const item = document.createElement('div');
+    const isAct = active && active.type === 'face' && active.idx === idx;
+    item.className = 'layer-item' + (isAct ? ' active' : '');
+    const faceObj = faces[f.faceIndex];
+    item.innerHTML = `
+      <div class="layer-title">
+        <span>🎭</span>
+        <span>${{faceObj ? faceObj.name : 'Custom Face'}}</span>
+      </div>
+      <div class="layer-controls">
+        <button class="layer-btn" title="Delete Layer" onclick="event.stopPropagation(); deleteFaceLayer(${{idx}})">🗑️</button>
+      </div>
+    `;
+    item.onclick = () => {{
+      state.activeTransformTarget = {{ type: 'face', idx: idx }};
+      render();
+      syncLayersUI();
+    }};
+    list.appendChild(item);
+  }});
+
+  // Accessory layers
+  state.accessoriesOnCanvas.forEach((a, idx) => {{
+    const item = document.createElement('div');
+    const isAct = active && active.type === 'acc' && active.idx === idx;
+    item.className = 'layer-item' + (isAct ? ' active' : '');
+    item.innerHTML = `
+      <div class="layer-title">
+        <span>🎀</span>
+        <span>Sticker #${{idx + 1}}</span>
+      </div>
+      <div class="layer-controls">
+        <button class="layer-btn" title="Delete Layer" onclick="event.stopPropagation(); deleteAccLayer(${{idx}})">🗑️</button>
+      </div>
+    `;
+    item.onclick = () => {{
+      state.activeTransformTarget = {{ type: 'acc', idx: idx }};
+      render();
+      syncLayersUI();
+    }};
+    list.appendChild(item);
+  }});
+
+  // Text layers
+  state.texts.forEach((t, idx) => {{
+    const item = document.createElement('div');
+    const isAct = active && active.type === 'text' && active.idx === idx;
+    item.className = 'layer-item' + (isAct ? ' active' : '');
+    item.innerHTML = `
+      <div class="layer-title">
+        <span>✍️</span>
+        <span>"${{t.text.substring(0, 14)}}"</span>
+      </div>
+      <div class="layer-controls">
+        <button class="layer-btn" title="Delete Layer" onclick="event.stopPropagation(); deleteTextLayer(${{idx}})">🗑️</button>
+      </div>
+    `;
+    item.onclick = () => {{
+      state.activeTransformTarget = {{ type: 'text', idx: idx }};
+      document.getElementById('activeTextInput').value = t.text;
+      render();
+      syncLayersUI();
+    }};
+    list.appendChild(item);
+  }});
+}}
+
+window.deleteFaceLayer = function(idx) {{
+  state.facesOnCanvas.splice(idx, 1);
+  state.activeTransformTarget = null;
+  render();
+  syncLayersUI();
+}};
+window.deleteAccLayer = function(idx) {{
+  state.accessoriesOnCanvas.splice(idx, 1);
+  state.activeTransformTarget = null;
+  render();
+  syncLayersUI();
+}};
+window.deleteTextLayer = function(idx) {{
+  state.texts.splice(idx, 1);
+  state.activeTransformTarget = null;
+  render();
+  syncLayersUI();
+}};
+
+// --- EXPORT FUNCTIONS ---
+function exportPng() {{
+  const prevTarget = state.activeTransformTarget;
+  state.activeTransformTarget = null;
+  render();
+
+  const link = document.createElement('a');
+  link.download = 'murad_photoshop_meme.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+
+  state.activeTransformTarget = prevTarget;
+  render();
+}}
+
+function copyToClipboard() {{
+  const prevTarget = state.activeTransformTarget;
+  state.activeTransformTarget = null;
+  render();
+
+  canvas.toBlob(blob => {{
+    if (!blob) return;
+    try {{
+      const item = new ClipboardItem({{ 'image/png': blob }});
+      navigator.clipboard.write([item]).then(() => {{
+        alert('🎉 Copied image to clipboard! You can paste directly into Discord with Ctrl+V!');
+      }}).catch(() => {{
+        alert('⚠️ Clipboard copy blocked by browser. Use Download PNG instead.');
+      }});
+    }} catch (err) {{
+      alert('⚠️ Clipboard API not supported. Use Download PNG instead.');
+    }}
+  }});
+
+  state.activeTransformTarget = prevTarget;
+  render();
+}}
+
+function exportGif() {{
+  if (!window.gifshot) {{
+    alert('GIF library is still loading, please wait a moment.');
+    return;
+  }}
+
   const progWrap = document.getElementById('progressWrap');
   const progBar = document.getElementById('progressBar');
   const progText = document.getElementById('progressText');
 
   progWrap.style.display = 'block';
   progBar.style.width = '0%';
-  progText.innerText = 'Capturing animation frames...';
+  progText.innerText = 'Rendering animation frames...';
 
-  const numFrames = (state.animation === 'none' && !state.bgIsGif) ? 1 : 12;
-  const frames = [];
+  const prevTarget = state.activeTransformTarget;
+  state.activeTransformTarget = null;
 
-  const prevFace = state.selectedFaceIdx;
-  const prevAcc = state.selectedAccIdx;
-  const prevText = state.selectedTextIdx;
-  state.selectedFaceIdx = -1;
-  state.selectedAccIdx = -1;
-  state.selectedTextIdx = -1;
+  const totalFrames = 18;
+  const frameImages = [];
 
-  for (let i = 0; i < numFrames; i++) {{
-    const progress = i / numFrames;
-    const off = getAnimOffset(state.animation, progress);
+  for (let i = 0; i < totalFrames; i++) {{
+    const p = i / totalFrames;
     if (state.bgIsGif && state.bgGifFrames.length > 0) {{
-      state.bgGifIndex = i % state.bgGifFrames.length;
+      state.bgGifIndex = Math.floor(p * state.bgGifFrames.length) % state.bgGifFrames.length;
     }}
+    const off = getAnimOffset(state.animation, p);
     render(off);
-    frames.push(canvas.toDataURL('image/png'));
+    frameImages.push(canvas.toDataURL('image/png'));
   }}
 
-  state.selectedFaceIdx = prevFace;
-  state.selectedAccIdx = prevAcc;
-  state.selectedTextIdx = prevText;
+  state.activeTransformTarget = prevTarget;
   render();
 
-  gifshot.createGIF({{
-    images: frames,
-    gifWidth: canvas.width,
-    gifHeight: canvas.height,
-    interval: 0.08,
+  progText.innerText = 'Encoding Discord GIF...';
+  window.gifshot.createGIF({{
+    images: frameImages,
+    gifWidth: Math.min(canvas.width, 500),
+    gifHeight: Math.min(canvas.height, 500),
+    interval: 0.06,
+    numWorkers: 2,
     progressCallback: (captureProgress) => {{
-      const pct = Math.round(captureProgress * 100);
-      progBar.style.width = pct + '%';
-      progText.innerText = 'Encoding Discord GIF: ' + pct + '%';
+      progBar.style.width = Math.round(captureProgress * 100) + '%';
+      progText.innerText = 'Encoding GIF: ' + Math.round(captureProgress * 100) + '%';
     }}
   }}, (obj) => {{
     if (!obj.error) {{
@@ -2299,14 +2283,14 @@ function generateDiscordGif() {{
 
 function getAnimOffset(anim, progress) {{
   const t = progress * Math.PI * 2;
-  if (anim === 'bob') return {{ x: 0, y: Math.sin(t) * 14, rot: 0, scale: 1.0 }};
-  if (anim === 'shake') return {{ x: (Math.random() - 0.5) * 16, y: (Math.random() - 0.5) * 16, rot: (Math.random() - 0.5) * 10, scale: 1.0 }};
+  if (anim === 'bob') return {{ x: 0, y: Math.sin(t) * 18, rot: 0, scale: 1.0 }};
+  if (anim === 'shake') return {{ x: (Math.random() - 0.5) * 20, y: (Math.random() - 0.5) * 20, rot: (Math.random() - 0.5) * 14, scale: 1.0 }};
   if (anim === 'spin') return {{ x: 0, y: 0, rot: progress * 360, scale: 1.0 }};
-  if (anim === 'petpet') return {{ x: 0, y: Math.abs(Math.sin(t)) * 16, rot: 0, scale: 1.0 - Math.abs(Math.sin(t)) * 0.16 }};
-  if (anim === 'zoom') return {{ x: 0, y: 0, rot: 0, scale: 1.0 + Math.sin(t) * 0.2 }};
-  if (anim === 'pulse') return {{ x: 0, y: 0, rot: 0, scale: 1.0 + Math.sin(t * 2) * 0.14 }};
-  if (anim === 'wobble') return {{ x: Math.sin(t) * 12, y: 0, rot: Math.sin(t) * 14, scale: 1.0 }};
-  if (anim === 'disco') return {{ x: Math.sin(t) * 10, y: Math.cos(t) * 10, rot: Math.sin(t) * 16, scale: 1.0 + Math.sin(t) * 0.12 }};
+  if (anim === 'petpet') return {{ x: 0, y: Math.abs(Math.sin(t)) * 20, rot: 0, scale: 1.0 - Math.abs(Math.sin(t)) * 0.2 }};
+  if (anim === 'zoom') return {{ x: 0, y: 0, rot: 0, scale: 1.0 + Math.sin(t) * 0.24 }};
+  if (anim === 'pulse') return {{ x: 0, y: 0, rot: 0, scale: 1.0 + Math.sin(t * 2) * 0.18 }};
+  if (anim === 'wobble') return {{ x: Math.sin(t) * 16, y: 0, rot: Math.sin(t) * 18, scale: 1.0 }};
+  if (anim === 'disco') return {{ x: Math.sin(t) * 14, y: Math.cos(t) * 14, rot: Math.sin(t) * 20, scale: 1.0 + Math.sin(t) * 0.16 }};
   return {{ x: 0, y: 0, rot: 0, scale: 1.0 }};
 }}
 
@@ -2334,6 +2318,7 @@ function animLoop(timestamp) {{
 window.onload = () => {{
   initCanvasEvents();
   initUIEvents();
+  fitCanvasToScreen();
   render();
   requestAnimationFrame(animLoop);
 }};
@@ -2343,4 +2328,4 @@ window.onload = () => {{
 """
 
 # Render embedded Photoshop Web Studio
-components.html(html_app, height=920, scrolling=False)
+components.html(html_app, height=980, scrolling=False)
