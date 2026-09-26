@@ -213,6 +213,18 @@ try:
 except Exception:
     pass
 
+private_repo_secret = ""
+try:
+    private_repo_secret = st.secrets.get("PRIVATE_FACES_REPO", "")
+except Exception:
+    pass
+
+private_folder_secret = ""
+try:
+    private_folder_secret = st.secrets.get("PRIVATE_FACES_FOLDER", "faces" if private_repo_secret else "assets")
+except Exception:
+    private_folder_secret = "faces" if private_repo_secret else "assets"
+
 expected_pwd = ""
 try:
     expected_pwd = st.secrets.get("ADMIN_PASSWORD", "")
@@ -222,6 +234,8 @@ if not expected_pwd:
     expected_pwd = "MuradAdmin"
 
 gh_token_json = json.dumps(token_secret)
+gh_repo_json = json.dumps(private_repo_secret)
+gh_folder_json = json.dumps(private_folder_secret)
 admin_pwd_json = json.dumps(expected_pwd)
 
 # --- EMBEDDED FRUTISATOR WEB STUDIO ---
@@ -1428,6 +1442,8 @@ html_app = f"""
 const faces = {faces_json};
 const templates = {templates_json};
 const GITHUB_TOKEN = {gh_token_json};
+const GITHUB_REPO = {gh_repo_json};
+const GITHUB_FOLDER = {gh_folder_json};
 const EXPECTED_ADMIN_PWD = {admin_pwd_json};
 
 let layerZCounter = 1;
@@ -3112,10 +3128,11 @@ window.deleteAdminFace = function(idx) {{
 // GitHub API face sync helper
 async function syncFaceToGitHub(faceName, filename, base64Data) {{
   const cleanB64 = base64Data.split(',')[1];
-  const repo = '3bood011/Muradeditor';
+  const repo = GITHUB_REPO || '3bood011/Muradeditor';
+  const folder = GITHUB_FOLDER || (GITHUB_REPO ? 'faces' : 'assets');
   const branch = 'main';
 
-  const filePath = 'assets/' + filename;
+  const filePath = folder + '/' + filename;
   const putUrl = `https://api.github.com/repos/${{repo}}/contents/${{filePath}}`;
   
   await fetch(putUrl, {{
