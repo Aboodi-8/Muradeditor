@@ -95,7 +95,7 @@ def get_base64_data_uri(file_path: Path) -> str:
             mime = "image/jpeg"
         return f"data:{mime};base64,{encoded}"
 
-# Helper: load faces dynamically from storage repo (manifest.json or files) or local manifest
+# Helper: load faces dynamically from storage repo with self-healing auto-discovery
 def load_faces_catalog():
     faces_list = []
 
@@ -107,79 +107,108 @@ def load_faces_catalog():
             user_folder = st.secrets.get("PRIVATE_FACES_FOLDER", "Faces")
 
             for folder_candidate in [user_folder, user_folder.capitalize(), user_folder.lower(), "Faces", "faces"]:
-                # First check if manifest.json exists in storage repo
-                m_url = f"https://api.github.com/repos/{repo_name}/contents/{folder_candidate}/manifest.json"
+                folder_api_url = f"https://api.github.com/repos/{repo_name}/contents/{folder_candidate}"
+                folder_files = []
                 try:
-                    m_req = urllib.request.Request(
-                        m_url,
-                        headers={
-                            "Authorization": f"Bearer {token}",
-                            "Accept": "application/vnd.github.v3+json",
-                            "User-Agent": "Frutisator-App"
-                        }
-                    )
-                    with urllib.request.urlopen(m_req, timeout=5) as m_resp:
-                        m_data = json.loads(m_resp.read().decode("utf-8"))
-                        m_content = base64.b64decode(m_data["content"]).decode("utf-8")
-                        manifest_items = json.loads(m_content)
-                        for item in manifest_items:
-                            file_url = f"https://api.github.com/repos/{repo_name}/contents/{folder_candidate}/{item['file']}"
-                            f_req = urllib.request.Request(
-                                file_url,
-                                headers={
-                                    "Authorization": f"Bearer {token}",
-                                    "Accept": "application/vnd.github.v3.raw",
-                                    "User-Agent": "Frutisator-App"
-                                }
-                            )
-                            with urllib.request.urlopen(f_req, timeout=5) as f_resp:
-                                b64 = base64.b64encode(f_resp.read()).decode("utf-8")
-                                mime = "image/png" if item["file"].lower().endswith(".png") else "image/jpeg"
-                                faces_list.append({
-                                    "id": item.get("id", Path(item["file"]).stem),
-                                    "name": item.get("name", Path(item["file"]).stem.replace("_", " ").title() + " 🍉"),
-                                    "file": item["file"],
-                                    "src": f"data:{mime};base64,{b64}"
-                                })
-                        if faces_list:
-                            return faces_list
-                except Exception:
-                    pass
-
-                # If manifest empty or missing, scan folder for image files
-                try:
-                    api_url = f"https://api.github.com/repos/{repo_name}/contents/{folder_candidate}"
-                    req = urllib.request.Request(
-                        api_url,
-                        headers={
-                            "Authorization": f"Bearer {token}",
-                            "Accept": "application/vnd.github.v3+json",
-                            "User-Agent": "Frutisator-App"
-                        }
-                    )
-                    with urllib.request.urlopen(req, timeout=5) as resp:
-                        items = json.loads(resp.read().decode("utf-8"))
-                        for item in items:
-                            if item.get("type") == "file" and item["name"].lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
-                                f_req = urllib.request.Request(
-                                    item["download_url"],
-                                    headers={"Authorization": f"Bearer {token}", "User-Agent": "Frutisator-App"}
-                                )
-                                with urllib.request.urlopen(f_req, timeout=5) as f_resp:
-                                    b64 = base64.b64encode(f_resp.read()).decode("utf-8")
-                                    mime = "image/png" if item["name"].endswith(".png") else "image/jpeg"
-                                    faces_list.append({
-                                        "id": Path(item["name"]).stem,
-                                        "name": Path(item["name"]).stem.replace("_", " ").title() + " 🍉",
-                                        "file": item["name"],
-                                        "src": f"data:{mime};base64,{b64}"
-                                    })
-                        if faces_list:
-                            return faces_list
+                    f_req = urllib.request.Request(folder_api_url, headers={
+                        "Authorization": f"Bearer {token}",
+                        "Accept": "application/vnd.github.v3+json",
+                        "User-Agent": "Frutisator-App"
+                    })
+                    with urllib.request.urlopen(f_req, timeout=6) as f_resp:
+                        folder_files = json.loads(f_resp.read().decode("utf-8"))
                 except Exception:
                     continue
+
+                if not isinstance(folder_files, list) or len(folder_files) == 0:
+                    continue
+
+                # Load manifest.json if exists
+                manifest_items = []
+                manifest_sha = None
+                m_url = f"https://api.github.com/repos/{repo_name}/contents/{folder_candidate}/manifest.json"
+                try:
+                    m_req = urllib.request.Request(m_url, headers={
+                        "Authorization": f"Bearer {token}",
+                        "Accept": "application/vnd.github.v3+json",
+                        "User-Agent": "Frutisator-App"
+                    })
+                    with urllib.request.urlopen(m_req, timeout=5) as m_resp:
+                        m_data = json.loads(m_resp.read().decode("utf-8"))
+                        manifest_sha = m_data.get("sha")
+                        m_content = base64.b64decode(m_data["content"].replace("\n", "")).decode("utf-8")
+                        manifest_items = json.loads(m_content)
+                except Exception:
+                    manifest_items = []
+
+                # Self-healing: Check what is missing in GitHub manifest and add any missing files
+                known_files = {item["file"].lower(): item for item in manifest_items if "file" in item}
+                manifest_updated = False
+                for f_item in folder_files:
+                    fn = f_item.get("name", "")
+                    if f_item.get("type") == "file" and fn.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+                        if fn.lower() not in known_files:
+                            stem = Path(fn).stem
+                            clean_name = stem.replace("_", " ").title()
+                            new_entry = {
+                                "id": "face_" + stem,
+                                "name": clean_name + " 🍉",
+                                "file": fn
+                            }
+                            manifest_items.append(new_entry)
+                            known_files[fn.lower()] = new_entry
+                            manifest_updated = True
+
+                # If missing files were found, auto-save repaired manifest back to GitHub!
+                if manifest_updated:
+                    try:
+                        updated_b64 = base64.b64encode(json.dumps(manifest_items, indent=2).encode("utf-8")).decode("utf-8")
+                        put_body = {
+                            "message": "Auto-sync and repair Faces/manifest.json with all folder images",
+                            "content": updated_b64,
+                            "branch": "main"
+                        }
+                        if manifest_sha:
+                            put_body["sha"] = manifest_sha
+                        put_req = urllib.request.Request(m_url, data=json.dumps(put_body).encode("utf-8"), method="PUT", headers={
+                            "Authorization": f"Bearer {token}",
+                            "Content-Type": "application/json",
+                            "User-Agent": "Frutisator-App"
+                        })
+                        with urllib.request.urlopen(put_req, timeout=5) as put_resp:
+                            pass
+                    except Exception:
+                        pass
+
+                # Load base64 data for all items
+                for item in manifest_items:
+                    file_url = f"https://api.github.com/repos/{repo_name}/contents/{folder_candidate}/{item['file']}"
+                    try:
+                        f_req = urllib.request.Request(
+                            file_url,
+                            headers={
+                                "Authorization": f"Bearer {token}",
+                                "Accept": "application/vnd.github.v3.raw",
+                                "User-Agent": "Frutisator-App"
+                            }
+                        )
+                        with urllib.request.urlopen(f_req, timeout=5) as f_resp:
+                            b64 = base64.b64encode(f_resp.read()).decode("utf-8")
+                            mime = "image/png" if item["file"].lower().endswith(".png") else "image/jpeg"
+                            faces_list.append({
+                                "id": item.get("id", Path(item["file"]).stem),
+                                "name": item.get("name", Path(item["file"]).stem.replace("_", " ").title() + " 🍉"),
+                                "file": item["file"],
+                                "src": f"data:{mime};base64,{b64}"
+                            })
+                    except Exception:
+                        pass
+                if faces_list:
+                    return faces_list
     except Exception:
-        pass# 2. Local manifest check
+        pass
+
+    # 2. Local manifest check
     if MANIFEST_FILE.exists():
         try:
             with open(MANIFEST_FILE, "r", encoding="utf-8") as f:
@@ -216,12 +245,30 @@ TEMPLATES_DIR = ASSETS_DIR / "templates"
 def load_templates_catalog():
     tpl_list = []
 
-    # 1. Load from private storage repo Templates/manifest.json via Streamlit secrets
+    # 1. Load from private storage repo Templates/manifest.json via Streamlit secrets with self-healing
     try:
         if hasattr(st, "secrets") and "GITHUB_TOKEN" in st.secrets and "PRIVATE_FACES_REPO" in st.secrets:
             token = st.secrets["GITHUB_TOKEN"]
             repo_name = st.secrets["PRIVATE_FACES_REPO"]
             for tpl_folder in ["Templates", "templates"]:
+                folder_api_url = f"https://api.github.com/repos/{repo_name}/contents/{tpl_folder}"
+                folder_files = []
+                try:
+                    f_req = urllib.request.Request(folder_api_url, headers={
+                        "Authorization": f"Bearer {token}",
+                        "Accept": "application/vnd.github.v3+json",
+                        "User-Agent": "Frutisator-App"
+                    })
+                    with urllib.request.urlopen(f_req, timeout=6) as f_resp:
+                        folder_files = json.loads(f_resp.read().decode("utf-8"))
+                except Exception:
+                    continue
+
+                if not isinstance(folder_files, list) or len(folder_files) == 0:
+                    continue
+
+                manifest_items = []
+                manifest_sha = None
                 m_url = f"https://api.github.com/repos/{repo_name}/contents/{tpl_folder}/manifest.json"
                 try:
                     m_req = urllib.request.Request(
@@ -230,27 +277,70 @@ def load_templates_catalog():
                     )
                     with urllib.request.urlopen(m_req, timeout=5) as m_resp:
                         m_data = json.loads(m_resp.read().decode("utf-8"))
-                        m_content = base64.b64decode(m_data["content"]).decode("utf-8")
+                        manifest_sha = m_data.get("sha")
+                        m_content = base64.b64decode(m_data["content"].replace("\n", "")).decode("utf-8")
                         manifest_items = json.loads(m_content)
-                        for item in manifest_items:
-                            file_url = f"https://api.github.com/repos/{repo_name}/contents/{tpl_folder}/{item['file']}"
-                            f_req = urllib.request.Request(
-                                file_url,
-                                headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3.raw", "User-Agent": "Frutisator-App"}
-                            )
-                            with urllib.request.urlopen(f_req, timeout=5) as f_resp:
-                                b64 = base64.b64encode(f_resp.read()).decode("utf-8")
-                                mime = "image/webp" if item["file"].endswith(".webp") else "image/jpeg"
-                                tpl_list.append({
-                                    "id": item["id"],
-                                    "name": item["name"],
-                                    "file": item["file"],
-                                    "src": f"data:{mime};base64,{b64}"
-                                })
-                        if tpl_list:
-                            return tpl_list
                 except Exception:
-                    pass
+                    manifest_items = []
+
+                # Self-healing: Check what is missing in GitHub manifest and add any missing templates
+                known_files = {item["file"].lower(): item for item in manifest_items if "file" in item}
+                manifest_updated = False
+                for f_item in folder_files:
+                    fn = f_item.get("name", "")
+                    if f_item.get("type") == "file" and fn.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+                        if fn.lower() not in known_files:
+                            stem = Path(fn).stem
+                            clean_name = stem.replace("_", " ").title()
+                            new_entry = {
+                                "id": "tpl_" + stem,
+                                "name": clean_name,
+                                "file": fn
+                            }
+                            manifest_items.append(new_entry)
+                            known_files[fn.lower()] = new_entry
+                            manifest_updated = True
+
+                if manifest_updated:
+                    try:
+                        updated_b64 = base64.b64encode(json.dumps(manifest_items, indent=2).encode("utf-8")).decode("utf-8")
+                        put_body = {
+                            "message": "Auto-sync and repair Templates/manifest.json with all folder images",
+                            "content": updated_b64,
+                            "branch": "main"
+                        }
+                        if manifest_sha:
+                            put_body["sha"] = manifest_sha
+                        put_req = urllib.request.Request(m_url, data=json.dumps(put_body).encode("utf-8"), method="PUT", headers={
+                            "Authorization": f"Bearer {token}",
+                            "Content-Type": "application/json",
+                            "User-Agent": "Frutisator-App"
+                        })
+                        with urllib.request.urlopen(put_req, timeout=5) as put_resp:
+                            pass
+                    except Exception:
+                        pass
+
+                for item in manifest_items:
+                    file_url = f"https://api.github.com/repos/{repo_name}/contents/{tpl_folder}/{item['file']}"
+                    try:
+                        f_req = urllib.request.Request(
+                            file_url,
+                            headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github.v3.raw", "User-Agent": "Frutisator-App"}
+                        )
+                        with urllib.request.urlopen(f_req, timeout=5) as f_resp:
+                            b64 = base64.b64encode(f_resp.read()).decode("utf-8")
+                            mime = "image/webp" if item["file"].endswith(".webp") else ("image/png" if item["file"].endswith(".png") else "image/jpeg")
+                            tpl_list.append({
+                                "id": item["id"],
+                                "name": item["name"],
+                                "file": item["file"],
+                                "src": f"data:{mime};base64,{b64}"
+                            })
+                    except Exception:
+                        pass
+                if tpl_list:
+                    return tpl_list
     except Exception:
         pass
 
@@ -1206,6 +1296,7 @@ html_app = f"""
     <div class="ps-tool-options" id="toolOptions">
       <button id="fitScreenBtn" class="ps-opt-btn" title="Auto Fit Canvas to Viewport">🔍 Fit Screen</button>
       <button id="btnResetCanvas" class="ps-opt-btn" title="Reset Canvas (Clear all layers and refresh canvas)">🔄 Reset Canvas</button>
+      <button id="btnSyncCloud" class="ps-opt-btn" title="Live Sync with Cloud Storage (Instantly fetch new faces &amp; templates)">☁️ Sync</button>
       <span class="ps-opt-label" id="lblTransform">Transform:</span>
       <span class="ps-opt-badge" id="optLayerName">No layer selected</span>
       <div class="ps-opt-group" id="optActionGroup" style="display:none;">
@@ -1255,7 +1346,10 @@ html_app = f"""
 
         <!-- 1. DEFAULT FRUITS TEMPLATES (MOVED TO TOP) -->
         <div style="display:flex; flex-direction:column; gap:5px;">
-          <span class="section-label" id="lblPopularTemplates">Default Fruits Templates:</span>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <span class="section-label" id="lblPopularTemplates">Default Fruits Templates:</span>
+            <button id="btnSyncTemplatesQuick" class="ps-opt-btn" style="padding:2px 7px; font-size:11px;" title="Sync Templates from Cloud">🔄</button>
+          </div>
           <div class="grid-cards-faces" id="bgPresetsRow" style="max-height:160px; overflow-y:auto;"></div>
         </div>
 
@@ -1296,6 +1390,7 @@ html_app = f"""
           <span class="section-label" id="lblDefaultFaces">Default Fruits Faces:</span>
           <div style="display:flex; gap:6px; align-items:center;">
             <button id="lockVaultBtn" class="ps-opt-btn" style="padding:3px 7px; font-size:11px; display:none;" title="Lock Private Vault">🔒 Lock</button>
+            <button id="btnSyncFacesQuick" class="ps-opt-btn" style="padding:3px 7px; font-size:11px;" title="Sync Faces from Cloud">🔄</button>
             <button id="addFaceBtn" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff; padding:4px 10px;">➕ Add Face</button>
           </div>
         </div>
@@ -1643,6 +1738,7 @@ const i18n = {{
     appTitle: 'Frutisator',
     fitScreen: '🔍 Fit Screen',
     resetCanvas: '🔄 Reset Canvas',
+    syncCloud: '☁️ Sync',
     lblVaultTitle: 'Private Faces Vault',
     vaultPlaceholder: 'Password / كلمة المرور...',
     btnUnlockVault: '🔓 Unlock',
@@ -1745,6 +1841,7 @@ const i18n = {{
     appTitle: 'فروتيساتور',
     fitScreen: '🔍 ملاءمة الشاشة',
     resetCanvas: '🔄 إعادة تعيين',
+    syncCloud: '☁️ مزامنة السحابة',
     lblVaultTitle: 'خزنة الوجوه الخاصة',
     vaultPlaceholder: 'أدخل كلمة المرور...',
     btnUnlockVault: '🔓 فتح',
@@ -1859,6 +1956,7 @@ function applyLanguage(lang) {{
   document.getElementById('appTitle').innerText = t.appTitle;
   document.getElementById('fitScreenBtn').innerText = t.fitScreen;
   if (document.getElementById('btnResetCanvas')) document.getElementById('btnResetCanvas').innerText = t.resetCanvas;
+  if (document.getElementById('btnSyncCloud')) document.getElementById('btnSyncCloud').innerText = t.syncCloud || '☁️ Sync';
   if (document.getElementById('lblVaultTitle')) document.getElementById('lblVaultTitle').innerText = t.lblVaultTitle;
   if (document.getElementById('vaultPwdInput')) document.getElementById('vaultPwdInput').placeholder = t.vaultPlaceholder;
   if (document.getElementById('btnUnlockVault')) document.getElementById('btnUnlockVault').innerText = t.btnUnlockVault;
@@ -2688,14 +2786,14 @@ function initCanvasEvents() {{
   }}, {{ passive: false }});
 }}
 
-// --- POPULATE SIDEBARS & EVENTS ---
-function initUIEvents() {{
-  // 1. Templates Grid (SHORTER COMPACT 60px CARDS)
+// --- POPULATE TEMPLATES & FACES GRIDS ---
+function renderTemplatesGrid() {{
   const bgGrid = document.getElementById('bgPresetsRow');
+  if (!bgGrid) return;
   bgGrid.innerHTML = '';
   templates.forEach(t => {{
     const card = document.createElement('div');
-    card.className = 'grid-card-template' + (t.id === 'suit' ? ' active' : '');
+    card.className = 'grid-card-template' + (state.bgTemplateId === t.id ? ' active' : '');
     card.innerHTML = `<img src="${{t.src}}" alt="${{t.name}}"><span>${{t.name}}</span>`;
     card.onclick = () => {{
       document.querySelectorAll('#bgPresetsRow .grid-card-template').forEach(c => c.classList.remove('active'));
@@ -2708,6 +2806,46 @@ function initUIEvents() {{
     }};
     bgGrid.appendChild(card);
   }});
+}}
+
+function renderFacesGrid() {{
+  const facesGrid = document.getElementById('facesGrid');
+  if (!facesGrid) return;
+  facesGrid.innerHTML = '';
+  if (faces.length === 0) {{
+    const emptyNotice = document.createElement('div');
+    emptyNotice.id = 'emptyFacesNotice';
+    emptyNotice.style.cssText = 'grid-column: 1 / -1; padding: 14px 10px; text-align: center; color: var(--ps-text-muted); font-size: 11.5px; border: 1px dashed var(--ps-border); border-radius: 6px; background: rgba(255,255,255,0.02); line-height: 1.5;';
+    emptyNotice.innerText = currentLang === 'ar' ? 'لا توجد وجوه افتراضية. ارفع فاكهة أو صورة مخصصة بالأعلى للبدء!' : 'No default faces. Upload a custom fruit or photo above to start!';
+    facesGrid.appendChild(emptyNotice);
+  }} else {{
+    faces.forEach((f, idx) => {{
+      const card = document.createElement('div');
+      card.className = 'grid-card' + (idx === 0 ? ' active' : '');
+      card.innerHTML = `<img src="${{f.src}}" alt="${{f.name}}"><span>${{f.name}}</span>`;
+      card.onclick = () => {{
+        document.querySelectorAll('#facesGrid .grid-card').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
+        const active = getActiveLayerData();
+        if (active && active.type === 'face') {{
+          active.obj.faceIndex = idx;
+          active.obj.customImg = null;
+        }} else {{
+          state.facesOnCanvas.push(makeFaceLayer(idx, 0, 0, 1.0));
+          state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
+        }}
+        render();
+        syncLayersUI();
+      }};
+      facesGrid.appendChild(card);
+    }});
+  }}
+}}
+
+// --- POPULATE SIDEBARS & EVENTS ---
+function initUIEvents() {{
+  // 1. Templates Grid
+  renderTemplatesGrid();
 
   // Backdrop Custom File Upload
   document.getElementById('bgFileInput').onchange = (e) => {{
@@ -2779,37 +2917,16 @@ function initUIEvents() {{
     fitCanvasToScreen();
   }};
 
+  // Cloud Sync Buttons
+  const syncMainBtn = document.getElementById('btnSyncCloud');
+  if (syncMainBtn) syncMainBtn.onclick = () => syncCloudCatalog(true);
+  const syncFacesBtn = document.getElementById('btnSyncFacesQuick');
+  if (syncFacesBtn) syncFacesBtn.onclick = () => syncCloudCatalog(true);
+  const syncTplsBtn = document.getElementById('btnSyncTemplatesQuick');
+  if (syncTplsBtn) syncTplsBtn.onclick = () => syncCloudCatalog(true);
+
   // 2. Populate Fruits Faces Grid
-  const facesGrid = document.getElementById('facesGrid');
-  facesGrid.innerHTML = '';
-  if (faces.length === 0) {{
-    const emptyNotice = document.createElement('div');
-    emptyNotice.id = 'emptyFacesNotice';
-    emptyNotice.style.cssText = 'grid-column: 1 / -1; padding: 14px 10px; text-align: center; color: var(--ps-text-muted); font-size: 11.5px; border: 1px dashed var(--ps-border); border-radius: 6px; background: rgba(255,255,255,0.02); line-height: 1.5;';
-    emptyNotice.innerText = currentLang === 'ar' ? 'لا توجد وجوه افتراضية. ارفع فاكهة أو صورة مخصصة بالأعلى للبدء!' : 'No default faces. Upload a custom fruit or photo above to start!';
-    facesGrid.appendChild(emptyNotice);
-  }} else {{
-    faces.forEach((f, idx) => {{
-      const card = document.createElement('div');
-      card.className = 'grid-card' + (idx === 0 ? ' active' : '');
-      card.innerHTML = `<img src="${{f.src}}" alt="${{f.name}}"><span>${{f.name}}</span>`;
-      card.onclick = () => {{
-        document.querySelectorAll('#facesGrid .grid-card').forEach(c => c.classList.remove('active'));
-        card.classList.add('active');
-        const active = getActiveLayerData();
-        if (active && active.type === 'face') {{
-          active.obj.faceIndex = idx;
-          active.obj.customImg = null;
-        }} else {{
-          state.facesOnCanvas.push(makeFaceLayer(idx, 0, 0, 1.0));
-          state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
-        }}
-        render();
-        syncLayersUI();
-      }};
-      facesGrid.appendChild(card);
-    }});
-  }}
+  renderFacesGrid();
 
   // Add Face Button
   document.getElementById('addFaceBtn').onclick = () => {{
@@ -3493,6 +3610,7 @@ function initUIEvents() {{
     if (persist) {{
       try {{ localStorage.setItem('frutisator_vault_unlocked', 'true'); }} catch(e) {{}}
     }}
+    syncCloudCatalog(false);
   }}
 
   function lockVaultUI() {{
@@ -3566,15 +3684,127 @@ function renderAdminCatalog() {{
 
 window.deleteAdminFace = function(idx) {{
   if (confirm('Remove ' + faces[idx].name + ' from catalog?')) {{
-    faces.splice(idx, 1);
+    const removed = faces.splice(idx, 1)[0];
     delete loadedFaces[idx];
-    initUIEvents();
+    renderFacesGrid();
     renderAdminCatalog();
     render();
+
+    // Async sync deletion to Faces/manifest.json in storage repo
+    if (GITHUB_TOKEN && removed) {{
+      const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+      const folder = GITHUB_FOLDER || 'Faces';
+      const manifestPath = `${{folder}}/manifest.json`;
+      fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
+        headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+      }})
+      .then(r => r.json())
+      .then(mData => {{
+        const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
+        let manifestList = JSON.parse(decoded);
+        manifestList = manifestList.filter(item => item.id !== removed.id && item.file !== removed.file);
+        const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
+        return fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+          method: 'PUT',
+          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+          body: JSON.stringify({{ message: 'Remove face ' + removed.name, content: updatedB64, sha: mData.sha, branch: 'main' }})
+        }});
+      }}).catch(e => console.warn('Face deletion sync warning:', e));
+    }}
   }}
 }};
 
-// GitHub API template sync helper with duplicate file renaming and manifest.json sync
+// --- ROBUST REMOTE MANIFEST SYNC WITH CONFLICT RETRY & SELF-HEALING ---
+async function updateRemoteManifestWithRetry(folder, newItem, maxRetries = 3) {{
+  const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+  const branch = 'main';
+  const manifestPath = `${{folder}}/manifest.json`;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {{
+    try {{
+      // 1. Fetch latest manifest with cache-busting timestamp
+      let manifestList = [];
+      let manifestSha = null;
+      const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=${{branch}}&_t=${{Date.now()}}`, {{
+        headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+      }});
+      if (mRes.ok) {{
+        const mData = await mRes.json();
+        manifestSha = mData.sha;
+        const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
+        manifestList = JSON.parse(decoded);
+      }}
+
+      // 2. Self-healing check: inspect files in folder to ensure NO unlisted images are missing!
+      try {{
+        const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}?ref=${{branch}}&_t=${{Date.now()}}`, {{
+          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+        }});
+        if (fRes.ok) {{
+          const allFolderFiles = await fRes.json();
+          const listedFiles = new Set(manifestList.map(item => (item.file || '').toLowerCase()));
+          allFolderFiles.forEach(f => {{
+            const fn = f.name || '';
+            if (f.type === 'file' && fn.toLowerCase().match(/\\.(png|jpe?g|webp)$/i)) {{
+              if (!listedFiles.has(fn.toLowerCase()) && (!newItem || fn.toLowerCase() !== newItem.file.toLowerCase())) {{
+                const stem = fn.replace(/\\.[^/.]+$/, '').replace(/_/g, ' ');
+                const cleanName = stem.charAt(0).toUpperCase() + stem.slice(1);
+                manifestList.push({{
+                  id: (folder === 'Templates' ? 'tpl_' : 'face_') + fn.replace(/\\.[^/.]+$/, ''),
+                  name: cleanName + (folder === 'Templates' ? '' : ' 🍉'),
+                  file: fn
+                }});
+                listedFiles.add(fn.toLowerCase());
+              }}
+            }}
+          }});
+        }}
+      }} catch (e) {{}}
+
+      // 3. Merge or remove newItem
+      if (newItem) {{
+        manifestList = manifestList.filter(item => item.file !== newItem.file && item.id !== newItem.id);
+        manifestList.push(newItem);
+      }}
+
+      // 4. PUT updated manifest to GitHub
+      const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
+      const putBody = {{
+        message: 'Sync ' + manifestPath + (newItem ? (' for ' + newItem.name) : ' (self-healing auto-repair)'),
+        content: updatedB64,
+        branch: branch
+      }};
+      if (manifestSha) putBody.sha = manifestSha;
+
+      const putRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+        method: 'PUT',
+        headers: {{
+          'Authorization': 'Bearer ' + GITHUB_TOKEN,
+          'Content-Type': 'application/json'
+        }},
+        body: JSON.stringify(putBody)
+      }});
+
+      if (putRes.ok) {{
+        return manifestList;
+      }}
+
+      if (putRes.status === 409 && attempt < maxRetries - 1) {{
+        // SHA conflict: wait and retry with fresh SHA
+        await new Promise(r => setTimeout(r, 400 * (attempt + 1)));
+        continue;
+      }}
+
+      const errData = await putRes.json().catch(() => ({{}}));
+      throw new Error(errData.message || ('Manifest update HTTP ' + putRes.status));
+    }} catch (err) {{
+      if (attempt >= maxRetries - 1) throw err;
+      await new Promise(r => setTimeout(r, 400));
+    }}
+  }}
+}}
+
+// GitHub API template sync helper
 async function syncTemplateToGitHub(tplName, filename, base64Data) {{
   const cleanB64 = base64Data.split(',')[1];
   const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
@@ -3621,46 +3851,12 @@ async function syncTemplateToGitHub(tplName, filename, base64Data) {{
     throw new Error(errObj.message || ('Upload failed with HTTP ' + filePutRes.status));
   }}
 
-  // 4. Update Templates/manifest.json
-  const manifestPath = `${{folder}}/manifest.json`;
-  const manifestUrl = `https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=${{branch}}`;
-  let manifestList = [];
-  let manifestSha = null;
-
-  try {{
-    const mRes = await fetch(manifestUrl, {{
-      headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-    }});
-    if (mRes.ok) {{
-      const mData = await mRes.json();
-      manifestSha = mData.sha;
-      const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
-      manifestList = JSON.parse(decoded);
-    }}
-  }} catch (e) {{}}
-
+  // 4. Update Templates/manifest.json with conflict retry
   const tplId = 'tpl_' + Date.now();
-  manifestList.push({{
+  await updateRemoteManifestWithRetry('Templates', {{
     id: tplId,
     name: tplName,
     file: uniqueFilename
-  }});
-
-  const updatedManifestB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
-  const mPutBody = {{
-    message: 'Update Templates/manifest.json for ' + tplName,
-    content: updatedManifestB64,
-    branch: branch
-  }};
-  if (manifestSha) mPutBody.sha = manifestSha;
-
-  await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
-    method: 'PUT',
-    headers: {{
-      'Authorization': 'Bearer ' + GITHUB_TOKEN,
-      'Content-Type': 'application/json',
-    }},
-    body: JSON.stringify(mPutBody)
   }});
 
   return {{ id: tplId, name: tplName, file: uniqueFilename }};
@@ -3694,15 +3890,15 @@ window.deleteAdminTemplate = function(idx) {{
   if (confirm('Remove ' + templates[idx].name + ' from templates catalog?')) {{
     const removed = templates.splice(idx, 1)[0];
     delete loadedTemplates[removed.id];
-    initUIEvents();
+    renderTemplatesGrid();
     renderAdminTemplatesCatalog();
     render();
 
     // Async sync deletion to Templates/manifest.json in storage repo
-    if (GITHUB_TOKEN) {{
+    if (GITHUB_TOKEN && removed) {{
       const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
       const manifestPath = 'Templates/manifest.json';
-      fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main`, {{
+      fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
         headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
       }})
       .then(r => r.json())
@@ -3721,7 +3917,7 @@ window.deleteAdminTemplate = function(idx) {{
   }}
 }};
 
-// GitHub API face sync helper with duplicate file renaming and manifest.json sync
+// GitHub API face sync helper
 async function syncFaceToGitHub(faceName, filename, base64Data) {{
   const cleanB64 = base64Data.split(',')[1];
   const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
@@ -3739,7 +3935,7 @@ async function syncFaceToGitHub(faceName, filename, base64Data) {{
     }}
   }} catch (e) {{}}
 
-  // 2. Duplicate avoidance: rename if filename collision (e.g. face_1.png, face_2.png)
+  // 2. Duplicate avoidance
   const existingNames = new Set(existingFiles.map(f => (f.name || '').toLowerCase()));
   let uniqueFilename = filename;
   const dotIdx = filename.lastIndexOf('.');
@@ -3770,50 +3966,133 @@ async function syncFaceToGitHub(faceName, filename, base64Data) {{
     throw new Error(errObj.message || ('Upload failed with HTTP ' + filePutRes.status));
   }}
 
-  // 4. Update manifest.json in the storage repo
-  const manifestPath = `${{folder}}/manifest.json`;
-  const manifestUrl = `https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=${{branch}}`;
-  let manifestList = [];
-  let manifestSha = null;
-
-  try {{
-    const mRes = await fetch(manifestUrl, {{
-      headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-    }});
-    if (mRes.ok) {{
-      const mData = await mRes.json();
-      manifestSha = mData.sha;
-      const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
-      manifestList = JSON.parse(decoded);
-    }}
-  }} catch (e) {{}}
-
-  manifestList.push({{
-    id: 'face_' + Date.now(),
+  // 4. Update manifest.json with conflict retry
+  const faceId = 'face_' + Date.now();
+  await updateRemoteManifestWithRetry(folder, {{
+    id: faceId,
     name: faceName,
     file: uniqueFilename
   }});
 
-  const updatedManifestB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
-  const mPutBody = {{
-    message: 'Update manifest.json for ' + faceName,
-    content: updatedManifestB64,
-    branch: branch
-  }};
-  if (manifestSha) {{
-    mPutBody.sha = manifestSha;
+  return uniqueFilename;
+}}
+
+// LIVE CLOUD CATALOG SYNC (Real-time updates for all users on website)
+let isSyncingCatalog = false;
+async function syncCloudCatalog(showNotice = false) {{
+  if (isSyncingCatalog || !GITHUB_TOKEN) return;
+  isSyncingCatalog = true;
+
+  const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+  const folder = GITHUB_FOLDER || 'Faces';
+
+  // 1. Sync Faces from Cloud
+  try {{
+    const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/manifest.json?_t=${{Date.now()}}`, {{
+      headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+    }});
+    if (mRes.ok) {{
+      const mData = await mRes.json();
+      const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
+      const cloudFaces = JSON.parse(decoded);
+
+      const existingFiles = new Set(faces.map(f => f.file));
+      let newFacesAdded = false;
+
+      for (const cf of cloudFaces) {{
+        if (!existingFiles.has(cf.file)) {{
+          try {{
+            const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{cf.file}}?_t=${{Date.now()}}`, {{
+              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+            }});
+            if (fRes.ok) {{
+              const fData = await fRes.json();
+              const mime = cf.file.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+              const src = `data:${{mime}};base64,${{fData.content.replace(/\\s/g, '')}}`;
+              const newIdx = faces.length;
+              faces.push({{
+                id: cf.id || ('face_' + Date.now()),
+                name: cf.name || cf.file,
+                file: cf.file,
+                src: src
+              }});
+              const img = new Image();
+              img.src = src;
+              loadedFaces[newIdx] = img;
+              existingFiles.add(cf.file);
+              newFacesAdded = true;
+            }}
+          }} catch (e) {{}}
+        }}
+      }}
+
+      if (newFacesAdded) {{
+        renderFacesGrid();
+        renderAdminCatalog();
+      }}
+    }}
+  }} catch (err) {{
+    console.warn('Faces cloud sync notice:', err);
   }}
 
-  await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
-    method: 'PUT',
-    headers: {{
-      'Authorization': 'Bearer ' + GITHUB_TOKEN,
-      'Content-Type': 'application/json',
-    }},
-    body: JSON.stringify(mPutBody)
-  }});
+  // 2. Sync Templates from Cloud
+  try {{
+    const tmRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/Templates/manifest.json?_t=${{Date.now()}}`, {{
+      headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+    }});
+    if (tmRes.ok) {{
+      const tmData = await tmRes.json();
+      const decoded = decodeURIComponent(escape(atob(tmData.content.replace(/\\s/g, ''))));
+      const cloudTemplates = JSON.parse(decoded);
 
-  return uniqueFilename;
+      const existingTplIds = new Set(templates.map(t => t.id || t.file));
+      let newTplsAdded = false;
+
+      for (const ct of cloudTemplates) {{
+        const tId = ct.id || ct.file;
+        if (!existingTplIds.has(tId)) {{
+          try {{
+            const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/Templates/${{ct.file}}?_t=${{Date.now()}}`, {{
+              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+            }});
+            if (fRes.ok) {{
+              const fData = await fRes.json();
+              const mime = ct.file.toLowerCase().endsWith('.webp') ? 'image/webp' : (ct.file.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+              const src = `data:${{mime}};base64,${{fData.content.replace(/\\s/g, '')}}`;
+              templates.push({{
+                id: tId,
+                name: ct.name || ct.file,
+                file: ct.file,
+                src: src
+              }});
+              const img = new Image();
+              img.src = src;
+              loadedTemplates[tId] = img;
+              existingTplIds.add(tId);
+              newTplsAdded = true;
+            }}
+          }} catch (e) {{}}
+        }}
+      }}
+
+      if (newTplsAdded) {{
+        renderTemplatesGrid();
+        renderAdminTemplatesCatalog();
+      }}
+    }}
+  }} catch (err) {{
+    console.warn('Templates cloud sync notice:', err);
+  }} finally {{
+    isSyncingCatalog = false;
+    if (showNotice) {{
+      const syncBtn = document.getElementById('btnSyncCloud');
+      if (syncBtn) {{
+        const oldTxt = syncBtn.innerText;
+        syncBtn.innerText = '✅ Synced';
+        setTimeout(() => {{ syncBtn.innerText = oldTxt; }}, 2000);
+      }}
+    }}
+  }}
 }}
 
 // Reorder layer in stack
@@ -4247,6 +4526,8 @@ window.onload = () => {{
   fitCanvasToScreen();
   render();
   requestAnimationFrame(animLoop);
+  setTimeout(() => syncCloudCatalog(false), 1500);
+  setInterval(() => syncCloudCatalog(false), 25000);
 }};
 </script>
 </body>
