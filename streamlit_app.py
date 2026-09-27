@@ -146,11 +146,22 @@ def load_faces_catalog():
                 except Exception:
                     manifest_items = []
 
-                # Load base64 data for all items
+                # Load base64 data for all items with strict deduplication
+                seen_files = set()
+                seen_ids = set()
                 for item in manifest_items:
                     fname = item.get("file") or item.get("filename")
                     if not fname:
                         continue
+                    fname_lower = fname.lower()
+                    item_id = item.get("id") or Path(fname).stem
+                    item_id_lower = item_id.lower() if item_id else ""
+                    if fname_lower in seen_files or (item_id_lower and item_id_lower in seen_ids):
+                        continue
+                    seen_files.add(fname_lower)
+                    if item_id_lower:
+                        seen_ids.add(item_id_lower)
+
                     file_url = f"https://api.github.com/repos/{repo_name}/contents/{folder_candidate}/{fname}"
                     try:
                         f_req = urllib.request.Request(
@@ -2356,10 +2367,106 @@ function getFilterString(f) {{
   return parts.length ? parts.join(' ') : 'none';
 }}
 
-function makeFaceLayer(faceIndex, x, y, scale, z) {{
+// DEDUPLICATE FACES ARRAY (Guarantees zero duplicate cards in grid)
+function deduplicateFaces(list) {{
+  if (!Array.isArray(list)) return [];
+  const seenIds = new Set();
+  const seenFiles = new Set();
+  const seenSrcs = new Set();
+  const unique = [];
+
+  for (const f of list) {{
+    if (!f) continue;
+    const idLower = (f.id || '').trim().toLowerCase();
+    const fileLower = (f.file || f.filename || '').trim().toLowerCase();
+    const srcKey = (f.src && typeof f.src === 'string' && f.src.length > 50) ? f.src.substring(0, 80) : '';
+
+    if (idLower && seenIds.has(idLower)) continue;
+    if (fileLower && seenFiles.has(fileLower)) continue;
+    if (srcKey && seenSrcs.has(srcKey)) continue;
+
+    if (idLower) seenIds.add(idLower);
+    if (fileLower) seenFiles.add(fileLower);
+    if (srcKey) seenSrcs.add(srcKey);
+    unique.push(f);
+  }}
+  return unique;
+}}
+
+// RESOLVE FACE LAYER IMAGE BY ID, FILE, OR OBJECT (Fixes "one is behind" off-by-one bug)
+function getFaceLayerImg(faceObj) {{
+  if (!faceObj) return null;
+  if (faceObj.customImg) return faceObj.customImg;
+  if (faceObj.isGif && faceObj.gifFrames && faceObj.gifFrames.length > 0) {{
+    const frameIdx = (faceObj.gifIndex !== undefined ? faceObj.gifIndex : 0) % faceObj.gifFrames.length;
+    return faceObj.gifFrames[frameIdx];
+  }}
+
+  // 1. Direct ID lookup in loadedFaces
+  if (faceObj.faceId && loadedFaces[faceObj.faceId]) {{
+    return loadedFaces[faceObj.faceId];
+  }}
+  // 2. Direct File lookup in loadedFaces
+  const fFileLower = (faceObj.faceFile || '').toLowerCase();
+  if (fFileLower && loadedFaces[fFileLower]) {{
+    return loadedFaces[fFileLower];
+  }}
+  // 3. Find matching face in faces array
+  const match = faces.find(f => (faceObj.faceId && f.id === faceObj.faceId) || (fFileLower && f.file && f.file.toLowerCase() === fFileLower));
+  if (match) {{
+    if (match.img && match.img.complete) return match.img;
+    if (loadedFaces[match.id]) return loadedFaces[match.id];
+    if (match.src) {{
+      const newImg = new Image();
+      newImg.src = match.src;
+      match.img = newImg;
+      loadedFaces[match.id] = newImg;
+      if (match.file) loadedFaces[match.file.toLowerCase()] = newImg;
+      newImg.onload = () => {{ render(); }};
+      return newImg;
+    }}
+  }}
+  // 4. Fallback numeric index
+  if (faceObj.faceIndex !== undefined && loadedFaces[faceObj.faceIndex]) {{
+    return loadedFaces[faceObj.faceIndex];
+  }}
+  if (faceObj.faceIndex !== undefined && faces[faceObj.faceIndex]) {{
+    const f = faces[faceObj.faceIndex];
+    return f.img || loadedFaces[f.id] || null;
+  }}
+  return null;
+}}
+
+function makeFaceLayer(faceIndexOrId, x, y, scale, z) {{
+  let targetId = null;
+  let targetFile = '';
+  let targetName = '';
+  let targetIdx = 0;
+
+  if (typeof faceIndexOrId === 'string') {{
+    targetId = faceIndexOrId;
+    const found = faces.find(f => f.id === targetId || (f.file && f.file.toLowerCase() === targetId.toLowerCase()));
+    if (found) {{
+      targetFile = found.file || '';
+      targetName = found.name || '';
+      targetIdx = faces.indexOf(found);
+    }}
+  }} else if (typeof faceIndexOrId === 'number') {{
+    targetIdx = faceIndexOrId;
+    const found = faces[targetIdx];
+    if (found) {{
+      targetId = found.id || '';
+      targetFile = found.file || '';
+      targetName = found.name || '';
+    }}
+  }}
+
   return {{
     id: 'layer_' + Date.now() + '_' + Math.floor(Math.random() * 1000),
-    faceIndex: faceIndex !== undefined ? faceIndex : 0,
+    faceId: targetId,
+    faceFile: targetFile,
+    faceIndex: targetIdx,
+    customName: targetName,
     x: x !== undefined ? x : 0,
     y: y !== undefined ? y : -50,
     scale: scale !== undefined ? scale : 1.0,
@@ -2370,7 +2477,6 @@ function makeFaceLayer(faceIndex, x, y, scale, z) {{
     opacity: 1.0,
     maskShape: 'square',
     customImg: null,
-    customName: '',
     isGif: false,
     gifFrames: [],
     gifIndex: 0,
@@ -2703,15 +2809,23 @@ canvas.height = 800;
 let loadedFaces = {{}};
 function preloadFaces() {{
   if (!isVaultUnlocked) return;
+  faces = deduplicateFaces(faces);
   faces.forEach((f, idx) => {{
-    if (!loadedFaces[idx]) {{
-      const img = new Image();
+    const fId = f.id || ('face_' + idx);
+    const fFile = (f.file || '').toLowerCase();
+
+    let img = loadedFaces[fId] || (fFile && loadedFaces[fFile]);
+    if (!img || !img.src) {{
+      img = new Image();
       img.src = f.src;
       img.onload = () => {{
         render();
       }};
-      loadedFaces[idx] = img;
     }}
+    f.img = img;
+    loadedFaces[fId] = img;
+    if (fFile) loadedFaces[fFile] = img;
+    loadedFaces[idx] = img;
   }});
 }}
 
@@ -2760,10 +2874,7 @@ function getActiveLayerData() {{
   }}
   if (t.type === 'face' && state.facesOnCanvas[t.idx]) {{
     const face = state.facesOnCanvas[t.idx];
-    let img = face.customImg || loadedFaces[face.faceIndex];
-    if (face.isGif && face.gifFrames && face.gifFrames.length > 0) {{
-      img = face.gifFrames[face.gifIndex || 0];
-    }}
+    let img = getFaceLayerImg(face);
     const aspect = (img && img.naturalHeight) ? (img.naturalHeight / img.naturalWidth) : 1.0;
     const sx = face.scaleX !== undefined ? face.scaleX : (face.scale || 1.0);
     const sy = face.scaleY !== undefined ? face.scaleY : (face.scale || 1.0);
@@ -2909,7 +3020,7 @@ function findLayerAt(mx, my) {{
     const {{ layerType, idx, obj }} = item;
     let hw = 50, hh = 50, cx = canvas.width / 2 + obj.x, cy = canvas.height / 2 + obj.y, rot = obj.rotation || 0;
     if (layerType === 'face') {{
-      let img = obj.customImg || loadedFaces[obj.faceIndex];
+      let img = getFaceLayerImg(obj);
       const aspect = (img && img.naturalHeight) ? (img.naturalHeight / img.naturalWidth) : 1.0;
       const sx = obj.scaleX !== undefined ? obj.scaleX : (obj.scale || 1.0);
       const sy = obj.scaleY !== undefined ? obj.scaleY : (obj.scale || 1.0);
@@ -3006,11 +3117,7 @@ function render(offsetObj) {{
     const {{ layerType, obj }} = item;
 
     if (layerType === 'face') {{
-      let img = obj.customImg || loadedFaces[obj.faceIndex];
-      if (obj.isGif && obj.gifFrames && obj.gifFrames.length > 0) {{
-        const frameIdx = (obj.gifIndex !== undefined ? obj.gifIndex : 0) % obj.gifFrames.length;
-        img = obj.gifFrames[frameIdx];
-      }}
+      let img = getFaceLayerImg(obj);
       if (!img) return;
 
       ctx.save();
@@ -3278,7 +3385,7 @@ function initCanvasEvents() {{
         let newHh = Math.max(12, Math.abs(ly));
 
         if (active.type === 'face') {{
-          let img = active.obj.customImg || loadedFaces[active.obj.faceIndex];
+          let img = getFaceLayerImg(active.obj);
           const aspect = (img && img.naturalHeight) ? (img.naturalHeight / img.naturalWidth) : 1.0;
           active.obj.scaleX = Number((newHw / 100).toFixed(2));
           active.obj.scaleY = Number((newHh / (100 * aspect)).toFixed(2));
@@ -3435,6 +3542,7 @@ function renderFacesGrid() {{
   if (!isVaultUnlocked) {{
     return;
   }}
+  faces = deduplicateFaces(faces);
   if (faces.length === 0) {{
     const emptyNotice = document.createElement('div');
     emptyNotice.id = 'emptyFacesNotice';
@@ -3442,15 +3550,21 @@ function renderFacesGrid() {{
     emptyNotice.innerText = currentLang === 'ar' ? 'لا توجد وجوه افتراضية. ارفع فاكهة أو صورة مخصصة بالأعلى للبدء!' : 'No default faces. Upload a custom fruit or photo above to start!';
     facesGrid.appendChild(emptyNotice);
   }} else {{
+    const activeData = getActiveLayerData();
+    const activeFaceId = (activeData && activeData.type === 'face' && activeData.obj) ? (activeData.obj.faceId || (faces[activeData.obj.faceIndex] || {{}}).id) : null;
+
     faces.forEach((f, idx) => {{
+      const fId = f.id || ('face_' + idx);
+      const fFile = (f.file || '').toLowerCase();
+      const isActive = activeFaceId ? (f.id === activeFaceId || (activeData.obj.faceFile && fFile === activeData.obj.faceFile.toLowerCase())) : (idx === 0);
+
       const card = document.createElement('div');
-      card.className = 'grid-card' + (idx === 0 ? ' active' : '');
-      card.setAttribute('data-face-id', f.id || ('face_' + idx));
+      card.className = 'grid-card' + (isActive ? ' active' : '');
+      card.setAttribute('data-face-id', fId);
       card.setAttribute('data-face-file', f.file || '');
       card.innerHTML = `<img src="${{f.src}}" alt="${{f.name}}"><span>${{f.name}}</span>`;
 
       // Live sync and deletion indicator on cards
-      const fFile = (f.file || '').toLowerCase();
       if (deletingItemIds.has(f.id) || (fFile && deletingItemIds.has(fFile))) {{
         const overlay = document.createElement('div');
         overlay.className = 'card-syncing-overlay';
@@ -3464,21 +3578,24 @@ function renderFacesGrid() {{
       }}
 
       card.onclick = async () => {{
-        const targetFile = (f.file || '').toLowerCase();
-        if (deletingItemIds.has(f.id) || (targetFile && deletingItemIds.has(targetFile))) return;
+        if (deletingItemIds.has(f.id) || (fFile && deletingItemIds.has(fFile))) return;
         document.querySelectorAll('#facesGrid .grid-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
         let targetLayer = null;
         const active = getActiveLayerData();
         if (active && active.type === 'face') {{
-          active.obj.faceIndex = idx;
+          active.obj.faceId = f.id;
+          active.obj.faceFile = f.file;
+          active.obj.faceIndex = faces.findIndex(item => item.id === f.id || (f.file && item.file === f.file));
           active.obj.customImg = null;
           active.obj.customName = f.name;
           active.obj.isGif = false;
           active.obj.gifFrames = [];
           targetLayer = active.obj;
         }} else {{
-          targetLayer = makeFaceLayer(idx, 0, 0, 1.0);
+          targetLayer = makeFaceLayer(f.id || idx, 0, 0, 1.0);
+          targetLayer.faceId = f.id;
+          targetLayer.faceFile = f.file;
           targetLayer.customName = f.name;
           state.facesOnCanvas.push(targetLayer);
           state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
@@ -3639,7 +3756,14 @@ function initUIEvents() {{
       document.getElementById('faceFileInput').click();
       return;
     }}
-    state.facesOnCanvas.push(makeFaceLayer(0, Math.floor((Math.random() - 0.5) * 80), Math.floor((Math.random() - 0.5) * 80), 1.0));
+    const firstFace = faces[0];
+    const newFaceLayer = makeFaceLayer(firstFace ? firstFace.id : 0, Math.floor((Math.random() - 0.5) * 80), Math.floor((Math.random() - 0.5) * 80), 1.0);
+    if (firstFace) {{
+      newFaceLayer.faceId = firstFace.id;
+      newFaceLayer.faceFile = firstFace.file;
+      newFaceLayer.customName = firstFace.name;
+    }}
+    state.facesOnCanvas.push(newFaceLayer);
     state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
     render();
     syncLayersUI();
@@ -4284,21 +4408,26 @@ function initUIEvents() {{
             }} catch(err) {{}}
           }}
 
-          templates.push({{
+          const newTplObj = {{
             id: imgId,
             name: name,
             file: uploadedFilename,
             src: b64,
             isGif: isGif,
             gifFrames: parsedFrames
-          }});
-
+          }};
           const newImg = new Image();
           newImg.src = b64;
+          newTplObj.img = newImg;
+
+          const upTplFileLower = (uploadedFilename || '').toLowerCase();
+          templates = templates.filter(t => t.id !== imgId && (t.file || '').toLowerCase() !== upTplFileLower);
+          templates.push(newTplObj);
+
           loadedTemplates[imgId] = newImg;
+          if (uploadedFilename) loadedTemplates[upTplFileLower] = newImg;
 
           uploadingItemIds.delete(imgId);
-          initUIEvents();
           renderTemplatesGrid();
           renderAdminTemplatesCatalog();
 
@@ -4378,22 +4507,29 @@ function initUIEvents() {{
           }} catch(err) {{}}
         }}
 
-        faces.push({{
+        const targetUpFile = uploadedFilename || filename;
+        const upFaceFileLower = (targetUpFile || '').toLowerCase();
+        const newFaceObj = {{
           id: imgId,
           name: name,
-          file: uploadedFilename || filename,
+          file: targetUpFile,
           src: b64,
           isGif: isGif,
           gifFrames: parsedFrames
-        }});
-
-        const idx = faces.length - 1;
+        }};
         const newImg = new Image();
         newImg.src = b64;
-        loadedFaces[idx] = newImg;
+        newFaceObj.img = newImg;
+
+        faces = faces.filter(f => f.id !== imgId && (f.file || '').toLowerCase() !== upFaceFileLower);
+        faces.push(newFaceObj);
+        faces = deduplicateFaces(faces);
+
+        loadedFaces[imgId] = newImg;
+        if (upFaceFileLower) loadedFaces[upFaceFileLower] = newImg;
+        loadedFaces[faces.length - 1] = newImg;
 
         uploadingItemIds.delete(imgId);
-        initUIEvents();
         renderFacesGrid();
         renderAdminCatalog();
 
@@ -4463,7 +4599,11 @@ function initUIEvents() {{
   async function unlockVaultUI(pwd, persist = true) {{
     try {{
       const decrypted = await decryptVault(pwd);
-      faces = decrypted;
+      if (faces && faces.length > 0) {{
+        faces = deduplicateFaces([...decrypted, ...faces]);
+      }} else {{
+        faces = deduplicateFaces(decrypted);
+      }}
       isVaultUnlocked = true;
       preloadFaces();
       if (vaultOverlay) vaultOverlay.style.display = 'none';
@@ -4683,9 +4823,16 @@ window.deleteAdminFace = async function(idx, btn) {{
     // Step C: Clean up local array & state
     const removeIdx = faces.findIndex(item => item.id === faceId || (item.file && item.file.toLowerCase() === targetFileLower));
     const finalIdx = removeIdx !== -1 ? removeIdx : idx;
-    if (finalIdx >= 0 && finalIdx < faces.length) {{
-      faces.splice(finalIdx, 1);
-    }}
+
+    faces = faces.filter(item => {{
+      if (faceId && item.id === faceId) return false;
+      if (targetFileLower && (item.file || '').toLowerCase() === targetFileLower) return false;
+      return true;
+    }});
+    faces = deduplicateFaces(faces);
+
+    delete loadedFaces[faceId];
+    if (targetFileLower) delete loadedFaces[targetFileLower];
     delete loadedFaces[finalIdx];
 
     for (const k of Object.keys(loadedFaces)) {{
@@ -4693,18 +4840,25 @@ window.deleteAdminFace = async function(idx, btn) {{
     }}
     faces.forEach((item, i) => {{
       if (item.src) {{
-        const img = new Image();
-        img.src = item.src;
+        const img = (item.img && item.img.complete) ? item.img : new Image();
+        if (!img.src) img.src = item.src;
+        item.img = img;
+        loadedFaces[item.id] = img;
+        if (item.file) loadedFaces[item.file.toLowerCase()] = img;
         loadedFaces[i] = img;
       }}
     }});
 
     state.facesOnCanvas = state.facesOnCanvas.filter(fc => {{
-      if (fc.faceIndex === finalIdx || (faceId && fc.id === faceId)) return false;
+      if (faceId && fc.faceId === faceId) return false;
+      if (targetFileLower && fc.faceFile && fc.faceFile.toLowerCase() === targetFileLower) return false;
+      if (fc.faceIndex === finalIdx) return false;
       return true;
     }});
     state.facesOnCanvas.forEach(fc => {{
-      if (fc.faceIndex > finalIdx) fc.faceIndex -= 1;
+      const matchIdx = faces.findIndex(f => (fc.faceId && f.id === fc.faceId) || (fc.faceFile && f.file && f.file.toLowerCase() === fc.faceFile.toLowerCase()));
+      if (matchIdx !== -1) fc.faceIndex = matchIdx;
+      else if (fc.faceIndex > finalIdx) fc.faceIndex -= 1;
     }});
     if (state.activeTransformTarget && !state.facesOnCanvas.includes(state.activeTransformTarget)) {{
       state.activeTransformTarget = null;
@@ -5128,16 +5282,18 @@ async function syncCloudCatalog(showNotice = false) {{
       const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
       const cloudFaces = JSON.parse(decoded);
 
-      const existingFiles = new Set(faces.map(f => (f.file || '').toLowerCase()));
+      const existingFiles = new Set(faces.map(f => (f.file || f.filename || '').toLowerCase()).filter(Boolean));
+      const existingIds = new Set(faces.map(f => (f.id || '').toLowerCase()).filter(Boolean));
       let newFacesAdded = false;
 
       for (const cf of cloudFaces) {{
         const cfile = cf.file || cf.filename;
         if (!cfile) continue;
         const cfileLower = cfile.toLowerCase();
+        const cidLower = (cf.id || '').toLowerCase();
         // NEVER resurrect files that were deleted or are actively deleting in this session
-        if (deletedItemFiles.has(cfileLower) || deletingItemIds.has(cfileLower) || deletingItemIds.has(cf.id)) continue;
-        if (!existingFiles.has(cfileLower)) {{
+        if (deletedItemFiles.has(cfileLower) || deletingItemIds.has(cfileLower) || (cf.id && deletingItemIds.has(cf.id))) continue;
+        if (!existingFiles.has(cfileLower) && (!cidLower || !existingIds.has(cidLower))) {{
           try {{
             const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{cfile}}?_t=${{Date.now()}}`, {{
               headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
@@ -5147,18 +5303,23 @@ async function syncCloudCatalog(showNotice = false) {{
               const isGif = cfileLower.endsWith('.gif');
               const mime = isGif ? 'image/gif' : (cfileLower.endsWith('.webp') ? 'image/webp' : (cfileLower.endsWith('.png') ? 'image/png' : 'image/jpeg'));
               const src = `data:${{mime}};base64,${{fData.content.replace(/\\s/g, '')}}`;
-              const newIdx = faces.length;
-              faces.push({{
-                id: cf.id || ('face_' + Date.now()),
+              const faceId = cf.id || ('face_' + Date.now());
+              const img = new Image();
+              img.src = src;
+              const newFace = {{
+                id: faceId,
                 name: cf.name || cf.label || cfile,
                 file: cfile,
                 src: src,
+                img: img,
                 isGif: isGif
-              }});
-              const img = new Image();
-              img.src = src;
-              loadedFaces[newIdx] = img;
+              }};
+              faces.push(newFace);
+              loadedFaces[faceId] = img;
+              loadedFaces[cfileLower] = img;
+              loadedFaces[faces.length - 1] = img;
               existingFiles.add(cfileLower);
+              if (cidLower) existingIds.add(cidLower);
               newFacesAdded = true;
             }}
           }} catch (e) {{}}
@@ -5166,6 +5327,7 @@ async function syncCloudCatalog(showNotice = false) {{
       }}
 
       if (newFacesAdded) {{
+        faces = deduplicateFaces(faces);
         renderFacesGrid();
         renderAdminCatalog();
       }}
@@ -5296,10 +5458,11 @@ function syncLayersUI() {{
     let titleStr = '';
 
     if (layerType === 'face') {{
-      const faceImg = obj.customImg ? obj.customImg.src : (faces[obj.faceIndex] ? faces[obj.faceIndex].src : '');
+      const fImgObj = getFaceLayerImg(obj);
+      const faceImg = fImgObj ? fImgObj.src : '';
       thumbHtml = `<img src="${{faceImg}}" class="layer-thumb" alt="Face">`;
-      const fObj = faces[obj.faceIndex];
-      titleStr = fObj ? fObj.name : (currentLang === 'ar' ? 'فاكهة مخصصة' : 'Custom Fruit');
+      const fObj = faces.find(f => (obj.faceId && f.id === obj.faceId) || (obj.faceFile && f.file && f.file.toLowerCase() === obj.faceFile.toLowerCase())) || faces[obj.faceIndex];
+      titleStr = obj.customName || (fObj ? fObj.name : (currentLang === 'ar' ? 'فاكهة مخصصة' : 'Custom Fruit'));
     }} else if (layerType === 'acc') {{
       const accImg = obj.img ? obj.img.src : '';
       thumbHtml = `<img src="${{accImg}}" class="layer-thumb" alt="Sticker">`;
