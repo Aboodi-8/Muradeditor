@@ -307,7 +307,18 @@ def load_templates_catalog():
                 "file": t["file"],
                 "src": get_base64_data_uri(img_p)
             })
-    return tpl_list
+
+    # Strict deduplication by ID and file
+    seen_tpl_keys = set()
+    unique_tpls = []
+    for t in tpl_list:
+        tid = (t.get("id") or "").lower().strip()
+        tfile = (t.get("file") or "").lower().strip()
+        key = tid or tfile
+        if key and key not in seen_tpl_keys:
+            seen_tpl_keys.add(key)
+            unique_tpls.append(t)
+    return unique_tpls
 
 # Load GIF libraries
 gifshot_path = ASSETS_DIR / "gifshot.min.js"
@@ -2831,16 +2842,65 @@ function preloadFaces() {{
   }});
 }}
 
-// Preload template images
+// --- DEDUPLICATION & TEMPLATE PRELOADING ---
+function deduplicateTemplates(list) {{
+  if (!Array.isArray(list)) return [];
+  const seenIds = new Set();
+  const seenFiles = new Set();
+  const seenSrcs = new Set();
+  const unique = [];
+
+  for (const t of list) {{
+    if (!t) continue;
+    const tId = (t.id || '').toLowerCase().trim();
+    const tFile = (t.file || t.filename || '').toLowerCase().trim();
+    const tSrc = (t.src || '').slice(0, 100);
+
+    if (tId && seenIds.has(tId)) continue;
+    if (tFile && seenFiles.has(tFile)) continue;
+    if (tSrc && seenSrcs.has(tSrc)) continue;
+
+    if (tId) seenIds.add(tId);
+    if (tFile) seenFiles.add(tFile);
+    if (tSrc) seenSrcs.add(tSrc);
+    unique.push(t);
+  }}
+  return unique;
+}}
+
 let loadedTemplates = {{}};
-templates.forEach(t => {{
-  const img = new Image();
-  img.src = t.src;
-  img.onload = () => {{
-    render();
-  }};
-  loadedTemplates[t.id] = img;
-}});
+
+function getBgTemplateImg(tplId) {{
+  if (!tplId) return null;
+  if (loadedTemplates[tplId]) return loadedTemplates[tplId];
+  const tplIdLower = String(tplId).toLowerCase();
+  if (loadedTemplates[tplIdLower]) return loadedTemplates[tplIdLower];
+  if (templates) {{
+    const match = templates.find(t => t.id === tplId || (t.file && t.file.toLowerCase() === tplIdLower));
+    if (match) {{
+      return match.img || loadedTemplates[match.id] || (match.file ? loadedTemplates[match.file.toLowerCase()] : null);
+    }}
+  }}
+  return null;
+}}
+
+function preloadTemplates() {{
+  templates = deduplicateTemplates(templates);
+  templates.forEach(t => {{
+    if (!t) return;
+    const tId = t.id;
+    const tFile = (t.file || '').toLowerCase();
+    if (!loadedTemplates[tId]) {{
+      const img = new Image();
+      img.src = t.src;
+      img.onload = () => {{ render(); }};
+      t.img = img;
+      loadedTemplates[tId] = img;
+      if (tFile) loadedTemplates[tFile] = img;
+    }}
+  }});
+}}
+preloadTemplates();
 
 // --- AUTO FIT CANVAS TO SCREEN VIEWPORT ---
 function fitCanvasToScreen() {{
@@ -3073,8 +3133,8 @@ function render(offsetObj) {{
     bgImg = state.bgGifFrames[fIdx];
   }} else if (state.bgType === 'custom' && state.bgCustomImg) {{
     bgImg = state.bgCustomImg;
-  }} else if (state.bgType === 'template' && loadedTemplates[state.bgTemplateId]) {{
-    bgImg = loadedTemplates[state.bgTemplateId];
+  }} else if (state.bgType === 'template') {{
+    bgImg = getBgTemplateImg(state.bgTemplateId);
   }}
 
   let cw = 800, ch = 800;
@@ -3462,6 +3522,7 @@ function renderTemplatesGrid() {{
   const bgGrid = document.getElementById('bgPresetsRow');
   if (!bgGrid) return;
   bgGrid.innerHTML = '';
+  templates = deduplicateTemplates(templates);
   templates.forEach(t => {{
     const card = document.createElement('div');
     card.className = 'grid-card-template' + (state.bgTemplateId === t.id ? ' active' : '');
@@ -4425,6 +4486,7 @@ function initUIEvents() {{
           const upTplFileLower = (uploadedFilename || '').toLowerCase();
           templates = templates.filter(t => t.id !== imgId && (t.file || '').toLowerCase() !== upTplFileLower);
           templates.push(newTplObj);
+          templates = deduplicateTemplates(templates);
 
           loadedTemplates[imgId] = newImg;
           if (uploadedFilename) loadedTemplates[upTplFileLower] = newImg;
@@ -5473,14 +5535,17 @@ window.deleteAdminTemplate = async function(idx, btn) {{
     }}
 
     // 3. Clean up local state
-    const removeIdx = templates.findIndex(item => item.id === tplId || (item.file && item.file.toLowerCase() === targetFileLower));
-    const finalIdx = removeIdx !== -1 ? removeIdx : idx;
-    if (finalIdx >= 0 && finalIdx < templates.length) {{
-      templates.splice(finalIdx, 1);
-    }}
-    delete loadedTemplates[tplId];
+    templates = templates.filter(item => {{
+      if (tplId && item.id === tplId) return false;
+      if (targetFileLower && (item.file || item.filename || '').toLowerCase() === targetFileLower) return false;
+      return true;
+    }});
+    templates = deduplicateTemplates(templates);
 
-    if (state.bgType === 'template' && state.bgTemplateId === tplId) {{
+    delete loadedTemplates[tplId];
+    if (targetFileLower) delete loadedTemplates[targetFileLower];
+
+    if (state.bgType === 'template' && (state.bgTemplateId === tplId || (targetFileLower && String(state.bgTemplateId).toLowerCase() === targetFileLower))) {{
       state.bgType = 'color';
       state.bgTemplateId = null;
       state.bgCustomImg = null;
@@ -5741,6 +5806,7 @@ async function syncCloudCatalog(showNotice = false) {{
       }}
 
       if (newTplsAdded) {{
+        templates = deduplicateTemplates(templates);
         renderTemplatesGrid();
         renderAdminTemplatesCatalog();
       }}
@@ -5865,7 +5931,7 @@ function syncLayersUI() {{
 
   let bgImg = null;
   if (state.bgType === 'custom' && state.bgCustomImg) bgImg = state.bgCustomImg;
-  else if (state.bgType === 'template' && loadedTemplates[state.bgTemplateId]) bgImg = loadedTemplates[state.bgTemplateId];
+  else if (state.bgType === 'template') bgImg = getBgTemplateImg(state.bgTemplateId);
 
   let bgThumbHtml = bgImg && bgImg.src ? `<img src="${{bgImg.src}}" class="layer-thumb" alt="Backdrop">` : `<span style="font-size:16px; margin:0 4px;">🖼️</span>`;
   let bgTitle = currentLang === 'ar' ? 'الخلفية والقوالب' : 'Backdrop & Template';
