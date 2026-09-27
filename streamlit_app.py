@@ -846,38 +846,62 @@ html_app = f"""
     box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.3);
   }}
 
-  /* DISCORD ANIMATION CHIPS */
-  .grid-anim-chips {{
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 5px;
+  /* DISCORD ANIMATION DROPDOWN */
+  .anim-select-container {{
+    position: relative;
+    width: 100%;
   }}
-  .anim-chip {{
-    background: var(--ps-card);
+  .anim-dropdown {{
+    width: 100%;
+    background-color: var(--ps-card);
     border: 1px solid var(--ps-border);
-    border-radius: 6px;
-    padding: 6px 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
+    border-radius: 7px;
+    color: #f1f3f7;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 9px 34px 9px 12px;
+    outline: none;
     cursor: pointer;
-    font-size: 11px;
-    font-weight: 700;
-    color: #e2e4ea;
-    transition: all 0.12s ease;
+    transition: all 0.18s ease;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%238a94a6' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 14px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.25);
   }}
-  .anim-chip:hover {{
-    background: var(--ps-card-hover);
+  .anim-dropdown:hover {{
+    background-color: var(--ps-card-hover);
     border-color: var(--ps-border-light);
   }}
-  .anim-chip.active {{
-    background: rgba(0, 132, 255, 0.22);
+  .anim-dropdown:focus {{
     border-color: var(--ps-blue);
-    box-shadow: 0 0 0 1.5px var(--ps-blue);
+    box-shadow: 0 0 0 2px rgba(0, 132, 255, 0.35);
   }}
-  .anim-chip span.emoji {{
-    font-size: 14px;
+  .anim-dropdown option {{
+    background: #181b22;
+    color: #f1f3f7;
+    padding: 8px 10px;
+    font-size: 13px;
+  }}
+  .anim-badge {{
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 12px;
+    background: rgba(0, 132, 255, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(0, 132, 255, 0.3);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }}
+  .lang-ar .anim-dropdown {{
+    padding: 9px 12px 9px 34px;
+    background-position: left 12px center;
+    direction: rtl;
+    text-align: right;
   }}
 
   /* ACTIVE LAYERS LIST */
@@ -1458,22 +1482,39 @@ html_app = f"""
         </div>
       </div>
 
-      <!-- 5. SECTION: COMPACT DISCORD GIF EFFECTS -->
+      <!-- 5. SECTION: DISCORD GIF EFFECTS DROPDOWN -->
       <div class="ps-panel-section" id="section-anim">
         <div class="panel-section-header">
           <span class="panel-section-title" id="secTitleAnim">✨ Discord GIF Effects</span>
+          <span class="anim-badge" id="animActiveBadge">Still</span>
         </div>
 
-        <div class="grid-anim-chips" id="animGrid">
-          <div class="anim-chip active" data-anim="none"><span class="emoji">🖼️</span><span id="animStill">Still</span></div>
-          <div class="anim-chip" data-anim="bob"><span class="emoji">🕺</span><span id="animBob">Bob</span></div>
-          <div class="anim-chip" data-anim="shake"><span class="emoji">💢</span><span id="animShake">Shake</span></div>
-          <div class="anim-chip" data-anim="spin"><span class="emoji">🌀</span><span id="animSpin">Spin</span></div>
-          <div class="anim-chip" data-anim="petpet"><span class="emoji">👋</span><span id="animPetpet">Petpet</span></div>
-          <div class="anim-chip" data-anim="zoom"><span class="emoji">💥</span><span id="animPulse">Pulse</span></div>
-          <div class="anim-chip" data-anim="pulse"><span class="emoji">💓</span><span id="animHeart">Heart</span></div>
-          <div class="anim-chip" data-anim="wobble"><span class="emoji">🌊</span><span id="animWobble">Wobble</span></div>
-          <div class="anim-chip" data-anim="disco"><span class="emoji">🪩</span><span id="animDisco">Disco</span></div>
+        <div class="anim-select-container">
+          <select id="animEffectSelect" class="ps-select anim-dropdown">
+            <option value="none">🖼️ Still (No Animation)</option>
+            <option value="bob">🕺 Bob Up &amp; Down</option>
+            <option value="bounce">🏀 Energetic Bounce</option>
+            <option value="shake">💢 Shake</option>
+            <option value="earthquake">🌋 Severe Earthquake</option>
+            <option value="petpet">👋 Petpet Squish</option>
+            <option value="jelly">🍮 Jelly Wobble</option>
+            <option value="spin">🌀 Spin 360°</option>
+            <option value="spin_fast">⚡ Hyper Spin</option>
+            <option value="disco">🪩 Disco Dance</option>
+            <option value="headbang">🎸 Headbang (Metal)</option>
+            <option value="wobble">🌊 Side Wobble</option>
+            <option value="swing">🕰️ Pendulum Swing</option>
+            <option value="float">🛸 Dreamy Hover</option>
+            <option value="orbit">🪐 3D Orbit</option>
+            <option value="heart">💓 Heartbeat</option>
+            <option value="zoom">💥 Pulse &amp; Zoom</option>
+            <option value="breathe">🫁 Slow Breathing</option>
+            <option value="roll">🛞 Barrel Roll</option>
+            <option value="dizzy">🥴 Drunk &amp; Dizzy</option>
+            <option value="peekaboo">🙈 Peek-a-boo</option>
+            <option value="jitter">⚡ Glitch Jitter</option>
+            <option value="chaos">🤯 Hyper Chaos</option>
+          </select>
         </div>
       </div>
 
@@ -1649,15 +1690,30 @@ const i18n = {{
     lblStickerOpacity: 'Opacity:',
 
     secTitleAnim: '✨ Discord GIF Effects',
-    animStill: 'Still',
-    animBob: 'Bob',
-    animShake: 'Shake',
-    animSpin: 'Spin',
-    animPetpet: 'Petpet',
-    animPulse: 'Pulse',
-    animHeart: 'Heart',
-    animWobble: 'Wobble',
-    animDisco: 'Disco',
+    animBadgeStill: 'Still',
+    animNone: '🖼️ Still (No Animation)',
+    animBob: '🕺 Bob Up & Down',
+    animBounce: '🏀 Energetic Bounce',
+    animShake: '💢 Shake',
+    animEarthquake: '🌋 Severe Earthquake',
+    animPetpet: '👋 Petpet Squish',
+    animJelly: '🍮 Jelly Wobble',
+    animSpin: '🌀 Spin 360°',
+    animSpinFast: '⚡ Hyper Spin',
+    animDisco: '🪩 Disco Dance',
+    animHeadbang: '🎸 Headbang (Metal)',
+    animWobble: '🌊 Side Wobble',
+    animSwing: '🕰️ Pendulum Swing',
+    animFloat: '🛸 Dreamy Hover',
+    animOrbit: '🪐 3D Orbit',
+    animHeart: '💓 Heartbeat',
+    animZoom: '💥 Pulse & Zoom',
+    animBreathe: '🫁 Slow Breathing',
+    animRoll: '🛞 Barrel Roll',
+    animDizzy: '🥴 Drunk & Dizzy',
+    animPeekaboo: '🙈 Peek-a-boo',
+    animJitter: '⚡ Glitch Jitter',
+    animChaos: '🤯 Hyper Chaos',
 
     secTitleLayers: '📑 Active Layers',
     noLayers: 'No active layers on canvas',
@@ -1736,15 +1792,30 @@ const i18n = {{
     lblStickerOpacity: 'الشفافية:',
 
     secTitleAnim: '✨ تأثيرات ديسكورد المتحركة',
-    animStill: 'ثابت',
-    animBob: 'تمايل',
-    animShake: 'اهتزاز',
-    animSpin: 'دوران',
-    animPetpet: 'تربيت',
-    animPulse: 'نبض',
-    animHeart: 'قلب',
-    animWobble: 'تموج',
-    animDisco: 'ديسكو',
+    animBadgeStill: 'ثابت',
+    animNone: '🖼️ ثابت (بدون حركة)',
+    animBob: '🕺 تمايل للأعلى والأسفل',
+    animBounce: '🏀 قفز ارتدادي ممتع',
+    animShake: '💢 اهتزاز سريع',
+    animEarthquake: '🌋 زلزال عنيف',
+    animPetpet: '👋 تربيت سريع (Petpet)',
+    animJelly: '🍮 تموج الجيلي المطاطي',
+    animSpin: '🌀 دوران 360 درجة',
+    animSpinFast: '⚡ دوران فائق السرعة',
+    animDisco: '🪩 رقص ديسكو',
+    animHeadbang: '🎸 هز الرأس (ميتال)',
+    animWobble: '🌊 تموج جانبي',
+    animSwing: '🕰️ تأرجح البندول',
+    animFloat: '🛸 طفو عائم ناعم',
+    animOrbit: '🪐 مدار ثلاثي الأبعاد',
+    animHeart: '💓 نبض القلب',
+    animZoom: '💥 نبض وتكبير متفجر',
+    animBreathe: '🫁 تنفس هادئ',
+    animRoll: '🛞 دحرجة برميلية',
+    animDizzy: '🥴 دوخة وترنح',
+    animPeekaboo: '🙈 تلصص واختفاء',
+    animJitter: '⚡ تشويش وجليتش',
+    animChaos: '🤯 فوضى ميم خارقة',
 
     secTitleLayers: '📑 الطبقات النشطة',
     noLayers: 'لا توجد طبقات نشطة على الكانفاس',
@@ -1832,15 +1903,47 @@ function applyLanguage(lang) {{
   document.getElementById('lblStickerOpacity').innerText = t.lblStickerOpacity;
 
   document.getElementById('secTitleAnim').innerText = t.secTitleAnim;
-  document.getElementById('animStill').innerText = t.animStill;
-  document.getElementById('animBob').innerText = t.animBob;
-  document.getElementById('animShake').innerText = t.animShake;
-  document.getElementById('animSpin').innerText = t.animSpin;
-  document.getElementById('animPetpet').innerText = t.animPetpet;
-  document.getElementById('animPulse').innerText = t.animPulse;
-  document.getElementById('animHeart').innerText = t.animHeart;
-  document.getElementById('animWobble').innerText = t.animWobble;
-  document.getElementById('animDisco').innerText = t.animDisco;
+  const animSelect = document.getElementById('animEffectSelect');
+  if (animSelect) {{
+    const animMap = {{
+      none: t.animNone,
+      bob: t.animBob,
+      bounce: t.animBounce,
+      shake: t.animShake,
+      earthquake: t.animEarthquake,
+      petpet: t.animPetpet,
+      jelly: t.animJelly,
+      spin: t.animSpin,
+      spin_fast: t.animSpinFast,
+      disco: t.animDisco,
+      headbang: t.animHeadbang,
+      wobble: t.animWobble,
+      swing: t.animSwing,
+      float: t.animFloat,
+      orbit: t.animOrbit,
+      heart: t.animHeart,
+      zoom: t.animZoom,
+      breathe: t.animBreathe,
+      roll: t.animRoll,
+      dizzy: t.animDizzy,
+      peekaboo: t.animPeekaboo,
+      jitter: t.animJitter,
+      chaos: t.animChaos
+    }};
+    for (let i = 0; i < animSelect.options.length; i++) {{
+      const opt = animSelect.options[i];
+      if (animMap[opt.value]) {{
+        opt.innerText = animMap[opt.value];
+      }}
+    }}
+    const badge = document.getElementById('animActiveBadge');
+    if (badge) {{
+      const currentOpt = animSelect.options[animSelect.selectedIndex];
+      if (currentOpt) {{
+        badge.innerText = currentOpt.value === 'none' ? t.animBadgeStill : (currentOpt.text.split(' ')[1] || currentOpt.text);
+      }}
+    }}
+  }}
 
   document.getElementById('secTitleLayers').innerText = t.secTitleLayers;
   const emptyNotice = document.getElementById('emptyFacesNotice');
@@ -2264,8 +2367,10 @@ function render(offsetObj) {{
       const sy = obj.scaleY !== undefined ? obj.scaleY : (obj.scale || 1.0);
       const baseW = 200;
       const baseH = 200 * aspect;
-      const w = baseW * sx * animOff.scale;
-      const h = baseH * sy * animOff.scale;
+      const scaleXMult = animOff.scaleX !== undefined ? animOff.scaleX : (animOff.scale !== undefined ? animOff.scale : 1.0);
+      const scaleYMult = animOff.scaleY !== undefined ? animOff.scaleY : (animOff.scale !== undefined ? animOff.scale : 1.0);
+      const w = baseW * sx * scaleXMult;
+      const h = baseH * sy * scaleYMult;
 
       if (obj.maskShape === 'oval') {{
         ctx.beginPath();
@@ -3096,15 +3201,19 @@ function initUIEvents() {{
     reader.readAsDataURL(file);
   }};
 
-  // 5. Discord Animation Grid Chips
-  document.querySelectorAll('#animGrid .anim-chip').forEach(card => {{
-    card.onclick = () => {{
-      document.querySelectorAll('#animGrid .anim-chip').forEach(c => c.classList.remove('active'));
-      card.classList.add('active');
-      state.animation = card.dataset.anim;
+  // 5. Discord Animation Dropdown
+  const animSelect = document.getElementById('animEffectSelect');
+  if (animSelect) {{
+    animSelect.onchange = () => {{
+      state.animation = animSelect.value;
+      const badge = document.getElementById('animActiveBadge');
+      if (badge) {{
+        const opt = animSelect.options[animSelect.selectedIndex];
+        badge.innerText = opt ? (opt.value === 'none' ? (i18n[currentLang].animBadgeStill || 'Still') : (opt.text.split(' ')[1] || opt.text)) : state.animation;
+      }}
       render();
     }};
-  }});
+  }}
 
   // 6. Topbar Context Tool Actions (Flip, Center, Delete)
   document.getElementById('optFlipBtn').onclick = () => {{
@@ -3353,9 +3462,10 @@ function initUIEvents() {{
     state.bgFilters = makeDefaultFilters();
     state.animation = 'none';
 
-    document.querySelectorAll('#animGrid .anim-chip').forEach(c => {{
-      c.classList.toggle('active', c.dataset.anim === 'none');
-    }});
+    const animSelect = document.getElementById('animEffectSelect');
+    if (animSelect) animSelect.value = 'none';
+    const animBadge = document.getElementById('animActiveBadge');
+    if (animBadge) animBadge.innerText = i18n[currentLang].animBadgeStill || 'Still';
     document.getElementById('activeTextInput').value = '';
 
     render();
@@ -3954,14 +4064,159 @@ function exportGif() {{
 
 function getAnimOffset(anim, progress) {{
   const t = progress * Math.PI * 2;
-  if (anim === 'bob') return {{ x: 0, y: Math.sin(t) * 18, rot: 0, scale: 1.0 }};
-  if (anim === 'shake') return {{ x: (Math.random() - 0.5) * 20, y: (Math.random() - 0.5) * 20, rot: (Math.random() - 0.5) * 14, scale: 1.0 }};
-  if (anim === 'spin') return {{ x: 0, y: 0, rot: progress * 360, scale: 1.0 }};
-  if (anim === 'petpet') return {{ x: 0, y: Math.abs(Math.sin(t)) * 20, rot: 0, scale: 1.0 - Math.abs(Math.sin(t)) * 0.2 }};
-  if (anim === 'zoom') return {{ x: 0, y: 0, rot: 0, scale: 1.0 + Math.sin(t) * 0.24 }};
-  if (anim === 'pulse') return {{ x: 0, y: 0, rot: 0, scale: 1.0 + Math.sin(t * 2) * 0.18 }};
-  if (anim === 'wobble') return {{ x: Math.sin(t) * 16, y: 0, rot: Math.sin(t) * 18, scale: 1.0 }};
-  if (anim === 'disco') return {{ x: Math.sin(t) * 14, y: Math.cos(t) * 14, rot: Math.sin(t) * 20, scale: 1.0 + Math.sin(t) * 0.16 }};
+  if (anim === 'bob') {{
+    return {{ x: 0, y: Math.sin(t) * 20, rot: 0, scale: 1.0 }};
+  }}
+  if (anim === 'bounce') {{
+    const b = Math.abs(Math.sin(t));
+    return {{
+      x: 0,
+      y: -b * 30,
+      rot: Math.sin(t) * 4,
+      scaleX: 1.0 + (1 - b) * 0.22,
+      scaleY: 1.0 - (1 - b) * 0.20
+    }};
+  }}
+  if (anim === 'shake') {{
+    return {{
+      x: (Math.random() - 0.5) * 20,
+      y: (Math.random() - 0.5) * 20,
+      rot: (Math.random() - 0.5) * 14,
+      scale: 1.0
+    }};
+  }}
+  if (anim === 'earthquake') {{
+    return {{
+      x: (Math.random() - 0.5) * 40,
+      y: (Math.random() - 0.5) * 40,
+      rot: (Math.random() - 0.5) * 25,
+      scale: 1.0 + (Math.random() - 0.5) * 0.15
+    }};
+  }}
+  if (anim === 'petpet') {{
+    const squish = Math.abs(Math.sin(t * 2));
+    return {{
+      x: 0,
+      y: squish * 18,
+      rot: 0,
+      scaleX: 1.0 + squish * 0.18,
+      scaleY: 1.0 - squish * 0.28
+    }};
+  }}
+  if (anim === 'jelly') {{
+    return {{
+      x: Math.sin(t) * 8,
+      y: Math.cos(t) * 6,
+      rot: Math.sin(t) * 12,
+      scaleX: 1.0 + Math.sin(t * 2) * 0.22,
+      scaleY: 1.0 - Math.sin(t * 2) * 0.22
+    }};
+  }}
+  if (anim === 'spin') {{
+    return {{ x: 0, y: 0, rot: progress * 360, scale: 1.0 }};
+  }}
+  if (anim === 'spin_fast') {{
+    return {{ x: 0, y: 0, rot: progress * 720, scale: 1.0 }};
+  }}
+  if (anim === 'disco') {{
+    return {{
+      x: Math.sin(t) * 16,
+      y: Math.cos(t) * 16,
+      rot: Math.sin(t) * 22,
+      scale: 1.0 + Math.sin(t) * 0.18
+    }};
+  }}
+  if (anim === 'headbang') {{
+    const hb = Math.pow(Math.max(0, Math.sin(t)), 1.5);
+    return {{
+      x: 0,
+      y: hb * 28,
+      rot: hb * 22,
+      scaleX: 1.0 + hb * 0.12,
+      scaleY: 1.0 - hb * 0.16
+    }};
+  }}
+  if (anim === 'wobble') {{
+    return {{ x: Math.sin(t) * 18, y: 0, rot: Math.sin(t) * 20, scale: 1.0 }};
+  }}
+  if (anim === 'swing') {{
+    return {{
+      x: Math.sin(t) * 24,
+      y: (1 - Math.cos(t)) * 12,
+      rot: Math.sin(t) * 30,
+      scale: 1.0
+    }};
+  }}
+  if (anim === 'float') {{
+    return {{
+      x: Math.sin(t) * 16,
+      y: Math.sin(t * 2) * 12,
+      rot: Math.sin(t) * 7,
+      scale: 1.0
+    }};
+  }}
+  if (anim === 'orbit') {{
+    return {{
+      x: Math.cos(t) * 28,
+      y: Math.sin(t) * 12,
+      rot: -Math.sin(t) * 10,
+      scale: 1.0 + Math.sin(t) * 0.24
+    }};
+  }}
+  if (anim === 'heart') {{
+    const hPhase = progress % 0.5;
+    const hBeat = Math.sin(hPhase * Math.PI * 2) * (hPhase < 0.25 ? 0.22 : 0.08);
+    return {{ x: 0, y: -hBeat * 8, rot: 0, scale: 1.0 + Math.max(0, hBeat) }};
+  }}
+  if (anim === 'zoom') {{
+    return {{ x: 0, y: 0, rot: 0, scale: 1.0 + Math.sin(t) * 0.26 }};
+  }}
+  if (anim === 'breathe') {{
+    const br = (Math.sin(t) + 1) / 2;
+    return {{
+      x: 0,
+      y: -br * 8,
+      rot: 0,
+      scaleX: 1.0 + br * 0.12,
+      scaleY: 1.0 + br * 0.16
+    }};
+  }}
+  if (anim === 'roll') {{
+    return {{ x: Math.sin(t) * 24, y: 0, rot: Math.sin(t) * 45, scale: 1.0 }};
+  }}
+  if (anim === 'dizzy') {{
+    return {{
+      x: Math.sin(t) * 20 + Math.cos(t * 2) * 8,
+      y: Math.cos(t) * 14,
+      rot: Math.sin(t * 1.5) * 26,
+      scale: 1.0 + Math.sin(t * 3) * 0.12
+    }};
+  }}
+  if (anim === 'peekaboo') {{
+    const pk = Math.sin(t);
+    return {{
+      x: 0,
+      y: pk < 0 ? (-pk) * 55 : 0,
+      rot: pk < 0 ? 0 : Math.sin(t * 4) * 8,
+      scale: 1.0
+    }};
+  }}
+  if (anim === 'jitter') {{
+    return {{
+      x: (Math.random() - 0.5) * 12,
+      y: (Math.random() - 0.5) * 12,
+      rot: (Math.random() - 0.5) * 8,
+      scale: 1.0 + (Math.random() - 0.5) * 0.08
+    }};
+  }}
+  if (anim === 'chaos') {{
+    return {{
+      x: (Math.random() - 0.5) * 36 + Math.sin(t * 3) * 16,
+      y: (Math.random() - 0.5) * 36 + Math.cos(t * 3) * 16,
+      rot: (Math.random() - 0.5) * 50 + t * 45,
+      scale: 0.85 + Math.random() * 0.4
+    }};
+  }}
   return {{ x: 0, y: 0, rot: 0, scale: 1.0 }};
 }}
 
