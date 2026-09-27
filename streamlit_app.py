@@ -142,7 +142,11 @@ def load_faces_catalog():
                     manifest_items = []
 
                 # Self-healing: Check what is missing in GitHub manifest and add any missing files
-                known_files = {item["file"].lower(): item for item in manifest_items if "file" in item}
+                known_files = {
+                    (item.get("file") or item.get("filename", "")).lower(): item
+                    for item in manifest_items
+                    if ("file" in item or "filename" in item)
+                }
                 manifest_updated = False
                 for f_item in folder_files:
                     fn = f_item.get("name", "")
@@ -182,7 +186,10 @@ def load_faces_catalog():
 
                 # Load base64 data for all items
                 for item in manifest_items:
-                    file_url = f"https://api.github.com/repos/{repo_name}/contents/{folder_candidate}/{item['file']}"
+                    fname = item.get("file") or item.get("filename")
+                    if not fname:
+                        continue
+                    file_url = f"https://api.github.com/repos/{repo_name}/contents/{folder_candidate}/{fname}"
                     try:
                         f_req = urllib.request.Request(
                             file_url,
@@ -194,11 +201,12 @@ def load_faces_catalog():
                         )
                         with urllib.request.urlopen(f_req, timeout=5) as f_resp:
                             b64 = base64.b64encode(f_resp.read()).decode("utf-8")
-                            mime = "image/png" if item["file"].lower().endswith(".png") else "image/jpeg"
+                            mime = "image/png" if fname.lower().endswith(".png") else "image/jpeg"
+                            item_name = item.get("name") or item.get("label") or (Path(fname).stem.replace("_", " ").title() + " 🍉")
                             faces_list.append({
-                                "id": item.get("id", Path(item["file"]).stem),
-                                "name": item.get("name", Path(item["file"]).stem.replace("_", " ").title() + " 🍉"),
-                                "file": item["file"],
+                                "id": item.get("id", Path(fname).stem),
+                                "name": item_name,
+                                "file": fname,
                                 "src": f"data:{mime};base64,{b64}"
                             })
                     except Exception:
@@ -284,7 +292,11 @@ def load_templates_catalog():
                     manifest_items = []
 
                 # Self-healing: Check what is missing in GitHub manifest and add any missing templates
-                known_files = {item["file"].lower(): item for item in manifest_items if "file" in item}
+                known_files = {
+                    (item.get("file") or item.get("filename", "")).lower(): item
+                    for item in manifest_items
+                    if ("file" in item or "filename" in item)
+                }
                 manifest_updated = False
                 for f_item in folder_files:
                     fn = f_item.get("name", "")
@@ -322,7 +334,10 @@ def load_templates_catalog():
                         pass
 
                 for item in manifest_items:
-                    file_url = f"https://api.github.com/repos/{repo_name}/contents/{tpl_folder}/{item['file']}"
+                    fname = item.get("file") or item.get("filename")
+                    if not fname:
+                        continue
+                    file_url = f"https://api.github.com/repos/{repo_name}/contents/{tpl_folder}/{fname}"
                     try:
                         f_req = urllib.request.Request(
                             file_url,
@@ -330,11 +345,12 @@ def load_templates_catalog():
                         )
                         with urllib.request.urlopen(f_req, timeout=5) as f_resp:
                             b64 = base64.b64encode(f_resp.read()).decode("utf-8")
-                            mime = "image/webp" if item["file"].endswith(".webp") else ("image/png" if item["file"].endswith(".png") else "image/jpeg")
+                            mime = "image/webp" if fname.endswith(".webp") else ("image/png" if fname.endswith(".png") else "image/jpeg")
+                            item_name = item.get("name") or item.get("label") or Path(fname).stem.replace("_", " ").title()
                             tpl_list.append({
-                                "id": item["id"],
-                                "name": item["name"],
-                                "file": item["file"],
+                                "id": item.get("id") or ("tpl_" + Path(fname).stem),
+                                "name": item_name,
+                                "file": fname,
                                 "src": f"data:{mime};base64,{b64}"
                             })
                     except Exception:
@@ -4000,26 +4016,28 @@ async function syncCloudCatalog(showNotice = false) {{
       let newFacesAdded = false;
 
       for (const cf of cloudFaces) {{
-        if (!existingFiles.has(cf.file)) {{
+        const cfile = cf.file || cf.filename;
+        if (!cfile) continue;
+        if (!existingFiles.has(cfile)) {{
           try {{
-            const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{cf.file}}?_t=${{Date.now()}}`, {{
+            const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{cfile}}?_t=${{Date.now()}}`, {{
               headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
             }});
             if (fRes.ok) {{
               const fData = await fRes.json();
-              const mime = cf.file.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+              const mime = cfile.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
               const src = `data:${{mime}};base64,${{fData.content.replace(/\\s/g, '')}}`;
               const newIdx = faces.length;
               faces.push({{
                 id: cf.id || ('face_' + Date.now()),
-                name: cf.name || cf.file,
-                file: cf.file,
+                name: cf.name || cf.label || cfile,
+                file: cfile,
                 src: src
               }});
               const img = new Image();
               img.src = src;
               loadedFaces[newIdx] = img;
-              existingFiles.add(cf.file);
+              existingFiles.add(cfile);
               newFacesAdded = true;
             }}
           }} catch (e) {{}}
@@ -4049,26 +4067,29 @@ async function syncCloudCatalog(showNotice = false) {{
       let newTplsAdded = false;
 
       for (const ct of cloudTemplates) {{
-        const tId = ct.id || ct.file;
-        if (!existingTplIds.has(tId)) {{
+        const ctfile = ct.file || ct.filename;
+        if (!ctfile) continue;
+        const tId = ct.id || ctfile;
+        if (!existingTplIds.has(tId) && !existingTplIds.has(ctfile)) {{
           try {{
-            const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/Templates/${{ct.file}}?_t=${{Date.now()}}`, {{
+            const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/Templates/${{ctfile}}?_t=${{Date.now()}}`, {{
               headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
             }});
             if (fRes.ok) {{
               const fData = await fRes.json();
-              const mime = ct.file.toLowerCase().endsWith('.webp') ? 'image/webp' : (ct.file.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+              const mime = ctfile.toLowerCase().endsWith('.webp') ? 'image/webp' : (ctfile.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
               const src = `data:${{mime}};base64,${{fData.content.replace(/\\s/g, '')}}`;
               templates.push({{
                 id: tId,
-                name: ct.name || ct.file,
-                file: ct.file,
+                name: ct.name || ct.label || ctfile,
+                file: ctfile,
                 src: src
               }});
               const img = new Image();
               img.src = src;
               loadedTemplates[tId] = img;
               existingTplIds.add(tId);
+              existingTplIds.add(ctfile);
               newTplsAdded = true;
             }}
           }} catch (e) {{}}
