@@ -386,6 +386,8 @@ if gifshot_path.exists():
         gifshot_script = f.read()
 
 gifuct_path = ASSETS_DIR / "gifuct-js.min.js"
+if not gifuct_path.exists():
+    gifuct_path = ASSETS_DIR / "gifuct-js.js"
 gifuct_script = ""
 if gifuct_path.exists():
     with open(gifuct_path, "r", encoding="utf-8") as f:
@@ -618,6 +620,48 @@ html_app = f"""
     align-items: center;
     gap: 8px;
     flex-shrink: 0;
+  }}
+
+  .export-filename-wrap {{
+    display: inline-flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 6px;
+    padding: 4px 8px;
+    gap: 5px;
+    transition: all 0.2s ease;
+  }}
+  .export-filename-wrap:focus-within {{
+    border-color: var(--ps-blue);
+    box-shadow: 0 0 8px rgba(0, 132, 255, 0.35);
+  }}
+  .export-file-icon {{
+    font-size: 13px;
+    user-select: none;
+    line-height: 1;
+  }}
+  .export-filename-input {{
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #4df0a0;
+    font-family: 'Inter', -apple-system, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    width: 135px;
+    min-width: 95px;
+    max-width: 165px;
+    text-overflow: ellipsis;
+  }}
+  .export-filename-input::placeholder {{
+    color: rgba(255, 255, 255, 0.35);
+  }}
+  .export-file-ext {{
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--ps-text-muted);
+    user-select: none;
   }}
 
   .ps-btn {{
@@ -1289,6 +1333,8 @@ html_app = f"""
     font-weight: 800 !important;
   }}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/build/gifshot.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/dist/gifuct-js.min.js"></script>
 <script>
 {gifshot_script}
 </script>
@@ -1327,6 +1373,11 @@ html_app = f"""
 
     <!-- EXPORT ACTIONS + ARABIC LANGUAGE SWITCHER -->
     <div class="ps-actions">
+      <div class="export-filename-wrap" title="Dynamic export file name (click to edit)">
+        <span class="export-file-icon">🏷️</span>
+        <input type="text" id="exportFileNameInput" class="export-filename-input" placeholder="frutisator-meme" value="frutisator-meme">
+        <span class="export-file-ext">.gif</span>
+      </div>
       <button id="btnExportGif" class="ps-btn ps-btn-primary" title="Export Animated Discord GIF">⬇️ Export GIF</button>
       <button id="btnExportPng" class="ps-btn" title="Export High-Res PNG">⬇️ PNG</button>
       <button id="btnCopyDiscord" class="ps-btn" title="Copy to clipboard for instant Discord paste">📋 Copy</button>
@@ -2129,6 +2180,10 @@ function makeFaceLayer(faceIndex, x, y, scale, z) {{
     opacity: 1.0,
     maskShape: 'square',
     customImg: null,
+    customName: '',
+    isGif: false,
+    gifFrames: [],
+    gifIndex: 0,
     filters: makeDefaultFilters(),
     z: z !== undefined ? z : ++layerZCounter
   }};
@@ -2142,6 +2197,7 @@ const state = {{
   bgType: 'template',
   bgTemplateId: 'suit',
   bgCustomImg: null,
+  bgCustomName: '',
   bgIsGif: false,
   bgGifFrames: [],
   bgGifIndex: 0,
@@ -2160,6 +2216,104 @@ const state = {{
   activeTransformTarget: null,
   dragTarget: null
 }};
+
+// UNIVERSAL GIF FRAME DECODER
+async function parseGifFrames(arrayBuffer) {{
+  try {{
+    let rawFrames = null;
+    if (window.gifuct && typeof window.gifuct.parseGIF === 'function') {{
+      const parsed = window.gifuct.parseGIF(arrayBuffer);
+      rawFrames = window.gifuct.decompressFrames(parsed, true);
+    }} else if (window.gifuct && typeof window.gifuct.decompressFrames === 'function') {{
+      rawFrames = window.gifuct.decompressFrames(arrayBuffer, true);
+    }} else if (window.GIF) {{
+      const g = new window.GIF(arrayBuffer);
+      rawFrames = g.decompressFrames(true);
+    }}
+
+    if (!rawFrames || rawFrames.length === 0) return null;
+
+    const firstF = rawFrames[0];
+    const w = (firstF.dims && firstF.dims.width) ? firstF.dims.width : 300;
+    const h = (firstF.dims && firstF.dims.height) ? firstF.dims.height : 300;
+
+    const tmpCanv = document.createElement('canvas');
+    tmpCanv.width = w;
+    tmpCanv.height = h;
+    const tmpCtx = tmpCanv.getContext('2d');
+
+    const loadedFrames = [];
+    for (let i = 0; i < rawFrames.length; i++) {{
+      const f = rawFrames[i];
+      if (f.disposalType === 2) {{
+        tmpCtx.clearRect(0, 0, w, h);
+      }}
+      if (f.patch && f.dims) {{
+        const patchData = tmpCtx.createImageData(f.dims.width, f.dims.height);
+        patchData.data.set(f.patch);
+        tmpCtx.putImageData(patchData, f.dims.left || 0, f.dims.top || 0);
+      }}
+      const img = new Image();
+      img.src = tmpCanv.toDataURL('image/png');
+      await new Promise(r => {{ img.onload = r; img.onerror = r; }});
+      loadedFrames.push(img);
+    }}
+    return loadedFrames;
+  }} catch (err) {{
+    console.warn('parseGifFrames notice:', err);
+    return null;
+  }}
+}}
+
+// DYNAMIC EXPORT FILE NAME GENERATOR
+function updateDynamicFileName() {{
+  const input = document.getElementById('exportFileNameInput');
+  if (!input) return;
+
+  const parts = [];
+
+  // 1. Background / Template name
+  if (state.bgType === 'template' && state.bgTemplateId) {{
+    const tpl = templates.find(t => t.id === state.bgTemplateId);
+    let stem = tpl ? (tpl.name || tpl.file || '') : state.bgTemplateId;
+    stem = stem.replace(/[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[\\u2600-\\u27BF]/g, '').trim().toLowerCase();
+    const cleanStem = stem.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    if (cleanStem) parts.push(cleanStem.substring(0, 10));
+  }} else if (state.bgType === 'custom' && state.bgCustomName) {{
+    const clean = state.bgCustomName.replace(/\\.[^/.]+$/, '').replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '').toLowerCase();
+    if (clean) parts.push(clean.substring(0, 10));
+  }}
+
+  // 2. Faces on canvas
+  state.facesOnCanvas.forEach((f, idx) => {{
+    let fName = '';
+    if (f.customName) {{
+      fName = f.customName;
+    }} else if (faces[f.faceIndex]) {{
+      fName = faces[f.faceIndex].name || faces[f.faceIndex].file || '';
+    }}
+    fName = fName.replace(/[\\uD800-\\uDBFF][\\uDC00-\\uDFFF]|[\\u2600-\\u27BF]/g, '').trim().toLowerCase();
+    let clean = fName.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    if (!clean) clean = 'face' + (idx + 1);
+    parts.push(clean.substring(0, 10));
+  }});
+
+  // 3. Text snippet
+  if (state.texts.length > 0 && state.texts[0].text) {{
+    const txt = state.texts[0].text.trim().toLowerCase();
+    const clean = txt.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+    if (clean) parts.push(clean.substring(0, 10));
+  }}
+
+  let finalName = parts.slice(0, 4).join('-');
+  if (!finalName) finalName = 'frutisator-meme';
+  if (finalName.length > 30) finalName = finalName.substring(0, 30).replace(/-$/, '');
+
+  input.placeholder = finalName;
+  if (!input.dataset.userEdited) {{
+    input.value = finalName;
+  }}
+}}
 
 const canvas = document.getElementById('mainCanvas');
 const ctx = canvas.getContext('2d');
@@ -2223,6 +2377,9 @@ function getActiveLayerData() {{
   if (t.type === 'face' && state.facesOnCanvas[t.idx]) {{
     const face = state.facesOnCanvas[t.idx];
     let img = face.customImg || loadedFaces[face.faceIndex];
+    if (face.isGif && face.gifFrames && face.gifFrames.length > 0) {{
+      img = face.gifFrames[face.gifIndex || 0];
+    }}
     const aspect = (img && img.naturalHeight) ? (img.naturalHeight / img.naturalWidth) : 1.0;
     const sx = face.scaleX !== undefined ? face.scaleX : (face.scale || 1.0);
     const sy = face.scaleY !== undefined ? face.scaleY : (face.scale || 1.0);
@@ -2465,6 +2622,10 @@ function render(offsetObj) {{
 
     if (layerType === 'face') {{
       let img = obj.customImg || loadedFaces[obj.faceIndex];
+      if (obj.isGif && obj.gifFrames && obj.gifFrames.length > 0) {{
+        const frameIdx = (obj.gifIndex !== undefined ? obj.gifIndex : 0) % obj.gifFrames.length;
+        img = obj.gifFrames[frameIdx];
+      }}
       if (!img) return;
 
       ctx.save();
@@ -2811,14 +2972,30 @@ function renderTemplatesGrid() {{
     const card = document.createElement('div');
     card.className = 'grid-card-template' + (state.bgTemplateId === t.id ? ' active' : '');
     card.innerHTML = `<img src="${{t.src}}" alt="${{t.name}}"><span>${{t.name}}</span>`;
-    card.onclick = () => {{
+    card.onclick = async () => {{
       document.querySelectorAll('#bgPresetsRow .grid-card-template').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
       state.bgType = 'template';
       state.bgTemplateId = t.id;
       state.bgCustomImg = null;
+      state.bgCustomName = '';
       state.bgIsGif = false;
+      state.bgGifFrames = [];
+      if (t.file && t.file.toLowerCase().endsWith('.gif') && t.src) {{
+        try {{
+          const res = await fetch(t.src);
+          const buf = await res.arrayBuffer();
+          const frames = await parseGifFrames(buf);
+          if (frames && frames.length > 0) {{
+            state.bgIsGif = true;
+            state.bgGifFrames = frames;
+            state.bgGifIndex = 0;
+          }}
+        }} catch(e) {{}}
+      }}
       render();
+      syncLayersUI();
+      updateDynamicFileName();
     }};
     bgGrid.appendChild(card);
   }});
@@ -2839,19 +3016,39 @@ function renderFacesGrid() {{
       const card = document.createElement('div');
       card.className = 'grid-card' + (idx === 0 ? ' active' : '');
       card.innerHTML = `<img src="${{f.src}}" alt="${{f.name}}"><span>${{f.name}}</span>`;
-      card.onclick = () => {{
+      card.onclick = async () => {{
         document.querySelectorAll('#facesGrid .grid-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
+        let targetLayer = null;
         const active = getActiveLayerData();
         if (active && active.type === 'face') {{
           active.obj.faceIndex = idx;
           active.obj.customImg = null;
+          active.obj.customName = f.name;
+          active.obj.isGif = false;
+          active.obj.gifFrames = [];
+          targetLayer = active.obj;
         }} else {{
-          state.facesOnCanvas.push(makeFaceLayer(idx, 0, 0, 1.0));
+          targetLayer = makeFaceLayer(idx, 0, 0, 1.0);
+          targetLayer.customName = f.name;
+          state.facesOnCanvas.push(targetLayer);
           state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
+        }}
+        if (f.file && f.file.toLowerCase().endsWith('.gif') && f.src) {{
+          try {{
+            const res = await fetch(f.src);
+            const buf = await res.arrayBuffer();
+            const frames = await parseGifFrames(buf);
+            if (frames && frames.length > 0) {{
+              targetLayer.isGif = true;
+              targetLayer.gifFrames = frames;
+              targetLayer.gifIndex = 0;
+            }}
+          }} catch(e) {{}}
         }}
         render();
         syncLayersUI();
+        updateDynamicFileName();
       }};
       facesGrid.appendChild(card);
     }});
@@ -2867,39 +3064,37 @@ function initUIEvents() {{
   document.getElementById('bgFileInput').onchange = (e) => {{
     const file = e.target.files[0];
     if (!file) return;
+    state.bgCustomName = file.name;
 
     if (file.name.toLowerCase().endsWith('.gif')) {{
       const reader = new FileReader();
-      reader.onload = (ev) => {{
+      reader.onload = async (ev) => {{
         try {{
-          const parsed = window.gifuct ? window.gifuct.parseGIF(ev.target.result) : null;
-          const frames = parsed ? window.gifuct.decompressFrames(parsed, true) : null;
+          const frames = await parseGifFrames(ev.target.result);
           if (frames && frames.length > 0) {{
-            const tmpCanv = document.createElement('canvas');
-            const tmpCtx = tmpCanv.getContext('2d');
-            tmpCanv.width = frames[0].dims.width;
-            tmpCanv.height = frames[0].dims.height;
-
-            const loadedFrames = [];
-            frames.forEach(f => {{
-              const fData = tmpCtx.createImageData(f.dims.width, f.dims.height);
-              fData.data.set(f.patch);
-              tmpCtx.putImageData(fData, f.dims.left, f.dims.top);
-              const img = new Image();
-              img.src = tmpCanv.toDataURL();
-              loadedFrames.push(img);
-            }});
-
             state.bgIsGif = true;
-            state.bgGifFrames = loadedFrames;
+            state.bgGifFrames = frames;
             state.bgGifIndex = 0;
-            state.bgType = 'gif';
+            state.bgType = 'custom';
+            state.bgCustomImg = frames[0];
             render();
+            syncLayersUI();
+            updateDynamicFileName();
             return;
           }}
         }} catch (err) {{
           console.error(err);
         }}
+        const img = new Image();
+        img.src = URL.createObjectURL(file);
+        img.onload = () => {{
+          state.bgType = 'custom';
+          state.bgCustomImg = img;
+          state.bgIsGif = false;
+          render();
+          syncLayersUI();
+          updateDynamicFileName();
+        }};
       }};
       reader.readAsArrayBuffer(file);
     }} else {{
@@ -2912,6 +3107,8 @@ function initUIEvents() {{
           state.bgCustomImg = img;
           state.bgIsGif = false;
           render();
+          syncLayersUI();
+          updateDynamicFileName();
         }};
       }};
       reader.readAsDataURL(file);
@@ -2941,6 +3138,19 @@ function initUIEvents() {{
   const syncTplsBtn = document.getElementById('btnSyncTemplatesQuick');
   if (syncTplsBtn) syncTplsBtn.onclick = () => syncCloudCatalog(true);
 
+  // Dynamic Filename Input listener
+  const expInput = document.getElementById('exportFileNameInput');
+  if (expInput) {{
+    expInput.oninput = (e) => {{
+      if (e.target.value.trim()) {{
+        expInput.dataset.userEdited = 'true';
+      }} else {{
+        expInput.dataset.userEdited = '';
+        updateDynamicFileName();
+      }}
+    }};
+  }}
+
   // 2. Populate Fruits Faces Grid
   renderFacesGrid();
 
@@ -2954,26 +3164,61 @@ function initUIEvents() {{
     state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
     render();
     syncLayersUI();
+    updateDynamicFileName();
   }};
 
   // Custom Face Upload
   document.getElementById('faceFileInput').onchange = (e) => {{
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {{
-      const img = new Image();
-      img.src = ev.target.result;
-      img.onload = () => {{
+
+    if (file.name.toLowerCase().endsWith('.gif')) {{
+      const reader = new FileReader();
+      reader.onload = async (ev) => {{
         const newLayer = makeFaceLayer(0, 0, 0, 1.0);
-        newLayer.customImg = img;
+        newLayer.customName = file.name.replace(/\\.[^/.]+$/, '');
+        try {{
+          const frames = await parseGifFrames(ev.target.result);
+          if (frames && frames.length > 0) {{
+            newLayer.isGif = true;
+            newLayer.gifFrames = frames;
+            newLayer.gifIndex = 0;
+            newLayer.customImg = frames[0];
+          }} else {{
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            newLayer.customImg = img;
+          }}
+        }} catch (err) {{
+          const img = new Image();
+          img.src = URL.createObjectURL(file);
+          newLayer.customImg = img;
+        }}
         state.facesOnCanvas.push(newLayer);
         state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
         render();
         syncLayersUI();
+        updateDynamicFileName();
       }};
-    }};
-    reader.readAsDataURL(file);
+      reader.readAsArrayBuffer(file);
+    }} else {{
+      const reader = new FileReader();
+      reader.onload = (ev) => {{
+        const img = new Image();
+        img.src = ev.target.result;
+        img.onload = () => {{
+          const newLayer = makeFaceLayer(0, 0, 0, 1.0);
+          newLayer.customName = file.name.replace(/\\.[^/.]+$/, '');
+          newLayer.customImg = img;
+          state.facesOnCanvas.push(newLayer);
+          state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
+          render();
+          syncLayersUI();
+          updateDynamicFileName();
+        }};
+      }};
+      reader.readAsDataURL(file);
+    }}
   }};
 
   // Mask Shape Toggles (Sticker circle removed)
@@ -3008,6 +3253,7 @@ function initUIEvents() {{
     document.getElementById('activeTextInput').value = 'TOP TEXT';
     render();
     syncLayersUI();
+    updateDynamicFileName();
   }};
   document.getElementById('addBottomTextBtn').onclick = () => {{
     state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, z: ++layerZCounter }});
@@ -3016,6 +3262,7 @@ function initUIEvents() {{
     document.getElementById('activeTextInput').value = 'BOTTOM TEXT';
     render();
     syncLayersUI();
+    updateDynamicFileName();
   }};
   document.getElementById('addCustomTextBtn').onclick = () => {{
     state.texts.push({{ id: 't_' + Date.now(), text: 'YOUR TEXT', x: 0, y: 0, size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, z: ++layerZCounter }});
@@ -3024,6 +3271,7 @@ function initUIEvents() {{
     document.getElementById('activeTextInput').value = 'YOUR TEXT';
     render();
     syncLayersUI();
+    updateDynamicFileName();
   }};
 
   const textInput = document.getElementById('activeTextInput');
@@ -3046,12 +3294,14 @@ function initUIEvents() {{
         state.selectedTextIdx = state.texts.length - 1;
         render();
         syncLayersUI();
+        updateDynamicFileName();
       }}
       return;
     }}
     active.obj.text = e.target.value.toUpperCase();
     render();
     syncLayersUI();
+    updateDynamicFileName();
   }};
 
   // Font Selection Change
@@ -3366,7 +3616,7 @@ function initUIEvents() {{
     render();
   }};
 
-  document.getElementById('optDeleteBtn').onclick = () => {{
+  function deleteActiveLayer() {{
     const active = getActiveLayerData();
     if (!active) return;
     if (active.type === 'face') {{
@@ -3375,12 +3625,23 @@ function initUIEvents() {{
       state.accessoriesOnCanvas.splice(active.idx, 1);
     }} else if (active.type === 'text') {{
       state.texts.splice(active.idx, 1);
-      document.getElementById('activeTextInput').value = '';
+      const ti = document.getElementById('activeTextInput');
+      if (ti) ti.value = '';
+    }} else if (active.type === 'bg') {{
+      state.bgType = 'color';
+      state.bgCustomImg = null;
+      state.bgTemplateId = null;
+      state.bgIsGif = false;
+      state.bgGifFrames = [];
+      state.bgCustomName = '';
     }}
     state.activeTransformTarget = null;
     render();
     syncLayersUI();
-  }};
+    updateDynamicFileName();
+  }}
+
+  document.getElementById('optDeleteBtn').onclick = deleteActiveLayer;
 
   // 7. Topbar Export Buttons & Language Switcher
   document.getElementById('btnExportPng').onclick = exportPng;
@@ -3454,10 +3715,16 @@ function initUIEvents() {{
     adminModal.style.display = 'none';
   }};
 
-  // Secret Hotkey Ctrl+Shift+A
+  // Secret Hotkey Ctrl+Shift+A & Delete/Backspace for Canvas Layers
   window.addEventListener('keydown', (e) => {{
     if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {{
       openAdminModal();
+      return;
+    }}
+    const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+    if (tag === 'input' || tag === 'textarea' || tag === 'select' || (e.target && e.target.isContentEditable)) return;
+    if (e.key === 'Delete' || e.key === 'Backspace') {{
+      deleteActiveLayer();
     }}
   }});
 
@@ -3698,34 +3965,76 @@ function renderAdminCatalog() {{
   }});
 }}
 
-window.deleteAdminFace = function(idx) {{
-  if (confirm('Remove ' + faces[idx].name + ' from catalog?')) {{
-    const removed = faces.splice(idx, 1)[0];
-    delete loadedFaces[idx];
-    renderFacesGrid();
-    renderAdminCatalog();
-    render();
+window.deleteAdminFace = async function(idx) {{
+  const f = faces[idx];
+  if (!f) return;
+  let ok = false;
+  try {{
+    ok = window.confirm('Remove ' + f.name + ' from catalog?');
+  }} catch(e) {{
+    ok = true;
+  }}
+  if (!ok) return;
 
-    // Async sync deletion to Faces/manifest.json in storage repo
-    if (GITHUB_TOKEN && removed) {{
-      const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
-      const folder = GITHUB_FOLDER || 'Faces';
-      const manifestPath = `${{folder}}/manifest.json`;
-      fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
+  const removed = faces.splice(idx, 1)[0];
+  const newLoaded = {{}};
+  faces.forEach((item, i) => {{
+    if (item.src) {{
+      const img = new Image();
+      img.src = item.src;
+      newLoaded[i] = img;
+    }}
+  }});
+  loadedFaces = newLoaded;
+
+  renderFacesGrid();
+  renderAdminCatalog();
+  render();
+
+  if (GITHUB_TOKEN && removed) {{
+    const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+    const folder = GITHUB_FOLDER || 'Faces';
+    const manifestPath = `${{folder}}/manifest.json`;
+    const targetFile = removed.file || removed.filename;
+
+    // 1. Delete image file from GitHub so self-healing does not restore it
+    if (targetFile) {{
+      try {{
+        const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}?ref=main&_t=${{Date.now()}}`, {{
+          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+        }});
+        if (fRes.ok) {{
+          const fData = await fRes.json();
+          await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}`, {{
+            method: 'DELETE',
+            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+            body: JSON.stringify({{ message: 'Remove face ' + removed.name, sha: fData.sha, branch: 'main' }})
+          }});
+        }}
+      }} catch(err) {{
+        console.warn('Error deleting face file from storage:', err);
+      }}
+    }}
+
+    // 2. Update manifest.json
+    try {{
+      const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
         headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-      }})
-      .then(r => r.json())
-      .then(mData => {{
+      }});
+      if (mRes.ok) {{
+        const mData = await mRes.json();
         const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
         let manifestList = JSON.parse(decoded);
-        manifestList = manifestList.filter(item => item.id !== removed.id && item.file !== removed.file);
+        manifestList = manifestList.filter(item => item.id !== removed.id && (item.file || item.filename) !== targetFile);
         const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
-        return fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+        await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
           method: 'PUT',
           headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
           body: JSON.stringify({{ message: 'Remove face ' + removed.name, content: updatedB64, sha: mData.sha, branch: 'main' }})
         }});
-      }}).catch(e => console.warn('Face deletion sync warning:', e));
+      }}
+    }} catch (e) {{
+      console.warn('Face deletion sync warning:', e);
     }}
   }}
 }};
@@ -3902,33 +4211,67 @@ function renderAdminTemplatesCatalog() {{
   }});
 }}
 
-window.deleteAdminTemplate = function(idx) {{
-  if (confirm('Remove ' + templates[idx].name + ' from templates catalog?')) {{
-    const removed = templates.splice(idx, 1)[0];
-    delete loadedTemplates[removed.id];
-    renderTemplatesGrid();
-    renderAdminTemplatesCatalog();
-    render();
+window.deleteAdminTemplate = async function(idx) {{
+  const t = templates[idx];
+  if (!t) return;
+  let ok = false;
+  try {{
+    ok = window.confirm('Remove ' + t.name + ' from templates catalog?');
+  }} catch(e) {{
+    ok = true;
+  }}
+  if (!ok) return;
 
-    // Async sync deletion to Templates/manifest.json in storage repo
-    if (GITHUB_TOKEN && removed) {{
-      const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
-      const manifestPath = 'Templates/manifest.json';
-      fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
+  const removed = templates.splice(idx, 1)[0];
+  delete loadedTemplates[removed.id];
+  renderTemplatesGrid();
+  renderAdminTemplatesCatalog();
+  render();
+
+  if (GITHUB_TOKEN && removed) {{
+    const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+    const folder = 'Templates';
+    const manifestPath = `${{folder}}/manifest.json`;
+    const targetFile = removed.file || removed.filename;
+
+    // 1. Delete template image file from GitHub
+    if (targetFile) {{
+      try {{
+        const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}?ref=main&_t=${{Date.now()}}`, {{
+          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+        }});
+        if (fRes.ok) {{
+          const fData = await fRes.json();
+          await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}`, {{
+            method: 'DELETE',
+            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+            body: JSON.stringify({{ message: 'Remove template ' + removed.name, sha: fData.sha, branch: 'main' }})
+          }});
+        }}
+      }} catch(err) {{
+        console.warn('Error deleting template file from GitHub:', err);
+      }}
+    }}
+
+    // 2. Update manifest.json
+    try {{
+      const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
         headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-      }})
-      .then(r => r.json())
-      .then(mData => {{
+      }});
+      if (mRes.ok) {{
+        const mData = await mRes.json();
         const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
         let manifestList = JSON.parse(decoded);
-        manifestList = manifestList.filter(item => item.id !== removed.id && item.file !== removed.file);
+        manifestList = manifestList.filter(item => item.id !== removed.id && (item.file || item.filename) !== targetFile);
         const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
-        return fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+        await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
           method: 'PUT',
           headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
           body: JSON.stringify({{ message: 'Remove template ' + removed.name, content: updatedB64, sha: mData.sha, branch: 'main' }})
         }});
-      }}).catch(e => console.warn('Template deletion sync warning:', e));
+      }}
+    }} catch (e) {{
+      console.warn('Template deletion sync warning:', e);
     }}
   }}
 }};
@@ -4229,7 +4572,7 @@ function syncLayersUI() {{
       <span class="layer-title-text">${{bgTitle}}</span>
     </div>
     <div class="layer-actions">
-      <span style="font-size:11px; color:var(--ps-text-muted); padding:3px 6px;" title="${{currentLang === 'ar' ? 'الخلفية مثبتة ولا يمكن حذفها' : 'Backdrop is permanent and locked'}}">🔒</span>
+      <button class="layer-action-btn" title="${{currentLang === 'ar' ? 'إعادة ضبط الخلفية' : 'Reset Backdrop'}}" onclick="event.stopPropagation(); deleteSpecificLayer('bg', 0)">🔄</button>
     </div>
   `;
 
@@ -4250,11 +4593,20 @@ window.deleteSpecificLayer = function(layerType, idx) {{
     state.accessoriesOnCanvas.splice(idx, 1);
   }} else if (layerType === 'text') {{
     state.texts.splice(idx, 1);
-    document.getElementById('activeTextInput').value = '';
+    const ti = document.getElementById('activeTextInput');
+    if (ti) ti.value = '';
+  }} else if (layerType === 'bg') {{
+    state.bgType = 'color';
+    state.bgCustomImg = null;
+    state.bgTemplateId = null;
+    state.bgIsGif = false;
+    state.bgGifFrames = [];
+    state.bgCustomName = '';
   }}
   state.activeTransformTarget = null;
   render();
   syncLayersUI();
+  updateDynamicFileName();
 }};
 
 // --- EXPORT FUNCTIONS ---
@@ -4263,8 +4615,11 @@ function exportPng() {{
   state.activeTransformTarget = null;
   render();
 
+  const expInput = document.getElementById('exportFileNameInput');
+  const baseName = (expInput && expInput.value.trim()) ? expInput.value.trim().replace(/[^a-zA-Z0-9_-]/g, '_') : 'frutisator_meme';
+
   const link = document.createElement('a');
-  link.download = 'frutisator_meme.png';
+  link.download = baseName + '.png';
   link.href = canvas.toDataURL('image/png');
   link.click();
 
@@ -4331,6 +4686,11 @@ function exportGif() {{
     if (state.bgIsGif && state.bgGifFrames.length > 0) {{
       state.bgGifIndex = Math.floor(p * state.bgGifFrames.length) % state.bgGifFrames.length;
     }}
+    state.facesOnCanvas.forEach(f => {{
+      if (f.isGif && f.gifFrames && f.gifFrames.length > 0) {{
+        f.gifIndex = Math.floor(p * f.gifFrames.length) % f.gifFrames.length;
+      }}
+    }});
     const off = getAnimOffset(state.animation, p);
     render(off);
     frameImages.push(canvas.toDataURL('image/png'));
@@ -4353,8 +4713,10 @@ function exportGif() {{
     }}
   }}, (obj) => {{
     if (!obj.error) {{
+      const expInput = document.getElementById('exportFileNameInput');
+      const baseName = (expInput && expInput.value.trim()) ? expInput.value.trim().replace(/[^a-zA-Z0-9_-]/g, '_') : 'frutisator_meme';
       const link = document.createElement('a');
-      link.download = 'frutisator_meme.gif';
+      link.download = baseName + '.gif';
       link.href = obj.image;
       link.click();
     }}
@@ -4528,11 +4890,17 @@ function animLoop(timestamp) {{
   const dt = (timestamp - lastFrameTime) / 1000;
   lastFrameTime = timestamp;
 
-  if (state.animation !== 'none' || state.bgIsGif) {{
+  const hasGifFace = state.facesOnCanvas.some(f => f.isGif && f.gifFrames && f.gifFrames.length > 0);
+  if (state.animation !== 'none' || state.bgIsGif || hasGifFace) {{
     animProgress = (animProgress + dt * 1.5) % 1.0;
     if (state.bgIsGif && state.bgGifFrames.length > 0) {{
       state.bgGifIndex = Math.floor(animProgress * state.bgGifFrames.length) % state.bgGifFrames.length;
     }}
+    state.facesOnCanvas.forEach(f => {{
+      if (f.isGif && f.gifFrames && f.gifFrames.length > 0) {{
+        f.gifIndex = Math.floor(animProgress * f.gifFrames.length) % f.gifFrames.length;
+      }}
+    }});
     const off = getAnimOffset(state.animation, animProgress);
     render(off);
   }}
@@ -4545,6 +4913,7 @@ window.onload = () => {{
   initCanvasEvents();
   initUIEvents();
   fitCanvasToScreen();
+  updateDynamicFileName();
   render();
   requestAnimationFrame(animLoop);
   setTimeout(() => syncCloudCatalog(false), 1500);
