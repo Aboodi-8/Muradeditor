@@ -413,17 +413,45 @@ templates_json = json.dumps(templates_data)
 
 token_secret = ""
 try:
-    token_secret = st.secrets.get("GITHUB_TOKEN", "")
+    if hasattr(st, "secrets"):
+        token_secret = st.secrets.get("GITHUB_TOKEN", "")
 except Exception:
     pass
 
 private_repo_secret = ""
 try:
-    private_repo_secret = st.secrets.get("PRIVATE_FACES_REPO", "")
+    if hasattr(st, "secrets"):
+        private_repo_secret = st.secrets.get("PRIVATE_FACES_REPO", "Aboodi-8/Muradeditorstorage")
 except Exception:
-    pass
+    private_repo_secret = "Aboodi-8/Muradeditorstorage"
+if not private_repo_secret:
+    private_repo_secret = "Aboodi-8/Muradeditorstorage"
 
 private_folder_secret = "Faces" if private_repo_secret else "assets"
+
+def get_global_rickroll_count():
+    if not token_secret or not private_repo_secret:
+        return 144
+    try:
+        url = f"https://api.github.com/repos/{private_repo_secret}/contents/stats/rickroll.json"
+        req = urllib.request.Request(
+            url,
+            headers={
+                "Authorization": f"Bearer {token_secret}",
+                "Accept": "application/vnd.github.v3+json",
+                "User-Agent": "Frutisator-App"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=3) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            raw = base64.b64decode(data["content"]).decode("utf-8")
+            obj = json.loads(raw)
+            return int(obj.get("count", 144))
+    except Exception:
+        return 144
+
+global_rickroll_count = get_global_rickroll_count()
+rickroll_count_json = json.dumps(global_rickroll_count)
 
 expected_pwd = ""
 try:
@@ -1992,14 +2020,14 @@ html_app = f"""
             <button class="rickroll-toast-close" onclick="document.getElementById('rickrollToast').style.display='none'">✕</button>
           </div>
           <div class="rickroll-toast-body" id="rickrollToastBody">
-            Don't be sad... only <b style="color:#fbbf24; font-size:13px;" id="rickrollCountVal">143</b> people fell for it! 😂🎶
+            Don't be sad... only <b style="color:#fbbf24; font-size:13px;" id="rickrollCountVal">{global_rickroll_count}</b> people fell for it! 😂🕺
           </div>
         </div>
 
         <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" id="floatingBugReportBtn" class="floating-bug-btn" style="position:relative; bottom:auto; right:auto;" title="Bug Report" aria-label="Bug Report">
           <span class="bug-icon">🐛</span>
           <span class="bug-label" id="txtBugReportLabel">Bug Report</span>
-          <span id="bugReportCountBadge" class="bug-count-badge" style="display:none;">143</span>
+          <span id="bugReportCountBadge" class="bug-count-badge" style="display:inline-block;">{global_rickroll_count}</span>
         </a>
       </div>
     </main>
@@ -2278,6 +2306,7 @@ const GITHUB_TOKEN = {gh_token_json};
 const GITHUB_REPO = {gh_repo_json};
 const GITHUB_FOLDER = {gh_folder_json};
 const EXPECTED_ADMIN_PWD = {admin_pwd_json};
+let globalVictimCount = {rickroll_count_json} || 144;
 
 let layerZCounter = 1;
 let currentLang = 'en';
@@ -2693,12 +2722,7 @@ function applyLanguage(lang) {{
     if (document.getElementById('lbl3DHintXDown')) document.getElementById('lbl3DHintXDown').innerText = t.lbl3DHintXDown;
   }}
   if (document.getElementById('txtBugReportLabel')) {{
-    const vCount = (typeof getVictimCount === 'function') ? getVictimCount() : 0;
-    if (vCount > 0) {{
-      document.getElementById('txtBugReportLabel').innerText = (lang === 'ar' ? ('إبلاغ عن خطأ (' + vCount + ')') : ('Bug Report (' + vCount + ')'));
-    }} else {{
-      document.getElementById('txtBugReportLabel').innerText = t.txtBugReportLabel || 'Bug Report';
-    }}
+    document.getElementById('txtBugReportLabel').innerText = t.txtBugReportLabel || 'Bug Report';
   }}
   if (document.getElementById('rickrollToastTitle')) {{
     document.getElementById('rickrollToastTitle').innerText = t.rickrollToastTitle || '🕺 Never Gonna Give You Up!';
@@ -5007,26 +5031,110 @@ function initUIEvents() {{
     }};
   }}
 
-  // Floating Bug Report button (Rickroll Easter Egg + Persistent Counter)
+  // Floating Bug Report button (Rickroll Easter Egg + Global Counter in Storage Repo)
   window.getVictimCount = function() {{
-    return parseInt(localStorage.getItem('frutisator_rickroll_victims') || '0');
+    return globalVictimCount;
   }};
 
   window.updateVictimUI = function(count) {{
     const countBadge = document.getElementById('bugReportCountBadge');
-    if (count > 0 && countBadge) {{
+    if (countBadge) {{
       countBadge.style.display = 'inline-block';
       countBadge.innerText = count > 999 ? (count / 1000).toFixed(1) + 'k' : count;
     }}
-    const label = document.getElementById('txtBugReportLabel');
-    if (label && count > 0) {{
-      label.innerText = currentLang === 'ar' ? ('إبلاغ عن خطأ (' + count + ')') : ('Bug Report (' + count + ')');
+    const toastVal = document.getElementById('rickrollCountVal');
+    if (toastVal) {{
+      toastVal.innerText = count;
     }}
   }};
 
-  const initialVictimCount = getVictimCount();
-  if (initialVictimCount > 0) {{
-    updateVictimUI(initialVictimCount);
+  // Cache fallback check
+  try {{
+    const localCached = parseInt(localStorage.getItem('frutisator_rickroll_victims') || '0', 10);
+    if (localCached > globalVictimCount) {{
+      globalVictimCount = localCached;
+    }}
+  }} catch(e) {{}}
+  updateVictimUI(globalVictimCount);
+
+  // Background live fetch of global victim count
+  async function fetchLiveRickrollCount() {{
+    if (!GITHUB_TOKEN || !GITHUB_REPO) return;
+    try {{
+      const getUrl = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/stats/rickroll.json?t=' + Date.now();
+      const resp = await fetch(getUrl, {{
+        headers: {{
+          'Authorization': 'Bearer ' + GITHUB_TOKEN,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'Frutisator-App'
+        }}
+      }});
+      if (resp.ok) {{
+        const fileData = await resp.json();
+        const decodedStr = atob(fileData.content.replace(/\\s/g, ''));
+        const obj = JSON.parse(decodedStr);
+        if (typeof obj.count === 'number' && obj.count > globalVictimCount) {{
+          globalVictimCount = obj.count;
+          updateVictimUI(globalVictimCount);
+        }}
+      }}
+    }} catch (err) {{}}
+  }}
+  fetchLiveRickrollCount();
+
+  // Background transaction to increment global counter in GitHub Storage Repo
+  async function syncRickrollIncrementToStorage() {{
+    if (!GITHUB_TOKEN || !GITHUB_REPO) return;
+    try {{
+      const getUrl = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/stats/rickroll.json?t=' + Date.now();
+      const getResp = await fetch(getUrl, {{
+        headers: {{
+          'Authorization': 'Bearer ' + GITHUB_TOKEN,
+          'Accept': 'application/vnd.github.v3+json',
+          'User-Agent': 'Frutisator-App'
+        }}
+      }});
+      if (!getResp.ok) return;
+      const fileData = await getResp.json();
+      const currentSha = fileData.sha;
+      let remoteCount = 144;
+      try {{
+        const decodedStr = atob(fileData.content.replace(/\\s/g, ''));
+        const obj = JSON.parse(decodedStr);
+        if (typeof obj.count === 'number') {{
+          remoteCount = obj.count;
+        }}
+      }} catch(pe) {{}}
+
+      const newRemoteCount = Math.max(globalVictimCount, remoteCount + 1);
+      globalVictimCount = newRemoteCount;
+      updateVictimUI(globalVictimCount);
+      try {{
+        localStorage.setItem('frutisator_rickroll_victims', globalVictimCount);
+      }} catch(le) {{}}
+
+      const putPayload = {{
+        message: 'Increment global rickroll victim count to ' + newRemoteCount,
+        content: btoa(JSON.stringify({{ count: newRemoteCount }}, null, 2)),
+        sha: currentSha
+      }};
+
+      const putUrl = 'https://api.github.com/repos/' + GITHUB_REPO + '/contents/stats/rickroll.json';
+      const putResp = await fetch(putUrl, {{
+        method: 'PUT',
+        headers: {{
+          'Authorization': 'Bearer ' + GITHUB_TOKEN,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        }},
+        body: JSON.stringify(putPayload)
+      }});
+      if (putResp.status === 409) {{
+        setTimeout(syncRickrollIncrementToStorage, 500);
+      }}
+    }} catch (err) {{
+      console.warn('Global rickroll sync failed:', err);
+    }}
   }}
 
   let rickrollToastTimer = null;
@@ -5035,26 +5143,22 @@ function initUIEvents() {{
     bugBtn.onclick = (e) => {{
       e.preventDefault();
 
-      // Retrieve and increment victim count in localStorage
-      let count = getVictimCount();
-      if (!count || count < 142) {{
-        count = 142; // Fun realistic base count
-      }}
-      count += 1;
+      // 1. Optimistically increment victim count
+      globalVictimCount += 1;
       try {{
-        localStorage.setItem('frutisator_rickroll_victims', count);
+        localStorage.setItem('frutisator_rickroll_victims', globalVictimCount);
       }} catch (err) {{}}
 
-      updateVictimUI(count);
+      updateVictimUI(globalVictimCount);
 
-      // Show funny Rickroll counter toast notification
+      // 2. Show funny Rickroll counter toast notification
       const rickToast = document.getElementById('rickrollToast');
       const toastBody = document.getElementById('rickrollToastBody');
       if (rickToast && toastBody) {{
         rickToast.style.display = 'block';
         toastBody.innerHTML = currentLang === 'ar'
-          ? ('لا تحزن... فقط <b style="color:#fbbf24; font-size:13px;">' + count + '</b> شخص انخدعوا قبلك! 😂🕺')
-          : ("Don't be sad... only <b style=\"color:#fbbf24; font-size:13px;\">" + count + "</b> people fell for it! 😂🕺");
+          ? ('لا تحزن... فقط <b style="color:#fbbf24; font-size:13px;">' + globalVictimCount + '</b> شخص انخدعوا قبلك! 😂🕺')
+          : ("Don't be sad... only <b style='color:#fbbf24; font-size:13px;'>" + globalVictimCount + "</b> people fell for it! 😂🕺");
 
         clearTimeout(rickrollToastTimer);
         rickrollToastTimer = setTimeout(() => {{
@@ -5062,7 +5166,10 @@ function initUIEvents() {{
         }}, 7000);
       }}
 
-      // Redirect to the classic Rickroll video in a new tab
+      // 3. Asynchronously persist increment to storage repository
+      syncRickrollIncrementToStorage();
+
+      // 4. Redirect to the classic Rickroll video in a new tab
       window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank', 'noopener,noreferrer');
     }};
   }}
@@ -5877,7 +5984,7 @@ window.deleteAdminFace = async function(idx, btn) {{
           }});
           if (mRes.ok) {{
             const mData = await mRes.json();
-            const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\s/g, ''))));
+            const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
             let manifestList = JSON.parse(decoded);
             manifestList = manifestList.filter(item => {{
               const ifile = (item.file || item.filename || '').toLowerCase();
@@ -6360,7 +6467,7 @@ window.deleteAdminTemplate = async function(idx, btn) {{
           }});
           if (mRes.ok) {{
             const mData = await mRes.json();
-            const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\s/g, ''))));
+            const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
             let manifestList = JSON.parse(decoded);
             manifestList = manifestList.filter(item => {{
               const ifile = (item.file || item.filename || '').toLowerCase();
