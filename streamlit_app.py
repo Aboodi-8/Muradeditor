@@ -1322,8 +1322,8 @@ html_app = f"""
     z-index: 2000;
   }}
   .admin-modal {{
-    width: 420px;
-    max-width: 92vw;
+    width: 460px;
+    max-width: 94vw;
     background: var(--ps-panel);
     border: 1px solid var(--ps-border-light);
     border-radius: 8px;
@@ -1945,7 +1945,7 @@ html_app = f"""
           <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
             <span style="font-size:12px; font-weight:800; color:#fff;">🗑️ MANAGE DEFAULT FRUITS:</span>
             <div id="adminFacesCatalogStatus" style="font-size:11.5px; margin-top:4px; margin-bottom:4px; min-height:16px; font-weight:600; text-align:center;"></div>
-            <div id="adminFacesCatalogList" style="display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-top:6px;"></div>
+            <div id="adminFacesCatalogList" style="display:flex; flex-direction:column; gap:5px; max-height:250px; overflow-y:auto; margin-top:6px;"></div>
           </div>
         </div>
 
@@ -1971,7 +1971,7 @@ html_app = f"""
           <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
             <span style="font-size:12px; font-weight:800; color:#fff;">🗑️ MANAGE DEFAULT TEMPLATES:</span>
             <div id="adminTplCatalogStatus" style="font-size:11.5px; margin-top:4px; margin-bottom:4px; min-height:16px; font-weight:600; text-align:center;"></div>
-            <div id="adminTemplatesCatalogList" style="display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-top:6px;"></div>
+            <div id="adminTemplatesCatalogList" style="display:flex; flex-direction:column; gap:5px; max-height:250px; overflow-y:auto; margin-top:6px;"></div>
           </div>
         </div>
       </div>
@@ -2340,6 +2340,8 @@ function applyLanguage(lang) {{
   syncFilterUI();
   updateTopbarToolOptions();
   syncLayersUI();
+  if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
+  if (typeof renderAdminTemplatesCatalog === 'function') renderAdminTemplatesCatalog();
 }}
 
 function makeDefaultFilters() {{
@@ -4694,7 +4696,7 @@ function initUIEvents() {{
   syncFilterUI();
 }}
 
-// Sync Admin Catalog List with Live Deletion Indicators
+// Sync Admin Catalog List with Live Deletion & Renaming
 function renderAdminCatalog() {{
   const list = document.getElementById('adminFacesCatalogList');
   if (!list) return;
@@ -4711,17 +4713,184 @@ function renderAdminCatalog() {{
     row.id = `adminFaceRow_${{idx}}`;
     row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:7px 10px; border-radius:6px; border:1px solid #1f2028; transition:all 0.2s ease;' + (isDeleting ? ' opacity:0.5;' : '');
     row.innerHTML = `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <img src="${{f.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
-        <span style="font-size:12.5px; font-weight:700; color:#fff;">${{f.name}}</span>
+      <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0; overflow:hidden;">
+        <img src="${{f.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover; flex-shrink:0;">
+        <span style="font-size:12.5px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="adminFaceName_${{idx}}" title="${{f.name}}">${{f.name}}</span>
       </div>
-      <button class="ps-opt-btn danger" id="adminFaceDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" ${{isDeleting ? 'disabled' : ''}} onclick="deleteAdminFace(${{idx}}, this)">
-        ${{isDeleting ? '<span class="ps-spinner ps-spinner-danger"></span> <span>' + (currentLang === 'ar' ? 'جاري الحذف...' : 'Deleting...') + '</span>' : (currentLang === 'ar' ? 'حذف' : 'Remove')}}
-      </button>
+      <div style="display:flex; align-items:center; gap:5px; flex-shrink:0; margin-left:8px;">
+        <button class="ps-opt-btn" id="adminFaceRenameBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:4px;" ${{isDeleting ? 'disabled' : ''}} onclick="startRenameAdminFace(${{idx}})">
+          <span>✏️</span> <span>${{currentLang === 'ar' ? 'تعديل' : 'Rename'}}</span>
+        </button>
+        <button class="ps-opt-btn danger" id="adminFaceDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" ${{isDeleting ? 'disabled' : ''}} onclick="deleteAdminFace(${{idx}}, this)">
+          ${{isDeleting ? '<span class="ps-spinner ps-spinner-danger"></span> <span>' + (currentLang === 'ar' ? 'جاري الحذف...' : 'Deleting...') + '</span>' : (currentLang === 'ar' ? 'حذف' : 'Remove')}}
+        </button>
+      </div>
     `;
     list.appendChild(row);
   }});
 }}
+
+window.startRenameAdminFace = function(idx) {{
+  const f = faces[idx];
+  if (!f) return;
+  const row = document.getElementById(`adminFaceRow_${{idx}}`);
+  if (!row) return;
+
+  const currentName = f.name || '';
+  row.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0; margin-right:8px;">
+      <img src="${{f.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover; flex-shrink:0;">
+      <input type="text" class="ps-input" id="adminFaceRenameInput_${{idx}}" style="padding:4px 8px; font-size:12px; height:28px; width:100%; border-color:var(--ps-blue); background:#181920; color:#fff;" placeholder="${{currentLang === 'ar' ? 'اسم الفاكهة...' : 'Fruit Name...'}}">
+    </div>
+    <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
+      <button class="ps-opt-btn primary" id="adminFaceSaveBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:4px; background:var(--ps-blue); border-color:var(--ps-blue); color:#fff;" onclick="saveRenameAdminFace(${{idx}})">
+        <span>💾</span> <span>${{currentLang === 'ar' ? 'حفظ' : 'Save'}}</span>
+      </button>
+      <button class="ps-opt-btn" id="adminFaceCancelBtn_${{idx}}" style="padding:4px 8px; font-size:11px;" onclick="renderAdminCatalog()">
+        ${{currentLang === 'ar' ? 'إلغاء' : 'Cancel'}}
+      </button>
+    </div>
+  `;
+
+  const input = document.getElementById(`adminFaceRenameInput_${{idx}}`);
+  if (input) {{
+    input.value = currentName;
+    input.focus();
+    input.select();
+    input.onkeydown = (e) => {{
+      if (e.key === 'Enter') saveRenameAdminFace(idx);
+      if (e.key === 'Escape') renderAdminCatalog();
+    }};
+  }}
+}};
+
+window.saveRenameAdminFace = async function(idx) {{
+  const f = faces[idx];
+  if (!f) return;
+  const input = document.getElementById(`adminFaceRenameInput_${{idx}}`);
+  if (!input) return;
+  const newName = input.value.trim();
+  if (!newName) {{
+    input.style.borderColor = 'var(--ps-danger)';
+    input.focus();
+    return;
+  }}
+  const oldName = f.name;
+  if (newName === oldName) {{
+    renderAdminCatalog();
+    return;
+  }}
+
+  const saveBtn = document.getElementById(`adminFaceSaveBtn_${{idx}}`);
+  const cancelBtn = document.getElementById(`adminFaceCancelBtn_${{idx}}`);
+  if (saveBtn) {{
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<span class="ps-spinner ps-spinner-sm"></span> <span>${{currentLang === 'ar' ? 'جاري الحفظ...' : 'Saving...'}}</span>`;
+  }}
+  if (cancelBtn) cancelBtn.disabled = true;
+  input.disabled = true;
+
+  const status = document.getElementById('adminFacesCatalogStatus');
+  if (status) {{
+    status.style.color = 'var(--ps-blue)';
+    status.innerHTML = `<span class="ps-spinner ps-spinner-sm"></span> <span>${{currentLang === 'ar' ? 'جاري حفظ الاسم في السحابة...' : 'Saving face name to cloud storage...'}}</span>`;
+  }}
+
+  try {{
+    if (GITHUB_TOKEN) {{
+      const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+      const folder = 'Faces';
+      const manifestPath = `${{folder}}/manifest.json`;
+      const branch = 'main';
+      const targetFileLower = (f.file || f.filename || '').toLowerCase();
+      const faceId = f.id;
+
+      let manifestUpdated = false;
+      for (let attempt = 0; attempt < 3; attempt++) {{
+        try {{
+          const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=${{branch}}&_t=${{Date.now()}}`, {{
+            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+          }});
+          if (mRes.ok) {{
+            const mData = await mRes.json();
+            const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
+            let manifestList = JSON.parse(decoded);
+            let found = false;
+            for (const item of manifestList) {{
+              const ifile = (item.file || item.filename || '').toLowerCase();
+              if ((faceId && item.id === faceId) || (targetFileLower && ifile === targetFileLower)) {{
+                item.name = newName;
+                found = true;
+                break;
+              }}
+            }}
+            if (!found) {{
+              manifestList.push({{
+                id: faceId || ('face_' + Date.now()),
+                name: newName,
+                file: f.file || (newName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '.png')
+              }});
+            }}
+            const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
+            const putRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+              method: 'PUT',
+              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+              body: JSON.stringify({{
+                message: `Rename face: "${{oldName}}" -> "${{newName}}"`,
+                content: updatedB64,
+                sha: mData.sha,
+                branch: branch
+              }})
+            }});
+            if (putRes.ok) {{
+              manifestUpdated = true;
+              break;
+            }}
+          }}
+        }} catch (err) {{
+          if (attempt === 2) throw err;
+        }}
+      }}
+      if (!manifestUpdated) {{
+        throw new Error('Failed to update Faces/manifest.json on GitHub');
+      }}
+    }}
+
+    // Update in-memory state
+    f.name = newName;
+
+    // Update any canvas layer referencing this face
+    state.facesOnCanvas.forEach(fc => {{
+      if ((fc.faceId && fc.faceId === f.id) || (fc.faceFile && f.file && fc.faceFile.toLowerCase() === f.file.toLowerCase()) || fc.faceIndex === idx) {{
+        fc.customName = newName;
+      }}
+    }});
+
+    syncLayersUI();
+    renderFacesGrid();
+    renderAdminCatalog();
+
+    if (status) {{
+      status.style.color = 'var(--ps-green)';
+      status.innerText = currentLang === 'ar' ? `✅ تم تغيير الاسم إلى "${{newName}}" بنجاح!` : `✅ Face renamed to "${{newName}}" successfully!`;
+      setTimeout(() => {{
+        if (status.innerText.includes(newName)) status.innerText = '';
+      }}, 4000);
+    }}
+  }} catch (err) {{
+    console.error('Rename error:', err);
+    if (status) {{
+      status.style.color = 'var(--ps-danger)';
+      status.innerText = (currentLang === 'ar' ? '❌ خطأ أثناء تعديل الاسم: ' : '❌ Error renaming face: ') + err.message;
+    }}
+    if (saveBtn) {{
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = `<span>💾</span> <span>${{currentLang === 'ar' ? 'حفظ' : 'Save'}}</span>`;
+    }}
+    if (cancelBtn) cancelBtn.disabled = false;
+    input.disabled = false;
+  }}
+}};
 
 window.deleteAdminFace = async function(idx, btn) {{
   const f = faces[idx];
@@ -5037,17 +5206,174 @@ function renderAdminTemplatesCatalog() {{
     row.id = `adminTplRow_${{idx}}`;
     row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:7px 10px; border-radius:6px; border:1px solid #1f2028; transition:all 0.2s ease;' + (isDeleting ? ' opacity:0.5;' : '');
     row.innerHTML = `
-      <div style="display:flex; align-items:center; gap:8px;">
-        <img src="${{t.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
-        <span style="font-size:12.5px; font-weight:700; color:#fff;">${{t.name}}</span>
+      <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0; overflow:hidden;">
+        <img src="${{t.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover; flex-shrink:0;">
+        <span style="font-size:12.5px; font-weight:700; color:#fff; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" id="adminTplName_${{idx}}" title="${{t.name}}">${{t.name}}</span>
       </div>
-      <button class="ps-opt-btn danger" id="adminTplDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" ${{isDeleting ? 'disabled' : ''}} onclick="deleteAdminTemplate(${{idx}}, this)">
-        ${{isDeleting ? '<span class="ps-spinner ps-spinner-danger"></span> <span>' + (currentLang === 'ar' ? 'جاري الحذف...' : 'Deleting...') + '</span>' : (currentLang === 'ar' ? 'حذف' : 'Remove')}}
-      </button>
+      <div style="display:flex; align-items:center; gap:5px; flex-shrink:0; margin-left:8px;">
+        <button class="ps-opt-btn" id="adminTplRenameBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:4px;" ${{isDeleting ? 'disabled' : ''}} onclick="startRenameAdminTemplate(${{idx}})">
+          <span>✏️</span> <span>${{currentLang === 'ar' ? 'تعديل' : 'Rename'}}</span>
+        </button>
+        <button class="ps-opt-btn danger" id="adminTplDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" ${{isDeleting ? 'disabled' : ''}} onclick="deleteAdminTemplate(${{idx}}, this)">
+          ${{isDeleting ? '<span class="ps-spinner ps-spinner-danger"></span> <span>' + (currentLang === 'ar' ? 'جاري الحذف...' : 'Deleting...') + '</span>' : (currentLang === 'ar' ? 'حذف' : 'Remove')}}
+        </button>
+      </div>
     `;
     list.appendChild(row);
   }});
 }}
+
+window.startRenameAdminTemplate = function(idx) {{
+  const t = templates[idx];
+  if (!t) return;
+  const row = document.getElementById(`adminTplRow_${{idx}}`);
+  if (!row) return;
+
+  const currentName = t.name || '';
+  row.innerHTML = `
+    <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0; margin-right:8px;">
+      <img src="${{t.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover; flex-shrink:0;">
+      <input type="text" class="ps-input" id="adminTplRenameInput_${{idx}}" style="padding:4px 8px; font-size:12px; height:28px; width:100%; border-color:var(--ps-blue); background:#181920; color:#fff;" placeholder="${{currentLang === 'ar' ? 'اسم القالب...' : 'Template Name...'}}">
+    </div>
+    <div style="display:flex; align-items:center; gap:5px; flex-shrink:0;">
+      <button class="ps-opt-btn primary" id="adminTplSaveBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:4px; background:var(--ps-blue); border-color:var(--ps-blue); color:#fff;" onclick="saveRenameAdminTemplate(${{idx}})">
+        <span>💾</span> <span>${{currentLang === 'ar' ? 'حفظ' : 'Save'}}</span>
+      </button>
+      <button class="ps-opt-btn" id="adminTplCancelBtn_${{idx}}" style="padding:4px 8px; font-size:11px;" onclick="renderAdminTemplatesCatalog()">
+        ${{currentLang === 'ar' ? 'إلغاء' : 'Cancel'}}
+      </button>
+    </div>
+  `;
+
+  const input = document.getElementById(`adminTplRenameInput_${{idx}}`);
+  if (input) {{
+    input.value = currentName;
+    input.focus();
+    input.select();
+    input.onkeydown = (e) => {{
+      if (e.key === 'Enter') saveRenameAdminTemplate(idx);
+      if (e.key === 'Escape') renderAdminTemplatesCatalog();
+    }};
+  }}
+}};
+
+window.saveRenameAdminTemplate = async function(idx) {{
+  const t = templates[idx];
+  if (!t) return;
+  const input = document.getElementById(`adminTplRenameInput_${{idx}}`);
+  if (!input) return;
+  const newName = input.value.trim();
+  if (!newName) {{
+    input.style.borderColor = 'var(--ps-danger)';
+    input.focus();
+    return;
+  }}
+  const oldName = t.name;
+  if (newName === oldName) {{
+    renderAdminTemplatesCatalog();
+    return;
+  }}
+
+  const saveBtn = document.getElementById(`adminTplSaveBtn_${{idx}}`);
+  const cancelBtn = document.getElementById(`adminTplCancelBtn_${{idx}}`);
+  if (saveBtn) {{
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = `<span class="ps-spinner ps-spinner-sm"></span> <span>${{currentLang === 'ar' ? 'جاري الحفظ...' : 'Saving...'}}</span>`;
+  }}
+  if (cancelBtn) cancelBtn.disabled = true;
+  input.disabled = true;
+
+  const status = document.getElementById('adminTplCatalogStatus');
+  if (status) {{
+    status.style.color = 'var(--ps-blue)';
+    status.innerHTML = `<span class="ps-spinner ps-spinner-sm"></span> <span>${{currentLang === 'ar' ? 'جاري حفظ اسم القالب في السحابة...' : 'Saving template name to cloud storage...'}}</span>`;
+  }}
+
+  try {{
+    if (GITHUB_TOKEN) {{
+      const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+      const folder = 'Templates';
+      const manifestPath = `${{folder}}/manifest.json`;
+      const branch = 'main';
+      const targetFileLower = (t.file || t.filename || '').toLowerCase();
+      const tplId = t.id;
+
+      let manifestUpdated = false;
+      for (let attempt = 0; attempt < 3; attempt++) {{
+        try {{
+          const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=${{branch}}&_t=${{Date.now()}}`, {{
+            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+          }});
+          if (mRes.ok) {{
+            const mData = await mRes.json();
+            const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
+            let manifestList = JSON.parse(decoded);
+            let found = false;
+            for (const item of manifestList) {{
+              const ifile = (item.file || item.filename || '').toLowerCase();
+              if ((tplId && item.id === tplId) || (targetFileLower && ifile === targetFileLower)) {{
+                item.name = newName;
+                found = true;
+                break;
+              }}
+            }}
+            if (!found) {{
+              manifestList.push({{
+                id: tplId || ('tpl_' + Date.now()),
+                name: newName,
+                file: t.file || (newName.toLowerCase().replace(/[^a-z0-9]/g, '_') + '.png')
+              }});
+            }}
+            const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
+            const putRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+              method: 'PUT',
+              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+              body: JSON.stringify({{
+                message: `Rename template: "${{oldName}}" -> "${{newName}}"`,
+                content: updatedB64,
+                sha: mData.sha,
+                branch: branch
+              }})
+            }});
+            if (putRes.ok) {{
+              manifestUpdated = true;
+              break;
+            }}
+          }}
+        }} catch (err) {{
+          if (attempt === 2) throw err;
+        }}
+      }}
+      if (!manifestUpdated) {{
+        throw new Error('Failed to update Templates/manifest.json on GitHub');
+      }}
+    }}
+
+    t.name = newName;
+    renderTemplatesGrid();
+    renderAdminTemplatesCatalog();
+
+    if (status) {{
+      status.style.color = 'var(--ps-green)';
+      status.innerText = currentLang === 'ar' ? `✅ تم تغيير اسم القالب إلى "${{newName}}" بنجاح!` : `✅ Template renamed to "${{newName}}" successfully!`;
+      setTimeout(() => {{
+        if (status.innerText.includes(newName)) status.innerText = '';
+      }}, 4000);
+    }}
+  }} catch (err) {{
+    console.error('Template rename error:', err);
+    if (status) {{
+      status.style.color = 'var(--ps-danger)';
+      status.innerText = (currentLang === 'ar' ? '❌ خطأ أثناء تعديل الاسم: ' : '❌ Error renaming template: ') + err.message;
+    }}
+    if (saveBtn) {{
+      saveBtn.disabled = false;
+      saveBtn.innerHTML = `<span>💾</span> <span>${{currentLang === 'ar' ? 'حفظ' : 'Save'}}</span>`;
+    }}
+    if (cancelBtn) cancelBtn.disabled = false;
+    input.disabled = false;
+  }}
+}};
 
 window.deleteAdminTemplate = async function(idx, btn) {{
   const t = templates[idx];
@@ -5293,6 +5619,22 @@ async function syncCloudCatalog(showNotice = false) {{
         const cidLower = (cf.id || '').toLowerCase();
         // NEVER resurrect files that were deleted or are actively deleting in this session
         if (deletedItemFiles.has(cfileLower) || deletingItemIds.has(cfileLower) || (cf.id && deletingItemIds.has(cf.id))) continue;
+
+        // If face already exists in memory, sync updated name from cloud manifest
+        const existingFace = faces.find(f => (cidLower && (f.id || '').toLowerCase() === cidLower) || (cfileLower && (f.file || '').toLowerCase() === cfileLower));
+        if (existingFace) {{
+          if (cf.name && existingFace.name !== cf.name) {{
+            existingFace.name = cf.name;
+            state.facesOnCanvas.forEach(fc => {{
+              if ((fc.faceId && fc.faceId === existingFace.id) || (fc.faceFile && existingFace.file && fc.faceFile.toLowerCase() === existingFace.file.toLowerCase())) {{
+                fc.customName = cf.name;
+              }}
+            }});
+            newFacesAdded = true;
+          }}
+          continue;
+        }}
+
         if (!existingFiles.has(cfileLower) && (!cidLower || !existingIds.has(cidLower))) {{
           try {{
             const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{cfile}}?_t=${{Date.now()}}`, {{
@@ -5344,7 +5686,7 @@ async function syncCloudCatalog(showNotice = false) {{
     }});
     if (tmRes.ok) {{
       const tmData = await tmRes.json();
-      const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
+      const decoded = decodeURIComponent(escape(atob(tmData.content.replace(/\\s/g, ''))));
       const cloudTemplates = JSON.parse(decoded);
 
       const existingTplIds = new Set(templates.map(t => (t.id || t.file || '').toLowerCase()));
@@ -5359,6 +5701,17 @@ async function syncCloudCatalog(showNotice = false) {{
         const tIdLower = tId.toLowerCase();
         // NEVER resurrect templates that were deleted or are actively deleting
         if (deletedItemFiles.has(ctfileLower) || deletingItemIds.has(ctfileLower) || deletingItemIds.has(tId)) continue;
+
+        // If template already exists in memory, sync updated name from cloud manifest
+        const existingTpl = templates.find(t => (tIdLower && (t.id || '').toLowerCase() === tIdLower) || (ctfileLower && (t.file || '').toLowerCase() === ctfileLower));
+        if (existingTpl) {{
+          if (ct.name && existingTpl.name !== ct.name) {{
+            existingTpl.name = ct.name;
+            newTplsAdded = true;
+          }}
+          continue;
+        }}
+
         if (!existingTplIds.has(tIdLower) && !existingTplFiles.has(ctfileLower)) {{
           try {{
             const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/Templates/${{ctfile}}?_t=${{Date.now()}}`, {{
