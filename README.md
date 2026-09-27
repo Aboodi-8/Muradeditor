@@ -1,8 +1,8 @@
+# THIS PROJECT IS FULLY AI WRITTEN!
+
 # 🍉 Frutisator — Photoshop-Style Pro Meme Studio & GIF Maker
 
 A powerful Photoshop-style browser & Streamlit studio to slap Fruit faces, stickers, animations, color filters, and custom meme captions onto any picture, template, or GIF!
-
-Deployed live on Streamlit Cloud: [https://muradeditor.streamlit.app/](https://muradeditor.streamlit.app/)
 
 ---
 
