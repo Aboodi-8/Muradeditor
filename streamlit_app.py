@@ -2382,7 +2382,7 @@ canvas.width = 800;
 canvas.height = 800;
 
 // Preload face images
-const loadedFaces = {{}};
+let loadedFaces = {{}};
 faces.forEach((f, idx) => {{
   const img = new Image();
   img.src = f.src;
@@ -2393,7 +2393,7 @@ faces.forEach((f, idx) => {{
 }});
 
 // Preload template images
-const loadedTemplates = {{}};
+let loadedTemplates = {{}};
 templates.forEach(t => {{
   const img = new Image();
   img.src = t.src;
@@ -4297,15 +4297,16 @@ window.deleteAdminFace = async function(idx, btn) {{
     }}
     delete loadedFaces[finalIdx];
 
-    const newLoaded = {{}};
+    for (const k of Object.keys(loadedFaces)) {{
+      delete loadedFaces[k];
+    }}
     faces.forEach((item, i) => {{
       if (item.src) {{
         const img = new Image();
         img.src = item.src;
-        newLoaded[i] = img;
+        loadedFaces[i] = img;
       }}
     }});
-    loadedFaces = newLoaded;
 
     state.facesOnCanvas = state.facesOnCanvas.filter(fc => {{
       if (fc.faceIndex === finalIdx || (faceId && fc.id === faceId)) return false;
