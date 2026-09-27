@@ -1537,6 +1537,80 @@ html_app = f"""
     font-size: 12px !important;
     font-weight: 800 !important;
   }}
+
+  /* FLOATING BUG REPORT CIRCLE BUTTON (RICKROLL EASTER EGG) */
+  .floating-bug-btn {{
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    width: 34px;
+    border-radius: 17px;
+    background: rgba(26, 29, 38, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    color: #e2e8f0;
+    text-decoration: none;
+    cursor: pointer;
+    overflow: hidden;
+    transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+    user-select: none;
+    padding: 0 9px;
+    box-sizing: border-box;
+  }}
+  .floating-bug-btn .bug-icon {{
+    font-size: 15px;
+    flex-shrink: 0;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s ease;
+  }}
+  .floating-bug-btn .bug-label {{
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    opacity: 0;
+    max-width: 0;
+    margin-left: 0;
+    overflow: hidden;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    color: #f8fafc;
+    letter-spacing: 0.2px;
+  }}
+  .floating-bug-btn:hover {{
+    width: 112px;
+    background: rgba(220, 38, 38, 0.92);
+    border-color: rgba(248, 113, 113, 0.5);
+    box-shadow: 0 4px 18px rgba(220, 38, 38, 0.45);
+    transform: translateY(-2px);
+  }}
+  .floating-bug-btn:hover .bug-icon {{
+    transform: scale(1.15) rotate(-12deg);
+  }}
+  .floating-bug-btn:hover .bug-label {{
+    opacity: 1;
+    max-width: 80px;
+    margin-left: 5px;
+  }}
+  .floating-bug-btn:active {{
+    transform: scale(0.95);
+  }}
+  .ps-app.lang-ar .floating-bug-btn {{
+    right: auto;
+    left: 16px;
+  }}
+  .ps-app.lang-ar .floating-bug-btn:hover .bug-label {{
+    margin-left: 0;
+    margin-right: 5px;
+  }}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/build/gifshot.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/dist/gifuct-js.min.js"></script>
@@ -1830,6 +1904,12 @@ html_app = f"""
       <div class="canvas-stage">
         <canvas id="mainCanvas" width="800" height="800"></canvas>
       </div>
+
+      <!-- FLOATING CIRCLE BUG REPORT BUTTON (RICKROLL EASTER EGG) -->
+      <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" id="floatingBugReportBtn" class="floating-bug-btn" title="Bug Report" aria-label="Bug Report">
+        <span class="bug-icon">🐛</span>
+        <span class="bug-label" id="txtBugReportLabel">Bug Report</span>
+      </a>
     </main>
 
     <!-- RIGHT SIDEBAR: TEXT, STICKERS, FX & ACTIVE LAYERS -->
@@ -2133,6 +2213,7 @@ const i18n = {{
     exportPng: '⬇️ PNG',
     copyDiscord: '📋 Copy',
     copiedAlert: '🎉 Copied image to clipboard! You can paste directly into Discord with Ctrl+V!',
+    txtBugReportLabel: 'Bug Report',
     
     secTitleBackdrop: '🖼️ Backdrop & Templates',
     txtUploadBg: 'Upload Image, Meme or Animated GIF',
@@ -2258,6 +2339,7 @@ const i18n = {{
     exportPng: '⬇️ حفظ PNG',
     copyDiscord: '📋 نسخ',
     copiedAlert: '🎉 تم نسخ الصورة إلى الحافظة! يمكنك لصقها مباشرة في ديسكورد عبر Ctrl+V!',
+    txtBugReportLabel: 'إبلاغ عن خطأ',
     
     secTitleBackdrop: '🖼️ الخلفيات والقوالب',
     txtUploadBg: 'رفع صورة أو ميم أو GIF متحرك',
@@ -2515,6 +2597,9 @@ function applyLanguage(lang) {{
     if (document.getElementById('lbl3DHintXUp')) document.getElementById('lbl3DHintXUp').innerText = t.lbl3DHintXUp;
     if (document.getElementById('lbl3DHintXCenter')) document.getElementById('lbl3DHintXCenter').innerText = t.lbl3DHintXCenter;
     if (document.getElementById('lbl3DHintXDown')) document.getElementById('lbl3DHintXDown').innerText = t.lbl3DHintXDown;
+  }}
+  if (document.getElementById('txtBugReportLabel')) {{
+    document.getElementById('txtBugReportLabel').innerText = t.txtBugReportLabel || 'Bug Report';
   }}
   if (document.getElementById('lblAnimTargetText')) {{
     document.getElementById('lblAnimTargetText').innerText = t.lblAnimTargetText || 'Selected Layer:';
@@ -4817,6 +4902,15 @@ function initUIEvents() {{
       syncAnimUI();
       if (typeof syncLayersUI === 'function') syncLayersUI();
       render();
+    }};
+  }}
+
+  // Floating Bug Report button (Rickroll Easter Egg)
+  const bugBtn = document.getElementById('floatingBugReportBtn');
+  if (bugBtn) {{
+    bugBtn.onclick = (e) => {{
+      e.preventDefault();
+      window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank', 'noopener,noreferrer');
     }};
   }}
 
