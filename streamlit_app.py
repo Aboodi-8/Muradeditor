@@ -4251,6 +4251,30 @@ function initUIEvents() {{
 }}
 
 // Sync Admin Catalog List with Live Deletion Indicators
+window.confirmDeleteFace = function(btn, idx) {{
+  if (!btn) return;
+  if (btn.dataset.confirming === 'true') {{
+    btn.disabled = true;
+    btn.innerHTML = '<span class="ps-spinner ps-spinner-danger"></span>';
+    deleteAdminFace(idx);
+  }} else {{
+    btn.dataset.confirming = 'true';
+    btn.style.background = '#d93838';
+    btn.style.borderColor = '#ff4d4d';
+    btn.style.fontWeight = 'bold';
+    btn.innerText = currentLang === 'ar' ? '⚠️ تأكيد؟' : '⚠️ Confirm?';
+    setTimeout(() => {{
+      if (btn && btn.dataset.confirming === 'true') {{
+        btn.dataset.confirming = 'false';
+        btn.style.background = '';
+        btn.style.borderColor = '';
+        btn.style.fontWeight = '';
+        btn.innerText = currentLang === 'ar' ? 'حذف' : 'Remove';
+      }}
+    }}, 4000);
+  }}
+}};
+
 function renderAdminCatalog() {{
   const list = document.getElementById('adminFacesCatalogList');
   if (!list) return;
@@ -4258,23 +4282,19 @@ function renderAdminCatalog() {{
   if (faces.length === 0) {{
     const emptyRow = document.createElement('div');
     emptyRow.style = 'color:var(--ps-text-muted); font-size:12px; text-align:center; padding:12px;';
-    emptyRow.innerText = 'Catalog is empty. Add new fruit faces using the form above!';
+    emptyRow.innerText = currentLang === 'ar' ? 'الكتالوج فارغ. أضف وجوه جديدة أعلاه!' : 'Catalog is empty. Add new fruit faces using the form above!';
     list.appendChild(emptyRow);
   }}
   faces.forEach((f, idx) => {{
-    const isDeleting = deletingItemIds.has(f.id) || (f.file && deletingItemIds.has(f.file.toLowerCase()));
     const row = document.createElement('div');
     row.id = `adminFaceRow_${{idx}}`;
     row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:7px 10px; border-radius:6px; border:1px solid #1f2028; transition:all 0.2s ease;';
-    if (isDeleting) {{
-      row.style.opacity = '0.65';
-    }}
     row.innerHTML = `
       <div style="display:flex; align-items:center; gap:8px;">
         <img src="${{f.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
         <span style="font-size:12.5px; font-weight:700; color:#fff;">${{f.name}}</span>
       </div>
-      <button class="ps-opt-btn danger" id="adminFaceDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" onclick="deleteAdminFace(${{idx}})">
+      <button class="ps-opt-btn danger" id="adminFaceDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" onclick="confirmDeleteFace(this, ${{idx}})">
         ${{currentLang === 'ar' ? 'حذف' : 'Remove'}}
       </button>
     `;
@@ -4288,14 +4308,7 @@ window.deleteAdminFace = async function(idx) {{
   const targetFile = f.file || f.filename || '';
   const targetFileLower = targetFile.toLowerCase();
   const faceId = f.id || ('face_' + idx);
-
-  let ok = false;
-  try {{
-    ok = window.confirm('Remove ' + f.name + ' from catalog and storage?');
-  }} catch(e) {{
-    ok = true;
-  }}
-  if (!ok) return;
+  const faceName = f.name || targetFile;
 
   // 1. Instant Optimistic Local Removal (Zero lag, zero endless spinning loop!)
   faces.splice(idx, 1);
@@ -4347,24 +4360,29 @@ window.deleteAdminFace = async function(idx) {{
 
     (async () => {{
       try {{
-        if (targetFile) {{
+        // Step A: Find the file in the folder by listing folder contents (handles any case/path differences!)
+        if (targetFileLower) {{
           try {{
-            const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}?ref=main&_t=${{Date.now()}}`, {{
+            const listRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}?ref=main&_t=${{Date.now()}}`, {{
               headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
             }});
-            if (fRes.ok) {{
-              const fData = await fRes.json();
-              if (fData && fData.sha) {{
-                await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}`, {{
+            if (listRes.ok) {{
+              const folderFiles = await listRes.json();
+              const matchingFile = folderFiles.find(item => (item.name || '').toLowerCase() === targetFileLower);
+              if (matchingFile && matchingFile.sha) {{
+                await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{encodeURIComponent(matchingFile.name)}}`, {{
                   method: 'DELETE',
                   headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-                  body: JSON.stringify({{ message: 'Delete face ' + (f.name || targetFile), sha: fData.sha, branch: 'main' }})
+                  body: JSON.stringify({{ message: 'Delete face ' + faceName, sha: matchingFile.sha, branch: 'main' }})
                 }});
               }}
             }}
-          }} catch(e) {{}}
+          }} catch(e) {{
+            console.warn('File delete warning:', e);
+          }}
         }}
 
+        // Step B: Update manifest.json on GitHub
         try {{
           const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
             headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
@@ -4374,18 +4392,20 @@ window.deleteAdminFace = async function(idx) {{
             const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\s/g, ''))));
             let manifestList = JSON.parse(decoded);
             manifestList = manifestList.filter(item => {{
-              const ifile = item.file || item.filename || '';
-              return item.id !== faceId && ifile.toLowerCase() !== targetFileLower;
+              const ifile = (item.file || item.filename || '').toLowerCase();
+              return item.id !== faceId && ifile !== targetFileLower;
             }});
             const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
             await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
               method: 'PUT',
               headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-              body: JSON.stringify({{ message: 'Remove face: ' + (f.name || targetFile), content: updatedB64, sha: mData.sha, branch: 'main' }})
+              body: JSON.stringify({{ message: 'Remove face: ' + faceName, content: updatedB64, sha: mData.sha, branch: 'main' }})
             }});
           }}
-        }} catch(e) {{}}
-      }} catch(err) {{
+        }} catch(e) {{
+          console.warn('Manifest update warning:', e);
+        }}
+      }} catch (err) {{
         console.warn('Background delete warning:', err);
       }} finally {{
         if (syncSpinner) syncSpinner.style.display = 'none';
@@ -4548,6 +4568,30 @@ async function syncTemplateToGitHub(tplName, filename, base64Data) {{
   return {{ id: tplId, name: tplName, file: uniqueFilename }};
 }}
 
+window.confirmDeleteTemplate = function(btn, idx) {{
+  if (!btn) return;
+  if (btn.dataset.confirming === 'true') {{
+    btn.disabled = true;
+    btn.innerHTML = '<span class="ps-spinner ps-spinner-danger"></span>';
+    deleteAdminTemplate(idx);
+  }} else {{
+    btn.dataset.confirming = 'true';
+    btn.style.background = '#d93838';
+    btn.style.borderColor = '#ff4d4d';
+    btn.style.fontWeight = 'bold';
+    btn.innerText = currentLang === 'ar' ? '⚠️ تأكيد؟' : '⚠️ Confirm?';
+    setTimeout(() => {{
+      if (btn && btn.dataset.confirming === 'true') {{
+        btn.dataset.confirming = 'false';
+        btn.style.background = '';
+        btn.style.borderColor = '';
+        btn.style.fontWeight = '';
+        btn.innerText = currentLang === 'ar' ? 'حذف' : 'Remove';
+      }}
+    }}, 4000);
+  }}
+}};
+
 function renderAdminTemplatesCatalog() {{
   const list = document.getElementById('adminTemplatesCatalogList');
   if (!list) return;
@@ -4555,23 +4599,19 @@ function renderAdminTemplatesCatalog() {{
   if (templates.length === 0) {{
     const emptyRow = document.createElement('div');
     emptyRow.style = 'color:var(--ps-text-muted); font-size:12px; text-align:center; padding:12px;';
-    emptyRow.innerText = 'Templates catalog is empty. Add new templates using the form above!';
+    emptyRow.innerText = currentLang === 'ar' ? 'كتالوج القوالب فارغ. أضف قوالب جديدة أعلاه!' : 'Templates catalog is empty. Add new templates using the form above!';
     list.appendChild(emptyRow);
   }}
   templates.forEach((t, idx) => {{
-    const isDeleting = deletingItemIds.has(t.id) || (t.file && deletingItemIds.has(t.file.toLowerCase()));
     const row = document.createElement('div');
     row.id = `adminTplRow_${{idx}}`;
     row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:7px 10px; border-radius:6px; border:1px solid #1f2028; transition:all 0.2s ease;';
-    if (isDeleting) {{
-      row.style.opacity = '0.65';
-    }}
     row.innerHTML = `
       <div style="display:flex; align-items:center; gap:8px;">
         <img src="${{t.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
         <span style="font-size:12.5px; font-weight:700; color:#fff;">${{t.name}}</span>
       </div>
-      <button class="ps-opt-btn danger" id="adminTplDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" onclick="deleteAdminTemplate(${{idx}})">
+      <button class="ps-opt-btn danger" id="adminTplDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" onclick="confirmDeleteTemplate(this, ${{idx}})">
         ${{currentLang === 'ar' ? 'حذف' : 'Remove'}}
       </button>
     `;
@@ -4585,14 +4625,7 @@ window.deleteAdminTemplate = async function(idx) {{
   const targetFile = t.file || t.filename || '';
   const targetFileLower = targetFile.toLowerCase();
   const tplId = t.id || ('tpl_' + idx);
-
-  let ok = false;
-  try {{
-    ok = window.confirm('Remove ' + t.name + ' from templates catalog?');
-  }} catch(e) {{
-    ok = true;
-  }}
-  if (!ok) return;
+  const tplName = t.name || targetFile;
 
   // 1. Instant Optimistic Local Removal (Zero lag, zero endless spinning loop!)
   templates.splice(idx, 1);
@@ -4628,24 +4661,29 @@ window.deleteAdminTemplate = async function(idx) {{
 
     (async () => {{
       try {{
-        if (targetFile) {{
+        // Step A: Find the file in the folder by listing folder contents (handles any case/path differences!)
+        if (targetFileLower) {{
           try {{
-            const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}?ref=main&_t=${{Date.now()}}`, {{
+            const listRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}?ref=main&_t=${{Date.now()}}`, {{
               headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
             }});
-            if (fRes.ok) {{
-              const fData = await fRes.json();
-              if (fData && fData.sha) {{
-                await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}`, {{
+            if (listRes.ok) {{
+              const folderFiles = await listRes.json();
+              const matchingFile = folderFiles.find(item => (item.name || '').toLowerCase() === targetFileLower);
+              if (matchingFile && matchingFile.sha) {{
+                await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{encodeURIComponent(matchingFile.name)}}`, {{
                   method: 'DELETE',
                   headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-                  body: JSON.stringify({{ message: 'Delete template ' + (t.name || targetFile), sha: fData.sha, branch: 'main' }})
+                  body: JSON.stringify({{ message: 'Delete template ' + tplName, sha: matchingFile.sha, branch: 'main' }})
                 }});
               }}
             }}
-          }} catch(e) {{}}
+          }} catch(e) {{
+            console.warn('File delete warning:', e);
+          }}
         }}
 
+        // Step B: Update manifest.json on GitHub
         try {{
           const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
             headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
@@ -4655,18 +4693,20 @@ window.deleteAdminTemplate = async function(idx) {{
             const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\s/g, ''))));
             let manifestList = JSON.parse(decoded);
             manifestList = manifestList.filter(item => {{
-              const ifile = item.file || item.filename || '';
-              return item.id !== tplId && ifile.toLowerCase() !== targetFileLower;
+              const ifile = (item.file || item.filename || '').toLowerCase();
+              return item.id !== tplId && ifile !== targetFileLower;
             }});
             const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
             await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
               method: 'PUT',
               headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-              body: JSON.stringify({{ message: 'Remove template: ' + (t.name || targetFile), content: updatedB64, sha: mData.sha, branch: 'main' }})
+              body: JSON.stringify({{ message: 'Remove template: ' + tplName, content: updatedB64, sha: mData.sha, branch: 'main' }})
             }});
           }}
-        }} catch(e) {{}}
-      }} catch(err) {{
+        }} catch(e) {{
+          console.warn('Manifest update warning:', e);
+        }}
+      }} catch (err) {{
         console.warn('Background delete warning:', err);
       }} finally {{
         if (syncSpinner) syncSpinner.style.display = 'none';
