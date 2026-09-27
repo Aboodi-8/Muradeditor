@@ -1760,6 +1760,69 @@ html_app = f"""
         </div>
       </div>
 
+      <!-- 4. SECTION: 3D PERSPECTIVE & TILT -->
+      <div class="ps-panel-section" id="section-3d">
+        <div class="panel-section-header">
+          <span class="panel-section-title" id="secTitle3D">📐 3D Perspective & Tilt</span>
+          <button id="reset3DBtn" class="ps-opt-btn" style="padding:2px 7px; font-size:10.5px;" title="Reset 3D Tilt">🔄 Reset</button>
+        </div>
+
+        <!-- CURRENT SELECTED LAYER TARGET BADGE -->
+        <div id="tiltActiveTargetBadge" style="display:flex; align-items:center; justify-content:space-between; background:var(--ps-card); border:1px solid var(--ps-border); border-radius:6px; padding:6px 10px; font-size:11.5px; font-weight:700; color:#fff;">
+          <span id="lbl3DTargetText">Selected Layer:</span>
+          <span id="val3DTargetName" style="color:#ff6b8b; font-weight:800;">🍉 Face</span>
+        </div>
+
+        <!-- NOTICE WHEN NO LAYER SELECTED -->
+        <div id="tiltNoTargetNotice" style="display:none; color:var(--ps-yellow); font-size:11px; padding:6px 8px; border:1px dashed var(--ps-border); border-radius:5px; background:rgba(255,200,0,0.05); text-align:center;"></div>
+
+        <div id="tiltSlidersBox" style="display:flex; flex-direction:column; gap:6px; transition:opacity 0.2s;">
+          <!-- QUICK 3D PRESETS -->
+          <div style="display:flex; flex-direction:column; gap:4px; margin-top:2px;">
+            <span class="section-label" id="lbl3DPresets">Quick 3D Presets:</span>
+            <div class="btn-group-grid" id="tiltPresetsGrid" style="display:grid; grid-template-columns:repeat(3, 1fr); gap:4px;">
+              <button class="ps-opt-btn" data-tilt-preset="flat" id="presetFlat" style="padding:5px 2px; font-size:10.5px; justify-content:center;">🔄 Flat</button>
+              <button class="ps-opt-btn" data-tilt-preset="left" id="presetLeanLeft" style="padding:5px 2px; font-size:10.5px; justify-content:center;">👈 Left</button>
+              <button class="ps-opt-btn" data-tilt-preset="right" id="presetLeanRight" style="padding:5px 2px; font-size:10.5px; justify-content:center;">👉 Right</button>
+              <button class="ps-opt-btn" data-tilt-preset="up" id="presetLeanUp" style="padding:5px 2px; font-size:10.5px; justify-content:center;">👆 Up</button>
+              <button class="ps-opt-btn" data-tilt-preset="down" id="presetLeanDown" style="padding:5px 2px; font-size:10.5px; justify-content:center;">👇 Down</button>
+              <button class="ps-opt-btn" data-tilt-preset="pop" id="preset3DPop" style="padding:5px 2px; font-size:10.5px; justify-content:center;">📐 3D Pop</button>
+            </div>
+          </div>
+
+          <!-- 3D LEAN SLIDERS -->
+          <div style="display:flex; flex-direction:column; gap:6px; margin-top:4px;">
+            <!-- LEAN LEFT / RIGHT (TILT Y) -->
+            <div class="slider-row">
+              <label style="display:flex; justify-content:space-between; align-items:center;">
+                <span id="lblTiltY">Lean Left / Right (Tilt Y):</span>
+                <b id="valTiltY" style="color:var(--ps-blue);">0°</b>
+              </label>
+              <div style="display:flex; justify-content:space-between; font-size:9.5px; color:var(--ps-text-muted); margin-bottom:1px;">
+                <span id="lbl3DHintYLeft">👈 Left</span>
+                <span id="lbl3DHintYCenter">| 0° Flat |</span>
+                <span id="lbl3DHintYRight">Right 👉</span>
+              </div>
+              <input type="range" id="sliderTiltY" min="-45" max="45" step="1" value="0" title="Double click to reset">
+            </div>
+
+            <!-- LEAN UP / DOWN (TILT X) -->
+            <div class="slider-row">
+              <label style="display:flex; justify-content:space-between; align-items:center;">
+                <span id="lblTiltX">Lean Up / Down (Tilt X):</span>
+                <b id="valTiltX" style="color:var(--ps-blue);">0°</b>
+              </label>
+              <div style="display:flex; justify-content:space-between; font-size:9.5px; color:var(--ps-text-muted); margin-bottom:1px;">
+                <span id="lbl3DHintXUp">👆 Up</span>
+                <span id="lbl3DHintXCenter">| 0° Flat |</span>
+                <span id="lbl3DHintXDown">Down 👇</span>
+              </div>
+              <input type="range" id="sliderTiltX" min="-45" max="45" step="1" value="0" title="Double click to reset">
+            </div>
+          </div>
+        </div>
+      </div>
+
     </aside>
 
     <!-- CENTER CANVAS VIEWPORT -->
@@ -2123,6 +2186,25 @@ const i18n = {{
     animJitter: '⚡ Glitch Jitter',
     animChaos: '🤯 Hyper Chaos',
 
+    secTitle3D: '📐 3D Perspective & Tilt',
+    reset3D: '🔄 Reset',
+    lbl3DTargetText: 'Selected Layer:',
+    lbl3DPresets: 'Quick 3D Presets:',
+    presetFlat: '🔄 Flat',
+    presetLeanLeft: '👈 Left',
+    presetLeanRight: '👉 Right',
+    presetLeanUp: '👆 Up',
+    presetLeanDown: '👇 Down',
+    preset3DPop: '📐 3D Pop',
+    lblTiltY: 'Lean Left / Right (Tilt Y):',
+    lblTiltX: 'Lean Up / Down (Tilt X):',
+    lbl3DHintYLeft: '👈 Left',
+    lbl3DHintYCenter: '| 0° Flat |',
+    lbl3DHintYRight: 'Right 👉',
+    lbl3DHintXUp: '👆 Up',
+    lbl3DHintXCenter: '| 0° Flat |',
+    lbl3DHintXDown: 'Down 👇',
+
     secTitleLayers: '📑 Active Layers',
     noLayers: 'No active layers on canvas',
 
@@ -2227,6 +2309,25 @@ const i18n = {{
     animPeekaboo: '🙈 تلصص واختفاء',
     animJitter: '⚡ تشويش وجليتش',
     animChaos: '🤯 فوضى ميم خارقة',
+
+    secTitle3D: '📐 منظور وإمالة ثلاثية الأبعاد',
+    reset3D: '🔄 إعادة ضبط',
+    lbl3DTargetText: 'الطبقة المحددة:',
+    lbl3DPresets: 'أوضاع ثلاثية الأبعاد سريعة:',
+    presetFlat: '🔄 مستوٍ',
+    presetLeanLeft: '👈 يسار',
+    presetLeanRight: '👉 يمين',
+    presetLeanUp: '👆 أعلى',
+    presetLeanDown: '👇 أسفل',
+    preset3DPop: '📐 مجسم ثلاثي',
+    lblTiltY: 'إمالة يسار / يمين (Tilt Y):',
+    lblTiltX: 'إمالة أعلى / أسفل (Tilt X):',
+    lbl3DHintYLeft: '👈 يسار',
+    lbl3DHintYCenter: '| 0° مستوٍ |',
+    lbl3DHintYRight: 'يمين 👉',
+    lbl3DHintXUp: '👆 أعلى',
+    lbl3DHintXCenter: '| 0° مستوٍ |',
+    lbl3DHintXDown: 'أسفل 👇',
 
     secTitleLayers: '📑 الطبقات النشطة',
     noLayers: 'لا توجد طبقات نشطة على الكانفاس',
@@ -2385,7 +2486,30 @@ function applyLanguage(lang) {{
     document.getElementById('lblFilterContrast').innerText = t.lblFilterContrast;
     document.getElementById('lblFilterSaturate').innerText = t.lblFilterSaturate;
   }}
+
+  // 3D Perspective Section translations
+  if (document.getElementById('secTitle3D')) {{
+    document.getElementById('secTitle3D').innerText = t.secTitle3D;
+    if (document.getElementById('reset3DBtn')) document.getElementById('reset3DBtn').innerText = t.reset3D;
+    if (document.getElementById('lbl3DTargetText')) document.getElementById('lbl3DTargetText').innerText = t.lbl3DTargetText;
+    if (document.getElementById('lbl3DPresets')) document.getElementById('lbl3DPresets').innerText = t.lbl3DPresets;
+    if (document.getElementById('presetFlat')) document.getElementById('presetFlat').innerText = t.presetFlat;
+    if (document.getElementById('presetLeanLeft')) document.getElementById('presetLeanLeft').innerText = t.presetLeanLeft;
+    if (document.getElementById('presetLeanRight')) document.getElementById('presetLeanRight').innerText = t.presetLeanRight;
+    if (document.getElementById('presetLeanUp')) document.getElementById('presetLeanUp').innerText = t.presetLeanUp;
+    if (document.getElementById('presetLeanDown')) document.getElementById('presetLeanDown').innerText = t.presetLeanDown;
+    if (document.getElementById('preset3DPop')) document.getElementById('preset3DPop').innerText = t.preset3DPop;
+    if (document.getElementById('lblTiltY')) document.getElementById('lblTiltY').innerText = t.lblTiltY;
+    if (document.getElementById('lblTiltX')) document.getElementById('lblTiltX').innerText = t.lblTiltX;
+    if (document.getElementById('lbl3DHintYLeft')) document.getElementById('lbl3DHintYLeft').innerText = t.lbl3DHintYLeft;
+    if (document.getElementById('lbl3DHintYCenter')) document.getElementById('lbl3DHintYCenter').innerText = t.lbl3DHintYCenter;
+    if (document.getElementById('lbl3DHintYRight')) document.getElementById('lbl3DHintYRight').innerText = t.lbl3DHintYRight;
+    if (document.getElementById('lbl3DHintXUp')) document.getElementById('lbl3DHintXUp').innerText = t.lbl3DHintXUp;
+    if (document.getElementById('lbl3DHintXCenter')) document.getElementById('lbl3DHintXCenter').innerText = t.lbl3DHintXCenter;
+    if (document.getElementById('lbl3DHintXDown')) document.getElementById('lbl3DHintXDown').innerText = t.lbl3DHintXDown;
+  }}
   syncFilterUI();
+  if (typeof sync3dUI === 'function') sync3dUI();
   updateTopbarToolOptions();
   syncLayersUI();
   if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
@@ -2531,6 +2655,8 @@ function makeFaceLayer(faceIndexOrId, x, y, scale, z) {{
     gifFrames: [],
     gifIndex: 0,
     filters: makeDefaultFilters(),
+    tiltX: 0,
+    tiltY: 0,
     z: z !== undefined ? z : ++layerZCounter
   }};
 }}
@@ -2548,6 +2674,8 @@ const state = {{
   bgGifFrames: [],
   bgGifIndex: 0,
   bgFilters: makeDefaultFilters(),
+  bgTiltX: 0,
+  bgTiltY: 0,
 
   canvasSizeMode: 'true_size',
 
@@ -3161,6 +3289,18 @@ function getAllLayers() {{
 }}
 
 // --- RENDER CANVAS ---
+function apply3DTransform(ctx, tiltX, tiltY) {{
+  if (!tiltX && !tiltY) return;
+  const radX = ((tiltX || 0) * Math.PI) / 180;
+  const radY = ((tiltY || 0) * Math.PI) / 180;
+  const cosX = Math.cos(radX);
+  const cosY = Math.cos(radY);
+  const shearX = Math.tan(radX) * 0.5;
+  const shearY = Math.tan(radY) * 0.5;
+
+  ctx.transform(cosY, shearY, shearX, cosX, 0, 0);
+}}
+
 function render(offsetObj) {{
   const animOff = offsetObj || {{ x: 0, y: 0, rot: 0, scale: 1.0 }};
 
@@ -3202,6 +3342,11 @@ function render(offsetObj) {{
   // 1. Draw Background
   ctx.save();
   ctx.filter = getFilterString(state.bgFilters);
+  if (state.bgTiltX || state.bgTiltY) {{
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    apply3DTransform(ctx, state.bgTiltX, state.bgTiltY);
+    ctx.translate(-canvas.width / 2, -canvas.height / 2);
+  }}
   if (bgImg) {{
     ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
   }} else {{
@@ -3226,6 +3371,7 @@ function render(offsetObj) {{
       ctx.translate(cx, cy);
       ctx.rotate(((obj.rotation + animOff.rot) * Math.PI) / 180);
       ctx.scale(obj.flipH || 1, 1);
+      apply3DTransform(ctx, obj.tiltX, obj.tiltY);
       ctx.globalAlpha = obj.opacity !== undefined ? obj.opacity : 1.0;
 
       const aspect = (img.naturalHeight || 1) / (img.naturalWidth || 1);
@@ -3256,6 +3402,7 @@ function render(offsetObj) {{
       ctx.translate(cx, cy);
       ctx.rotate((obj.rotation * Math.PI) / 180);
       ctx.scale(obj.flipH || 1, 1);
+      apply3DTransform(ctx, obj.tiltX, obj.tiltY);
       ctx.globalAlpha = obj.opacity !== undefined ? obj.opacity : 1.0;
 
       const aspect = (obj.img.naturalHeight || 1) / (obj.img.naturalWidth || 1);
@@ -3274,6 +3421,7 @@ function render(offsetObj) {{
       const cy = canvas.height / 2 + obj.y;
       ctx.translate(cx, cy);
       ctx.rotate((obj.rotation * Math.PI) / 180);
+      apply3DTransform(ctx, obj.tiltX, obj.tiltY);
       const sx = obj.scaleX !== undefined ? obj.scaleX : 1.0;
       const sy = obj.scaleY !== undefined ? obj.scaleY : 1.0;
       ctx.scale(sx, sy);
@@ -3295,10 +3443,13 @@ function render(offsetObj) {{
   // 3. Draw Refined Compact Free Transform Bounding Box & Handles
   const active = getActiveLayerData();
   if (active && active.type !== 'bg') {{
-    const {{ cx, cy, hw, hh, rotation }} = active;
+    const {{ cx, cy, hw, hh, rotation, obj }} = active;
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate((rotation * Math.PI) / 180);
+    if (obj) {{
+      apply3DTransform(ctx, obj.tiltX, obj.tiltY);
+    }}
 
     // Slim dashed bounding rectangle
     ctx.strokeStyle = '#0084ff';
@@ -4018,7 +4169,7 @@ function initUIEvents() {{
 
   // 3. Text Controls (Top, Bottom, Custom)
   document.getElementById('addTopTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'TOP TEXT', x: 0, y: -Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, z: ++layerZCounter }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'TOP TEXT', x: 0, y: -Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, tiltX: 0, tiltY: 0, z: ++layerZCounter }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
     state.selectedTextIdx = state.texts.length - 1;
     document.getElementById('activeTextInput').value = 'TOP TEXT';
@@ -4027,7 +4178,7 @@ function initUIEvents() {{
     updateDynamicFileName();
   }};
   document.getElementById('addBottomTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, z: ++layerZCounter }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, tiltX: 0, tiltY: 0, z: ++layerZCounter }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
     state.selectedTextIdx = state.texts.length - 1;
     document.getElementById('activeTextInput').value = 'BOTTOM TEXT';
@@ -4036,7 +4187,7 @@ function initUIEvents() {{
     updateDynamicFileName();
   }};
   document.getElementById('addCustomTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'YOUR TEXT', x: 0, y: 0, size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, z: ++layerZCounter }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'YOUR TEXT', x: 0, y: 0, size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, tiltX: 0, tiltY: 0, z: ++layerZCounter }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
     state.selectedTextIdx = state.texts.length - 1;
     document.getElementById('activeTextInput').value = 'YOUR TEXT';
@@ -4058,8 +4209,7 @@ function initUIEvents() {{
           size: 52,
           color: '#ffffff',
           font: document.getElementById('fontFamilySelect').value,
-          rotation: 0,
-          z: ++layerZCounter
+          rotation: 0, tiltX: 0, tiltY: 0, z: ++layerZCounter
         }});
         state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
         state.selectedTextIdx = state.texts.length - 1;
@@ -4239,7 +4389,65 @@ function initUIEvents() {{
     warm: {{ hue: 25, grayscale: 0, brightness: 105, contrast: 105, saturate: 130, invert: 0, sepia: 20 }}
   }};
 
-  document.querySelectorAll('#filterPresetsGrid .ps-opt-btn').forEach(btn => {{
+
+  // --- 3D PERSPECTIVE & TILT UI SYNC ---
+  window.sync3dUI = function() {{
+    const active = getActiveLayerData();
+    const badgeName = document.getElementById('val3DTargetName');
+    const box = document.getElementById('tiltSlidersBox');
+    const notice = document.getElementById('tiltNoTargetNotice');
+
+    if (!active) {{
+      if (badgeName) {{
+        badgeName.innerText = currentLang === 'ar' ? 'لا توجد طبقة محددة' : 'No Layer Selected';
+        badgeName.style.color = 'var(--ps-text-muted)';
+      }}
+      if (box) box.style.opacity = '0.4';
+      if (notice) {{
+        notice.style.display = 'block';
+        notice.innerText = currentLang === 'ar'
+          ? '⚠️ اضغط على أي وجه أو ملصق أو نص في الكانفاس لتعديل إمالته ثلاثية الأبعاد!'
+          : '⚠️ Click any face, sticker, or text on the canvas to adjust its 3D lean!';
+      }}
+      return;
+    }}
+
+    if (box) box.style.opacity = '1.0';
+    if (notice) notice.style.display = 'none';
+
+    if (badgeName) {{
+      if (active.type === 'face') {{
+        const fObj = faces.find(f => (active.obj && active.obj.faceId && f.id === active.obj.faceId) || (active.obj && active.obj.faceFile && f.file && f.file.toLowerCase() === active.obj.faceFile.toLowerCase())) || (active.obj ? faces[active.obj.faceIndex] : null);
+        badgeName.innerText = '🍉 ' + ((active.obj && active.obj.customName) || (fObj ? fObj.name : (currentLang === 'ar' ? 'وجه فاكهة' : 'Fruit Face')));
+        badgeName.style.color = '#ff6b8b';
+      }} else if (active.type === 'acc') {{
+        badgeName.innerText = '🎀 ' + (currentLang === 'ar' ? 'ملصق #' + (active.idx + 1) : 'Sticker #' + (active.idx + 1));
+        badgeName.style.color = '#a78bfa';
+      }} else if (active.type === 'text') {{
+        badgeName.innerText = '✍️ "' + (((active.obj && active.obj.text) || 'Text').substring(0, 10)) + '"';
+        badgeName.style.color = '#38bdf8';
+      }} else if (active.type === 'bg') {{
+        badgeName.innerText = '🖼️ ' + (currentLang === 'ar' ? 'الخلفية' : 'Backdrop');
+        badgeName.style.color = 'var(--ps-blue)';
+      }}
+    }}
+
+    const obj = active.type === 'bg' ? state : active.obj;
+    const tiltX = (active.type === 'bg' ? state.bgTiltX : (obj ? obj.tiltX : 0)) || 0;
+    const tiltY = (active.type === 'bg' ? state.bgTiltY : (obj ? obj.tiltY : 0)) || 0;
+
+    const sliderX = document.getElementById('sliderTiltX');
+    const sliderY = document.getElementById('sliderTiltY');
+    const valX = document.getElementById('valTiltX');
+    const valY = document.getElementById('valTiltY');
+
+    if (sliderX) sliderX.value = tiltX;
+    if (sliderY) sliderY.value = tiltY;
+    if (valX) valX.innerText = (tiltX > 0 ? '+' : '') + tiltX + '°';
+    if (valY) valY.innerText = (tiltY > 0 ? '+' : '') + tiltY + '°';
+  }};
+
+    document.querySelectorAll('#filterPresetsGrid .ps-opt-btn').forEach(btn => {{
     btn.onclick = () => {{
       const presetKey = btn.getAttribute('data-preset');
       const f = getActiveFilterTargetObj();
@@ -4321,6 +4529,140 @@ function initUIEvents() {{
     render();
   }};
 
+  // 3D Lean Sliders & Controls Setup
+  const sliderTiltY = document.getElementById('sliderTiltY');
+  if (sliderTiltY) {{
+    sliderTiltY.oninput = (e) => {{
+      let active = getActiveLayerData();
+      if (!active) {{
+        if (state.facesOnCanvas.length > 0) {{
+          state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
+          active = getActiveLayerData();
+        }} else if (state.accessoriesOnCanvas.length > 0) {{
+          state.activeTransformTarget = {{ type: 'acc', idx: state.accessoriesOnCanvas.length - 1 }};
+          active = getActiveLayerData();
+        }} else if (state.texts.length > 0) {{
+          state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
+          active = getActiveLayerData();
+        }} else {{
+          state.activeTransformTarget = {{ type: 'bg' }};
+          active = getActiveLayerData();
+        }}
+        if (typeof syncLayersUI === 'function') syncLayersUI();
+      }}
+      const val = parseInt(e.target.value) || 0;
+      const valEl = document.getElementById('valTiltY');
+      if (valEl) valEl.innerText = (val > 0 ? '+' : '') + val + '°';
+
+      if (active && active.type === 'bg') {{
+        state.bgTiltY = val;
+      }} else if (active && active.obj) {{
+        active.obj.tiltY = val;
+      }}
+      render();
+    }};
+    sliderTiltY.ondblclick = () => {{
+      sliderTiltY.value = 0;
+      sliderTiltY.dispatchEvent(new Event('input'));
+    }};
+  }}
+
+  const sliderTiltX = document.getElementById('sliderTiltX');
+  if (sliderTiltX) {{
+    sliderTiltX.oninput = (e) => {{
+      let active = getActiveLayerData();
+      if (!active) {{
+        if (state.facesOnCanvas.length > 0) {{
+          state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
+          active = getActiveLayerData();
+        }} else if (state.accessoriesOnCanvas.length > 0) {{
+          state.activeTransformTarget = {{ type: 'acc', idx: state.accessoriesOnCanvas.length - 1 }};
+          active = getActiveLayerData();
+        }} else if (state.texts.length > 0) {{
+          state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
+          active = getActiveLayerData();
+        }} else {{
+          state.activeTransformTarget = {{ type: 'bg' }};
+          active = getActiveLayerData();
+        }}
+        if (typeof syncLayersUI === 'function') syncLayersUI();
+      }}
+      const val = parseInt(e.target.value) || 0;
+      const valEl = document.getElementById('valTiltX');
+      if (valEl) valEl.innerText = (val > 0 ? '+' : '') + val + '°';
+
+      if (active && active.type === 'bg') {{
+        state.bgTiltX = val;
+      }} else if (active && active.obj) {{
+        active.obj.tiltX = val;
+      }}
+      render();
+    }};
+    sliderTiltX.ondblclick = () => {{
+      sliderTiltX.value = 0;
+      sliderTiltX.dispatchEvent(new Event('input'));
+    }};
+  }}
+
+  document.querySelectorAll('#tiltPresetsGrid .ps-opt-btn').forEach(btn => {{
+    btn.onclick = () => {{
+      const preset = btn.getAttribute('data-tilt-preset');
+      let active = getActiveLayerData();
+      if (!active) {{
+        if (state.facesOnCanvas.length > 0) {{
+          state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
+          active = getActiveLayerData();
+        }} else if (state.accessoriesOnCanvas.length > 0) {{
+          state.activeTransformTarget = {{ type: 'acc', idx: state.accessoriesOnCanvas.length - 1 }};
+          active = getActiveLayerData();
+        }} else if (state.texts.length > 0) {{
+          state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
+          active = getActiveLayerData();
+        }} else {{
+          state.activeTransformTarget = {{ type: 'bg' }};
+          active = getActiveLayerData();
+        }}
+        if (typeof syncLayersUI === 'function') syncLayersUI();
+      }}
+
+      let tx = 0, ty = 0;
+      if (preset === 'flat') {{ tx = 0; ty = 0; }}
+      else if (preset === 'left') {{ tx = 0; ty = -25; }}
+      else if (preset === 'right') {{ tx = 0; ty = 25; }}
+      else if (preset === 'up') {{ tx = -25; ty = 0; }}
+      else if (preset === 'down') {{ tx = 25; ty = 0; }}
+      else if (preset === 'pop') {{ tx = -15; ty = 20; }}
+
+      if (active && active.type === 'bg') {{
+        state.bgTiltX = tx;
+        state.bgTiltY = ty;
+      }} else if (active && active.obj) {{
+        active.obj.tiltX = tx;
+        active.obj.tiltY = ty;
+      }}
+
+      sync3dUI();
+      render();
+    }};
+  }});
+
+  const reset3DBtn = document.getElementById('reset3DBtn');
+  if (reset3DBtn) {{
+    reset3DBtn.onclick = () => {{
+      let active = getActiveLayerData();
+      if (!active) return;
+      if (active.type === 'bg') {{
+        state.bgTiltX = 0;
+        state.bgTiltY = 0;
+      }} else if (active.obj) {{
+        active.obj.tiltX = 0;
+        active.obj.tiltY = 0;
+      }}
+      sync3dUI();
+      render();
+    }};
+  }}
+
   // 4. Custom Sticker Upload
   // 3. STICKERS & ACCESSORIES UPLOAD HANDLER
   function handleAccFile(file) {{
@@ -4342,6 +4684,8 @@ function initUIEvents() {{
           flipH: 1,
           opacity: 1.0,
           filters: makeDefaultFilters(),
+          tiltX: 0,
+          tiltY: 0,
           z: ++layerZCounter
         }});
         state.activeTransformTarget = {{ type: 'acc', idx: state.accessoriesOnCanvas.length - 1 }};
@@ -6087,6 +6431,7 @@ function syncLayersUI() {{
       render();
       syncLayersUI();
       syncFilterUI();
+      if (typeof sync3dUI === 'function') sync3dUI();
     }};
 
     list.appendChild(row);
@@ -6120,9 +6465,11 @@ function syncLayersUI() {{
     render();
     syncLayersUI();
     syncFilterUI();
+    if (typeof sync3dUI === 'function') sync3dUI();
   }};
 
   list.appendChild(bgRow);
+  if (typeof sync3dUI === 'function') sync3dUI();
 }}
 
 window.deleteSpecificLayer = function(layerType, idx) {{
