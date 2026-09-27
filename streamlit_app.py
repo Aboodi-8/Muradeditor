@@ -143,49 +143,6 @@ def load_faces_catalog():
                 except Exception:
                     manifest_items = []
 
-                # Self-healing: Check what is missing in GitHub manifest and add any missing files
-                known_files = {
-                    (item.get("file") or item.get("filename", "")).lower(): item
-                    for item in manifest_items
-                    if ("file" in item or "filename" in item)
-                }
-                manifest_updated = False
-                for f_item in folder_files:
-                    fn = f_item.get("name", "")
-                    if f_item.get("type") == "file" and fn.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif")):
-                        if fn.lower() not in known_files:
-                            stem = Path(fn).stem
-                            clean_name = stem.replace("_", " ").title()
-                            new_entry = {
-                                "id": "face_" + stem,
-                                "name": clean_name + " 🍉",
-                                "file": fn
-                            }
-                            manifest_items.append(new_entry)
-                            known_files[fn.lower()] = new_entry
-                            manifest_updated = True
-
-                # If missing files were found, auto-save repaired manifest back to GitHub!
-                if manifest_updated:
-                    try:
-                        updated_b64 = base64.b64encode(json.dumps(manifest_items, indent=2).encode("utf-8")).decode("utf-8")
-                        put_body = {
-                            "message": "Auto-sync and repair Faces/manifest.json with all folder images",
-                            "content": updated_b64,
-                            "branch": "main"
-                        }
-                        if manifest_sha:
-                            put_body["sha"] = manifest_sha
-                        put_req = urllib.request.Request(m_url, data=json.dumps(put_body).encode("utf-8"), method="PUT", headers={
-                            "Authorization": f"Bearer {token}",
-                            "Content-Type": "application/json",
-                            "User-Agent": "Frutisator-App"
-                        })
-                        with urllib.request.urlopen(put_req, timeout=5) as put_resp:
-                            pass
-                    except Exception:
-                        pass
-
                 # Load base64 data for all items
                 for item in manifest_items:
                     fname = item.get("file") or item.get("filename")
@@ -293,48 +250,6 @@ def load_templates_catalog():
                 except Exception:
                     manifest_items = []
 
-                # Self-healing: Check what is missing in GitHub manifest and add any missing templates
-                known_files = {
-                    (item.get("file") or item.get("filename", "")).lower(): item
-                    for item in manifest_items
-                    if ("file" in item or "filename" in item)
-                }
-                manifest_updated = False
-                for f_item in folder_files:
-                    fn = f_item.get("name", "")
-                    if f_item.get("type") == "file" and fn.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif")):
-                        if fn.lower() not in known_files:
-                            stem = Path(fn).stem
-                            clean_name = stem.replace("_", " ").title()
-                            new_entry = {
-                                "id": "tpl_" + stem,
-                                "name": clean_name,
-                                "file": fn
-                            }
-                            manifest_items.append(new_entry)
-                            known_files[fn.lower()] = new_entry
-                            manifest_updated = True
-
-                if manifest_updated:
-                    try:
-                        updated_b64 = base64.b64encode(json.dumps(manifest_items, indent=2).encode("utf-8")).decode("utf-8")
-                        put_body = {
-                            "message": "Auto-sync and repair Templates/manifest.json with all folder images",
-                            "content": updated_b64,
-                            "branch": "main"
-                        }
-                        if manifest_sha:
-                            put_body["sha"] = manifest_sha
-                        put_req = urllib.request.Request(m_url, data=json.dumps(put_body).encode("utf-8"), method="PUT", headers={
-                            "Authorization": f"Bearer {token}",
-                            "Content-Type": "application/json",
-                            "User-Agent": "Frutisator-App"
-                        })
-                        with urllib.request.urlopen(put_req, timeout=5) as put_resp:
-                            pass
-                    except Exception:
-                        pass
-
                 for item in manifest_items:
                     fname = item.get("file") or item.get("filename")
                     if not fname:
@@ -413,11 +328,7 @@ try:
 except Exception:
     pass
 
-private_folder_secret = ""
-try:
-    private_folder_secret = st.secrets.get("PRIVATE_FACES_FOLDER", "Faces" if private_repo_secret else "assets")
-except Exception:
-    private_folder_secret = "faces" if private_repo_secret else "assets"
+private_folder_secret = "Faces" if private_repo_secret else "assets"
 
 expected_pwd = ""
 try:
@@ -1833,6 +1744,7 @@ html_app = f"""
 
           <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
             <span style="font-size:12px; font-weight:800; color:#fff;">🗑️ MANAGE DEFAULT FRUITS:</span>
+            <div id="adminFacesCatalogStatus" style="font-size:11.5px; margin-top:4px; margin-bottom:4px; min-height:16px; font-weight:600; text-align:center;"></div>
             <div id="adminFacesCatalogList" style="display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-top:6px;"></div>
           </div>
         </div>
@@ -1858,6 +1770,7 @@ html_app = f"""
 
           <div style="border-top:1px solid var(--ps-border); padding-top:10px;">
             <span style="font-size:12px; font-weight:800; color:#fff;">🗑️ MANAGE DEFAULT TEMPLATES:</span>
+            <div id="adminTplCatalogStatus" style="font-size:11.5px; margin-top:4px; margin-bottom:4px; min-height:16px; font-weight:600; text-align:center;"></div>
             <div id="adminTemplatesCatalogList" style="display:flex; flex-direction:column; gap:5px; max-height:200px; overflow-y:auto; margin-top:6px;"></div>
           </div>
         </div>
@@ -4251,30 +4164,6 @@ function initUIEvents() {{
 }}
 
 // Sync Admin Catalog List with Live Deletion Indicators
-window.confirmDeleteFace = function(btn, idx) {{
-  if (!btn) return;
-  if (btn.dataset.confirming === 'true') {{
-    btn.disabled = true;
-    btn.innerHTML = '<span class="ps-spinner ps-spinner-danger"></span>';
-    deleteAdminFace(idx);
-  }} else {{
-    btn.dataset.confirming = 'true';
-    btn.style.background = '#d93838';
-    btn.style.borderColor = '#ff4d4d';
-    btn.style.fontWeight = 'bold';
-    btn.innerText = currentLang === 'ar' ? '⚠️ تأكيد؟' : '⚠️ Confirm?';
-    setTimeout(() => {{
-      if (btn && btn.dataset.confirming === 'true') {{
-        btn.dataset.confirming = 'false';
-        btn.style.background = '';
-        btn.style.borderColor = '';
-        btn.style.fontWeight = '';
-        btn.innerText = currentLang === 'ar' ? 'حذف' : 'Remove';
-      }}
-    }}, 4000);
-  }}
-}};
-
 function renderAdminCatalog() {{
   const list = document.getElementById('adminFacesCatalogList');
   if (!list) return;
@@ -4286,23 +4175,24 @@ function renderAdminCatalog() {{
     list.appendChild(emptyRow);
   }}
   faces.forEach((f, idx) => {{
+    const isDeleting = deletingItemIds.has(f.id) || (f.file && deletingItemIds.has(f.file.toLowerCase()));
     const row = document.createElement('div');
     row.id = `adminFaceRow_${{idx}}`;
-    row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:7px 10px; border-radius:6px; border:1px solid #1f2028; transition:all 0.2s ease;';
+    row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:7px 10px; border-radius:6px; border:1px solid #1f2028; transition:all 0.2s ease;' + (isDeleting ? ' opacity:0.5;' : '');
     row.innerHTML = `
       <div style="display:flex; align-items:center; gap:8px;">
         <img src="${{f.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
         <span style="font-size:12.5px; font-weight:700; color:#fff;">${{f.name}}</span>
       </div>
-      <button class="ps-opt-btn danger" id="adminFaceDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" onclick="confirmDeleteFace(this, ${{idx}})">
-        ${{currentLang === 'ar' ? 'حذف' : 'Remove'}}
+      <button class="ps-opt-btn danger" id="adminFaceDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" ${{isDeleting ? 'disabled' : ''}} onclick="deleteAdminFace(${{idx}}, this)">
+        ${{isDeleting ? '<span class="ps-spinner ps-spinner-danger"></span> <span>' + (currentLang === 'ar' ? 'جاري الحذف...' : 'Deleting...') + '</span>' : (currentLang === 'ar' ? 'حذف' : 'Remove')}}
       </button>
     `;
     list.appendChild(row);
   }});
 }}
 
-window.deleteAdminFace = async function(idx) {{
+window.deleteAdminFace = async function(idx, btn) {{
   const f = faces[idx];
   if (!f) return;
   const targetFile = f.file || f.filename || '';
@@ -4310,79 +4200,63 @@ window.deleteAdminFace = async function(idx) {{
   const faceId = f.id || ('face_' + idx);
   const faceName = f.name || targetFile;
 
-  // 1. Instant Optimistic Local Removal (Zero lag, zero endless spinning loop!)
-  faces.splice(idx, 1);
-  delete loadedFaces[idx];
-
-  const newLoaded = {{}};
-  faces.forEach((item, i) => {{
-    if (item.src) {{
-      const img = new Image();
-      img.src = item.src;
-      newLoaded[i] = img;
-    }}
-  }});
-  loadedFaces = newLoaded;
-
-  // Remove matching layers from canvas and adjust remaining face indices
-  state.facesOnCanvas = state.facesOnCanvas.filter(fc => {{
-    if (fc.faceIndex === idx || (faceId && fc.id === faceId)) return false;
-    return true;
-  }});
-  state.facesOnCanvas.forEach(fc => {{
-    if (fc.faceIndex > idx) fc.faceIndex -= 1;
-  }});
-  if (state.activeTransformTarget && !state.facesOnCanvas.includes(state.activeTransformTarget)) {{
-    state.activeTransformTarget = null;
+  const status = document.getElementById('adminFacesCatalogStatus');
+  if (status) {{
+    status.style.color = 'var(--ps-blue)';
+    status.innerHTML = `<span class="ps-spinner ps-spinner-sm"></span> <span>` + (currentLang === 'ar' ? 'جاري حذف ' + faceName + ' من التخزين السحابي...' : 'Deleting "' + faceName + '" from cloud storage...') + `</span>`;
   }}
 
-  // Anti-resurrection protection
-  if (targetFileLower) deletedItemFiles.add(targetFileLower);
-  if (faceId) deletedItemFiles.add(faceId.toLowerCase());
+  // 1. Show immediate loading feedback on button and row
+  if (btn) {{
+    btn.disabled = true;
+    btn.innerHTML = '<span class="ps-spinner ps-spinner-danger"></span> <span>' + (currentLang === 'ar' ? 'جاري الحذف...' : 'Deleting...') + '</span>';
+  }}
+  const row = document.getElementById(`adminFaceRow_${{idx}}`);
+  if (row) row.style.opacity = '0.5';
 
-  // Immediate UI refresh
+  deletingItemIds.add(faceId);
+  if (targetFileLower) deletingItemIds.add(targetFileLower);
   renderFacesGrid();
-  renderAdminCatalog();
-  syncLayersUI();
-  updateDynamicFileName();
-  render();
 
-  // 2. Non-blocking background deletion on GitHub
   const syncSpinner = document.getElementById('cloudSyncSpinner');
   const syncLabel = document.getElementById('cloudSyncLabel');
   if (syncSpinner) syncSpinner.style.display = 'inline-block';
-  if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? '☁️ حذف من السحابة...' : '☁️ Deleting from Cloud...';
+  if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? '☁️ حذف من السحابة...' : '☁️ Deleting...';
 
-  if (GITHUB_TOKEN) {{
-    const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
-    const folder = GITHUB_FOLDER || 'Faces';
-    const manifestPath = `${{folder}}/manifest.json`;
+  try {{
+    if (GITHUB_TOKEN) {{
+      const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+      const folder = 'Faces'; // Always exact 'Faces' casing
+      const manifestPath = `${{folder}}/manifest.json`;
 
-    (async () => {{
-      try {{
-        // Step A: Find the file in the folder by listing folder contents (handles any case/path differences!)
-        if (targetFileLower) {{
-          try {{
-            const listRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}?ref=main&_t=${{Date.now()}}`, {{
-              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+      // Step A: Find matching file by live directory listing and DELETE it
+      if (targetFileLower) {{
+        const listRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}?ref=main&_t=${{Date.now()}}`, {{
+          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+        }});
+        if (listRes.ok) {{
+          const folderFiles = await listRes.json();
+          const matchingFile = folderFiles.find(item => (item.name || '').toLowerCase() === targetFileLower);
+          if (matchingFile && matchingFile.sha) {{
+            const delRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{encodeURIComponent(matchingFile.name)}}`, {{
+              method: 'DELETE',
+              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+              body: JSON.stringify({{ message: 'Delete face file: ' + faceName, sha: matchingFile.sha, branch: 'main' }})
             }});
-            if (listRes.ok) {{
-              const folderFiles = await listRes.json();
-              const matchingFile = folderFiles.find(item => (item.name || '').toLowerCase() === targetFileLower);
-              if (matchingFile && matchingFile.sha) {{
-                await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{encodeURIComponent(matchingFile.name)}}`, {{
-                  method: 'DELETE',
-                  headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-                  body: JSON.stringify({{ message: 'Delete face ' + faceName, sha: matchingFile.sha, branch: 'main' }})
-                }});
-              }}
+            if (!delRes.ok) {{
+              const errObj = await delRes.json().catch(() => ({{}}));
+              console.warn('Physical face file deletion warning:', errObj);
             }}
-          }} catch(e) {{
-            console.warn('File delete warning:', e);
           }}
+        }} else {{
+          const errObj = await listRes.json().catch(() => ({{}}));
+          throw new Error('Could not access Faces folder: ' + (errObj.message || listRes.status));
         }}
+      }}
 
-        // Step B: Update manifest.json on GitHub
+      // Step B: Update manifest.json with retry
+      let manifestUpdated = false;
+      for (let attempt = 0; attempt < 3; attempt++) {{
         try {{
           const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
             headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
@@ -4396,27 +4270,86 @@ window.deleteAdminFace = async function(idx) {{
               return item.id !== faceId && ifile !== targetFileLower;
             }});
             const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
-            await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+            const putRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
               method: 'PUT',
               headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-              body: JSON.stringify({{ message: 'Remove face: ' + faceName, content: updatedB64, sha: mData.sha, branch: 'main' }})
+              body: JSON.stringify({{ message: 'Remove face from manifest: ' + faceName, content: updatedB64, sha: mData.sha, branch: 'main' }})
             }});
+            if (putRes.ok) {{
+              manifestUpdated = true;
+              break;
+            }}
           }}
-        }} catch(e) {{
-          console.warn('Manifest update warning:', e);
+        }} catch (manErr) {{
+          if (attempt === 2) throw manErr;
         }}
-      }} catch (err) {{
-        console.warn('Background delete warning:', err);
-      }} finally {{
-        if (syncSpinner) syncSpinner.style.display = 'none';
-        if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? '☁️ متزامن' : '☁️ Synced';
       }}
-    }})();
-  }} else {{
-    setTimeout(() => {{
-      if (syncSpinner) syncSpinner.style.display = 'none';
-      if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? '☁️ متزامن' : '☁️ Synced';
-    }}, 400);
+      if (!manifestUpdated) {{
+        throw new Error('Could not update Faces/manifest.json on GitHub');
+      }}
+    }}
+
+    // Step C: Clean up local array & state
+    const removeIdx = faces.findIndex(item => item.id === faceId || (item.file && item.file.toLowerCase() === targetFileLower));
+    const finalIdx = removeIdx !== -1 ? removeIdx : idx;
+    if (finalIdx >= 0 && finalIdx < faces.length) {{
+      faces.splice(finalIdx, 1);
+    }}
+    delete loadedFaces[finalIdx];
+
+    const newLoaded = {{}};
+    faces.forEach((item, i) => {{
+      if (item.src) {{
+        const img = new Image();
+        img.src = item.src;
+        newLoaded[i] = img;
+      }}
+    }});
+    loadedFaces = newLoaded;
+
+    state.facesOnCanvas = state.facesOnCanvas.filter(fc => {{
+      if (fc.faceIndex === finalIdx || (faceId && fc.id === faceId)) return false;
+      return true;
+    }});
+    state.facesOnCanvas.forEach(fc => {{
+      if (fc.faceIndex > finalIdx) fc.faceIndex -= 1;
+    }});
+    if (state.activeTransformTarget && !state.facesOnCanvas.includes(state.activeTransformTarget)) {{
+      state.activeTransformTarget = null;
+    }}
+
+    if (targetFileLower) deletedItemFiles.add(targetFileLower);
+    if (faceId) deletedItemFiles.add(faceId.toLowerCase());
+
+    if (status) {{
+      status.style.color = 'var(--ps-green)';
+      status.innerText = currentLang === 'ar' ? '✅ تم حذف "' + faceName + '" بنجاح من التخزين!' : '✅ "' + faceName + '" permanently deleted from storage!';
+      setTimeout(() => {{ if (status) status.innerText = ''; }}, 5000);
+    }}
+
+  }} catch (err) {{
+    console.error('Delete face error:', err);
+    if (status) {{
+      status.style.color = 'var(--ps-danger)';
+      status.innerText = '❌ ' + (err.message || 'Error deleting from storage');
+    }}
+    if (btn) {{
+      btn.disabled = false;
+      btn.innerText = currentLang === 'ar' ? 'حذف' : 'Remove';
+    }}
+    if (row) row.style.opacity = '1.0';
+  }} finally {{
+    deletingItemIds.delete(faceId);
+    if (targetFileLower) deletingItemIds.delete(targetFileLower);
+
+    if (syncSpinner) syncSpinner.style.display = 'none';
+    if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? '☁️ متزامن' : '☁️ Synced';
+
+    renderFacesGrid();
+    renderAdminCatalog();
+    syncLayersUI();
+    updateDynamicFileName();
+    render();
   }}
 }};
 
@@ -4440,32 +4373,6 @@ async function updateRemoteManifestWithRetry(folder, newItem, maxRetries = 3) {{
         const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
         manifestList = JSON.parse(decoded);
       }}
-
-      // 2. Self-healing check: inspect files in folder to ensure NO unlisted images are missing!
-      try {{
-        const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}?ref=${{branch}}&_t=${{Date.now()}}`, {{
-          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-        }});
-        if (fRes.ok) {{
-          const allFolderFiles = await fRes.json();
-          const listedFiles = new Set(manifestList.map(item => (item.file || '').toLowerCase()));
-          allFolderFiles.forEach(f => {{
-            const fn = f.name || '';
-            if (f.type === 'file' && fn.toLowerCase().match(/\\.(png|jpe?g|webp)$/i)) {{
-              if (!listedFiles.has(fn.toLowerCase()) && (!newItem || fn.toLowerCase() !== newItem.file.toLowerCase())) {{
-                const stem = fn.replace(/\\.[^/.]+$/, '').replace(/_/g, ' ');
-                const cleanName = stem.charAt(0).toUpperCase() + stem.slice(1);
-                manifestList.push({{
-                  id: (folder === 'Templates' ? 'tpl_' : 'face_') + fn.replace(/\\.[^/.]+$/, ''),
-                  name: cleanName + (folder === 'Templates' ? '' : ' 🍉'),
-                  file: fn
-                }});
-                listedFiles.add(fn.toLowerCase());
-              }}
-            }}
-          }});
-        }}
-      }} catch (e) {{}}
 
       // 3. Merge or remove newItem
       if (newItem) {{
@@ -4604,6 +4511,12 @@ window.deleteAdminTemplate = async function(idx, btn) {{
   const tplId = t.id || ('tpl_' + idx);
   const tplName = t.name || targetFile;
 
+  const status = document.getElementById('adminTplCatalogStatus');
+  if (status) {{
+    status.style.color = 'var(--ps-blue)';
+    status.innerHTML = `<span class="ps-spinner ps-spinner-sm"></span> <span>` + (currentLang === 'ar' ? 'جاري حذف ' + tplName + ' من السحابة...' : 'Deleting "' + tplName + '" from cloud storage...') + `</span>`;
+  }}
+
   // 1. Show immediate loading feedback on button and row
   if (btn) {{
     btn.disabled = true;
@@ -4624,32 +4537,36 @@ window.deleteAdminTemplate = async function(idx, btn) {{
   try {{
     if (GITHUB_TOKEN) {{
       const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
-      const folder = 'Templates';
+      const folder = 'Templates'; // Always exact 'Templates' casing
       const manifestPath = `${{folder}}/manifest.json`;
 
       // Step A: Find matching file by live directory listing and DELETE it
       if (targetFileLower) {{
-        try {{
-          const listRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}?ref=main&_t=${{Date.now()}}`, {{
-            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-          }});
-          if (listRes.ok) {{
-            const folderFiles = await listRes.json();
-            const matchingFile = folderFiles.find(item => (item.name || '').toLowerCase() === targetFileLower);
-            if (matchingFile && matchingFile.sha) {{
-              await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{encodeURIComponent(matchingFile.name)}}`, {{
-                method: 'DELETE',
-                headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-                body: JSON.stringify({{ message: 'Delete template file: ' + tplName, sha: matchingFile.sha, branch: 'main' }})
-              }});
+        const listRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}?ref=main&_t=${{Date.now()}}`, {{
+          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+        }});
+        if (listRes.ok) {{
+          const folderFiles = await listRes.json();
+          const matchingFile = folderFiles.find(item => (item.name || '').toLowerCase() === targetFileLower);
+          if (matchingFile && matchingFile.sha) {{
+            const delRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{encodeURIComponent(matchingFile.name)}}`, {{
+              method: 'DELETE',
+              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+              body: JSON.stringify({{ message: 'Delete template file: ' + tplName, sha: matchingFile.sha, branch: 'main' }})
+            }});
+            if (!delRes.ok) {{
+              const errObj = await delRes.json().catch(() => ({{}}));
+              console.warn('Physical template file deletion warning:', errObj);
             }}
           }}
-        }} catch (fileErr) {{
-          console.warn('Physical template file deletion warning:', fileErr);
+        }} else {{
+          const errObj = await listRes.json().catch(() => ({{}}));
+          throw new Error('Could not access Templates folder: ' + (errObj.message || listRes.status));
         }}
       }}
 
       // Step B: Update manifest.json with retry
+      let manifestUpdated = false;
       for (let attempt = 0; attempt < 3; attempt++) {{
         try {{
           const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
@@ -4669,11 +4586,17 @@ window.deleteAdminTemplate = async function(idx, btn) {{
               headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
               body: JSON.stringify({{ message: 'Remove template from manifest: ' + tplName, content: updatedB64, sha: mData.sha, branch: 'main' }})
             }});
-            if (putRes.ok) break;
+            if (putRes.ok) {{
+              manifestUpdated = true;
+              break;
+            }}
           }}
         }} catch (manErr) {{
-          if (attempt === 2) console.warn('Manifest delete warning:', manErr);
+          if (attempt === 2) throw manErr;
         }}
+      }}
+      if (!manifestUpdated) {{
+        throw new Error('Could not update Templates/manifest.json on GitHub');
       }}
     }}
 
@@ -4696,8 +4619,23 @@ window.deleteAdminTemplate = async function(idx, btn) {{
     if (targetFileLower) deletedItemFiles.add(targetFileLower);
     if (tplId) deletedItemFiles.add(tplId.toLowerCase());
 
+    if (status) {{
+      status.style.color = 'var(--ps-green)';
+      status.innerText = currentLang === 'ar' ? '✅ تم حذف "' + tplName + '" بنجاح من التخزين!' : '✅ "' + tplName + '" permanently deleted from storage!';
+      setTimeout(() => {{ if (status) status.innerText = ''; }}, 5000);
+    }}
+
   }} catch (err) {{
     console.error('Delete template error:', err);
+    if (status) {{
+      status.style.color = 'var(--ps-danger)';
+      status.innerText = '❌ ' + (err.message || 'Error deleting from storage');
+    }}
+    if (btn) {{
+      btn.disabled = false;
+      btn.innerText = currentLang === 'ar' ? 'حذف' : 'Remove';
+    }}
+    if (row) row.style.opacity = '1.0';
   }} finally {{
     deletingItemIds.delete(tplId);
     if (targetFileLower) deletingItemIds.delete(targetFileLower);
@@ -4717,7 +4655,7 @@ window.deleteAdminTemplate = async function(idx, btn) {{
 async function syncFaceToGitHub(faceName, filename, base64Data) {{
   const cleanB64 = base64Data.split(',')[1];
   const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
-  const folder = GITHUB_FOLDER || 'Faces';
+  const folder = 'Faces';
   const branch = 'main';
 
   // 1. Fetch current folder contents to check duplicate filenames
@@ -4780,7 +4718,7 @@ async function syncCloudCatalog(showNotice = false) {{
   isSyncingCatalog = true;
 
   const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
-  const folder = GITHUB_FOLDER || 'Faces';
+  const folder = 'Faces';
 
   const syncSpinner = document.getElementById('cloudSyncSpinner');
   const syncLabel = document.getElementById('cloudSyncLabel');
