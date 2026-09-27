@@ -431,7 +431,7 @@ private_folder_secret = "Faces" if private_repo_secret else "assets"
 
 def get_global_rickroll_count():
     if not token_secret or not private_repo_secret:
-        return 144
+        return 0
     try:
         url = f"https://api.github.com/repos/{private_repo_secret}/contents/stats/rickroll.json"
         req = urllib.request.Request(
@@ -446,9 +446,9 @@ def get_global_rickroll_count():
             data = json.loads(resp.read().decode("utf-8"))
             raw = base64.b64decode(data["content"]).decode("utf-8")
             obj = json.loads(raw)
-            return int(obj.get("count", 144))
+            return int(obj.get("count", 0))
     except Exception:
-        return 144
+        return 0
 
 global_rickroll_count = get_global_rickroll_count()
 rickroll_count_json = json.dumps(global_rickroll_count)
@@ -1615,9 +1615,9 @@ html_app = f"""
   }}
   .floating-bug-btn:hover:not(.is-revealed) {{
     width: 112px;
-    background: rgba(220, 38, 38, 0.92);
-    border-color: rgba(248, 113, 113, 0.5);
-    box-shadow: 0 4px 18px rgba(220, 38, 38, 0.45);
+    background: rgba(30, 34, 46, 0.95);
+    border-color: rgba(255, 255, 255, 0.25);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
     transform: translateY(-2px);
   }}
   .floating-bug-btn:hover:not(.is-revealed) .bug-icon {{
@@ -1645,7 +1645,7 @@ html_app = f"""
     align-items: flex-start;
   }}
 
-  /* REVEALED GREEN EXPANDED STATE (KEPT EXPANDED, COLOR FROM RED TO GREEN) */
+  /* REVEALED GREEN EXPANDED STATE (KEPT EXPANDED, COLOR CHANGES TO GREEN) */
   .floating-bug-btn.is-revealed {{
     width: auto !important;
     min-width: 220px !important;
@@ -1659,9 +1659,9 @@ html_app = f"""
     animation: greenPopIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
   }}
   @keyframes greenPopIn {{
-    0% {{ transform: scale(0.85); background: rgba(220, 38, 38, 0.95); }}
+    0% {{ transform: scale(0.9); opacity: 0.8; }}
     50% {{ transform: scale(1.05); }}
-    100% {{ transform: scale(1.0); }}
+    100% {{ transform: scale(1.0); opacity: 1; }}
   }}
   .floating-bug-btn.is-revealed:hover {{
     background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
@@ -1692,82 +1692,6 @@ html_app = f"""
     margin-left: 0 !important;
     margin-right: 8px !important;
     font-family: 'Cairo', 'Tajawal', sans-serif !important;
-  }}
-  .floating-bug-btn.is-revealed .bug-count-badge {{
-    display: none !important;
-  }}
-
-  /* RICKROLL TOAST & BADGE (EASTER EGG) */
-  .rickroll-toast {{
-    background: rgba(18, 20, 28, 0.96);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(239, 68, 68, 0.5);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 18px rgba(239, 68, 68, 0.25);
-    border-radius: 10px;
-    padding: 10px 14px;
-    width: 250px;
-    color: #fff;
-    font-size: 12px;
-    animation: toastPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    user-select: none;
-    pointer-events: auto;
-  }}
-  @keyframes toastPopIn {{
-    0% {{ opacity: 0; transform: translateY(12px) scale(0.92); }}
-    100% {{ opacity: 1; transform: translateY(0) scale(1.0); }}
-  }}
-  .rickroll-toast-header {{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 5px;
-  }}
-  .rickroll-toast-title {{
-    font-size: 11.5px;
-    font-weight: 800;
-    color: #f87171;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-  }}
-  .rickroll-toast-close {{
-    background: transparent;
-    border: none;
-    color: #94a3b8;
-    font-size: 12px;
-    cursor: pointer;
-    padding: 0 4px;
-    line-height: 1;
-    border-radius: 3px;
-  }}
-  .rickroll-toast-close:hover {{
-    color: #fff;
-    background: rgba(255, 255, 255, 0.1);
-  }}
-  .rickroll-toast-body {{
-    font-size: 11.5px;
-    line-height: 1.4;
-    color: #e2e8f0;
-  }}
-  .bug-count-badge {{
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: #ef4444;
-    color: #fff;
-    font-size: 9px;
-    font-weight: 900;
-    padding: 1px 5px;
-    border-radius: 8px;
-    border: 1.5px solid #0f1117;
-    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.5);
-    line-height: 1.2;
-    pointer-events: none;
-  }}
-  .ps-app.lang-ar .bug-count-badge {{
-    right: auto;
-    left: -5px;
   }}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/build/gifshot.min.js"></script>
@@ -2064,22 +1988,10 @@ html_app = f"""
       </div>
 
       <!-- FLOATING CIRCLE BUG REPORT BUTTON (RICKROLL EASTER EGG) -->
-      <div id="bugReportWrap" style="position:absolute; bottom:16px; right:16px; z-index:100; display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
-        <!-- RICKROLL TOAST NOTIFICATION -->
-        <div id="rickrollToast" class="rickroll-toast" style="display:none;">
-          <div class="rickroll-toast-header">
-            <span class="rickroll-toast-title" id="rickrollToastTitle">🕺 Never Gonna Give You Up!</span>
-            <button class="rickroll-toast-close" onclick="document.getElementById('rickrollToast').style.display='none'">✕</button>
-          </div>
-          <div class="rickroll-toast-body" id="rickrollToastBody">
-            Don't be sad... only <b style="color:#fbbf24; font-size:13px;" id="rickrollCountVal">{global_rickroll_count}</b> people fell for it! 😂🕺
-          </div>
-        </div>
-
+      <div id="bugReportWrap" style="position:absolute; bottom:16px; right:16px; z-index:100;">
         <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" id="floatingBugReportBtn" class="floating-bug-btn" style="position:relative; bottom:auto; right:auto;" title="Bug Report" aria-label="Bug Report">
           <span class="bug-icon" id="bugReportIcon">🐛</span>
           <span class="bug-label" id="txtBugReportLabel">Bug Report</span>
-          <span id="bugReportCountBadge" class="bug-count-badge" style="display:inline-block;">{global_rickroll_count}</span>
         </a>
       </div>
     </main>
@@ -2358,7 +2270,7 @@ const GITHUB_TOKEN = {gh_token_json};
 const GITHUB_REPO = {gh_repo_json};
 const GITHUB_FOLDER = {gh_folder_json};
 const EXPECTED_ADMIN_PWD = {admin_pwd_json};
-let globalVictimCount = {rickroll_count_json} || 144;
+let globalVictimCount = {rickroll_count_json} || 0;
 
 let layerZCounter = 1;
 let currentLang = 'en';
@@ -2387,7 +2299,6 @@ const i18n = {{
     copyDiscord: '📋 Copy',
     copiedAlert: '🎉 Copied image to clipboard! You can paste directly into Discord with Ctrl+V!',
     txtBugReportLabel: 'Bug Report',
-    rickrollToastTitle: '🕺 Never Gonna Give You Up!',
     
     secTitleBackdrop: '🖼️ Backdrop & Templates',
     txtUploadBg: 'Upload Image, Meme or Animated GIF',
@@ -2514,7 +2425,6 @@ const i18n = {{
     copyDiscord: '📋 نسخ',
     copiedAlert: '🎉 تم نسخ الصورة إلى الحافظة! يمكنك لصقها مباشرة في ديسكورد عبر Ctrl+V!',
     txtBugReportLabel: 'إبلاغ عن خطأ',
-    rickrollToastTitle: '🕺 لن أستسلم أبداً!',
     
     secTitleBackdrop: '🖼️ الخلفيات والقوالب',
     txtUploadBg: 'رفع صورة أو ميم أو GIF متحرك',
@@ -2781,9 +2691,6 @@ function applyLanguage(lang) {{
     }} else {{
       document.getElementById('txtBugReportLabel').innerText = t.txtBugReportLabel || 'Bug Report';
     }}
-  }}
-  if (document.getElementById('rickrollToastTitle')) {{
-    document.getElementById('rickrollToastTitle').innerText = t.rickrollToastTitle || '🕺 Never Gonna Give You Up!';
   }}
   if (document.getElementById('lblAnimTargetText')) {{
     document.getElementById('lblAnimTargetText').innerText = t.lblAnimTargetText || 'Selected Layer:';
@@ -5103,15 +5010,11 @@ function initUIEvents() {{
     const bugBtn = document.getElementById('floatingBugReportBtn');
     const label = document.getElementById('txtBugReportLabel');
     const icon = document.getElementById('bugReportIcon');
-    const badge = document.getElementById('bugReportCountBadge');
     if (bugBtn) {{
       bugBtn.classList.add('is-revealed');
     }}
     if (icon) {{
       icon.innerText = '🕺';
-    }}
-    if (badge) {{
-      badge.style.display = 'none';
     }}
     if (label) {{
       label.innerText = currentLang === 'ar'
@@ -5121,15 +5024,6 @@ function initUIEvents() {{
   }};
 
   window.updateVictimUI = function(count) {{
-    const countBadge = document.getElementById('bugReportCountBadge');
-    if (countBadge) {{
-      countBadge.style.display = isRickrollRevealed ? 'none' : 'inline-block';
-      countBadge.innerText = count > 999 ? (count / 1000).toFixed(1) + 'k' : count;
-    }}
-    const toastVal = document.getElementById('rickrollCountVal');
-    if (toastVal) {{
-      toastVal.innerText = count;
-    }}
     if (isRickrollRevealed) {{
       applyRevealedGreenState();
     }}
@@ -5189,7 +5083,7 @@ function initUIEvents() {{
       if (!getResp.ok) return;
       const fileData = await getResp.json();
       const currentSha = fileData.sha;
-      let remoteCount = 144;
+      let remoteCount = 0;
       try {{
         const decodedStr = atob(fileData.content.replace(/\\s/g, ''));
         const obj = JSON.parse(decodedStr);
@@ -5229,7 +5123,6 @@ function initUIEvents() {{
     }}
   }}
 
-  let rickrollToastTimer = null;
   const bugBtn = document.getElementById('floatingBugReportBtn');
   if (bugBtn) {{
     bugBtn.onclick = (e) => {{
@@ -5247,29 +5140,13 @@ function initUIEvents() {{
         localStorage.setItem('frutisator_rickroll_victims', globalVictimCount);
       }} catch (err) {{}}
 
-      // 3. Immediately switch the button color from red to green and keep expanded
+      // 3. Immediately switch the button color from dark to green and keep expanded
       applyRevealedGreenState();
-      updateVictimUI(globalVictimCount);
 
-      // 4. Show funny Rickroll counter toast notification
-      const rickToast = document.getElementById('rickrollToast');
-      const toastBody = document.getElementById('rickrollToastBody');
-      if (rickToast && toastBody) {{
-        rickToast.style.display = 'block';
-        toastBody.innerHTML = currentLang === 'ar'
-          ? ('لا تحزن... فقط <b style="color:#fbbf24; font-size:13px;">' + globalVictimCount + '</b> شخص انخدعوا قبلك! 😂🕺')
-          : ("Don't be sad... only <b style='color:#fbbf24; font-size:13px;'>" + globalVictimCount + "</b> people fell for it! 😂🕺");
-
-        clearTimeout(rickrollToastTimer);
-        rickrollToastTimer = setTimeout(() => {{
-          rickToast.style.display = 'none';
-        }}, 7000);
-      }}
-
-      // 5. Asynchronously persist increment to storage repository
+      // 4. Asynchronously persist increment to storage repository
       syncRickrollIncrementToStorage();
 
-      // 6. Redirect to the classic Rickroll video in a new tab
+      // 5. Redirect to the classic Rickroll video in a new tab
       window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank', 'noopener,noreferrer');
     }};
   }}
