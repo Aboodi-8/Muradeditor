@@ -1,3 +1,6 @@
+import os
+import hashlib
+import hmac
 import base64
 import json
 import urllib.request
@@ -310,8 +313,78 @@ if gifuct_path.exists():
     with open(gifuct_path, "r", encoding="utf-8") as f:
         gifuct_script = f.read()
 
+def encrypt_vault_payload(data_obj, passwords):
+    plaintext = json.dumps(data_obj).encode("utf-8")
+    salt = os.urandom(16)
+    master_key = os.urandom(32)
+
+    has_crypto = False
+    try:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        has_crypto = True
+    except Exception:
+        has_crypto = False
+
+    norm_passwords = []
+    seen = set()
+    for p in passwords:
+        if p and isinstance(p, str):
+            clean_p = p.strip()
+            if clean_p and clean_p not in seen:
+                seen.add(clean_p)
+                norm_passwords.append(clean_p)
+
+    if has_crypto:
+        from cryptography.hazmat.primitives.ciphers.aead import AESGCM
+        slots = []
+        for p in norm_passwords:
+            dk = hashlib.pbkdf2_hmac("sha256", p.encode("utf-8"), salt, 10000, 32)
+            s_nonce = os.urandom(12)
+            s_ct = AESGCM(dk).encrypt(s_nonce, master_key, None)
+            slots.append({
+                "nonce": base64.b64encode(s_nonce).decode("utf-8"),
+                "ct": base64.b64encode(s_ct).decode("utf-8")
+            })
+        p_nonce = os.urandom(12)
+        p_ct = AESGCM(master_key).encrypt(p_nonce, plaintext, None)
+        return {
+            "algo": "AES-GCM",
+            "salt": base64.b64encode(salt).decode("utf-8"),
+            "slots": slots,
+            "nonce": base64.b64encode(p_nonce).decode("utf-8"),
+            "ct": base64.b64encode(p_ct).decode("utf-8")
+        }
+    else:
+        slots = []
+        for p in norm_passwords:
+            dk = hashlib.pbkdf2_hmac("sha256", p.encode("utf-8"), salt, 10000, 32)
+            s_nonce = os.urandom(16)
+            mask_input = dk + s_nonce
+            mask = hashlib.sha256(mask_input).digest()
+            s_ct = bytes(a ^ b for a, b in zip(master_key, mask))
+            tag = hmac.new(dk, s_nonce + s_ct, "sha256").digest()
+            slots.append({
+                "nonce": base64.b64encode(s_nonce).decode("utf-8"),
+                "ct": base64.b64encode(s_ct).decode("utf-8"),
+                "tag": base64.b64encode(tag).decode("utf-8")
+            })
+        p_nonce = os.urandom(16)
+        num_blocks = (len(plaintext) + 31) // 32
+        keystream = bytearray()
+        for i in range(num_blocks):
+            keystream.extend(hashlib.sha256(master_key + p_nonce + i.to_bytes(4, "big")).digest())
+        p_ct = bytes(a ^ b for a, b in zip(plaintext, keystream[:len(plaintext)]))
+        tag = hmac.new(master_key, p_nonce + p_ct, "sha256").digest()
+        return {
+            "algo": "SHA256-CTR",
+            "salt": base64.b64encode(salt).decode("utf-8"),
+            "slots": slots,
+            "nonce": base64.b64encode(p_nonce).decode("utf-8"),
+            "ct": base64.b64encode(p_ct).decode("utf-8"),
+            "tag": base64.b64encode(tag).decode("utf-8")
+        }
+
 faces_data = load_faces_catalog()
-faces_json = json.dumps(faces_data)
 
 templates_data = load_templates_catalog()
 templates_json = json.dumps(templates_data)
@@ -346,11 +419,14 @@ except Exception:
 if not vault_pwd_secret:
     vault_pwd_secret = "fruit"
 
+valid_vault_passwords = [vault_pwd_secret, expected_pwd, "fruit", "fruits"]
+encrypted_vault_pkg = encrypt_vault_payload(faces_data, valid_vault_passwords)
+encrypted_vault_json = json.dumps(encrypted_vault_pkg)
+
 gh_token_json = json.dumps(token_secret)
 gh_repo_json = json.dumps(private_repo_secret)
 gh_folder_json = json.dumps(private_folder_secret)
 admin_pwd_json = json.dumps(expected_pwd)
-vault_pwd_json = json.dumps(vault_pwd_secret)
 
 # --- EMBEDDED FRUTISATOR WEB STUDIO ---
 html_app = f"""
@@ -1894,13 +1970,14 @@ html_app = f"""
 </div>
 
 <script>
-const faces = {faces_json};
+const encryptedFacesVault = {encrypted_vault_json};
+let faces = [];
+let isVaultUnlocked = false;
 const templates = {templates_json};
 const GITHUB_TOKEN = {gh_token_json};
 const GITHUB_REPO = {gh_repo_json};
 const GITHUB_FOLDER = {gh_folder_json};
 const EXPECTED_ADMIN_PWD = {admin_pwd_json};
-const EXPECTED_VAULT_PWD = {vault_pwd_json};
 
 let layerZCounter = 1;
 let currentLang = 'en';
@@ -2330,6 +2407,128 @@ const state = {{
   dragTarget: null
 }};
 
+// VAULT DECRYPTION HELPER (AES-GCM & SHA256-CTR)
+function b64ToUint8(b64) {{
+  return Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+}}
+
+async function decryptVault(password) {{
+  const pkg = encryptedFacesVault;
+  if (!pkg || !pkg.slots || !pkg.slots.length) return [];
+  const enc = new TextEncoder();
+  const salt = b64ToUint8(pkg.salt);
+
+  if (pkg.algo === 'AES-GCM') {{
+    const pwdKeyMaterial = await crypto.subtle.importKey(
+      'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+    );
+    const derivedKey = await crypto.subtle.deriveKey(
+      {{ name: 'PBKDF2', salt: salt, iterations: 10000, hash: 'SHA-256' }},
+      pwdKeyMaterial,
+      {{ name: 'AES-GCM', length: 256 }},
+      false,
+      ['decrypt']
+    );
+
+    let masterKeyRaw = null;
+    for (const slot of pkg.slots) {{
+      try {{
+        const slotNonce = b64ToUint8(slot.nonce);
+        const slotCt = b64ToUint8(slot.ct);
+        const decrypted = await crypto.subtle.decrypt(
+          {{ name: 'AES-GCM', iv: slotNonce }},
+          derivedKey,
+          slotCt
+        );
+        masterKeyRaw = decrypted;
+        break;
+      }} catch (e) {{}}
+    }}
+    if (!masterKeyRaw) throw new Error('Incorrect password');
+
+    const masterKey = await crypto.subtle.importKey(
+      'raw', masterKeyRaw, 'AES-GCM', false, ['decrypt']
+    );
+    const pNonce = b64ToUint8(pkg.nonce);
+    const pCt = b64ToUint8(pkg.ct);
+    const decryptedPayload = await crypto.subtle.decrypt(
+      {{ name: 'AES-GCM', iv: pNonce }},
+      masterKey,
+      pCt
+    );
+    return JSON.parse(new TextDecoder().decode(decryptedPayload));
+  }} else if (pkg.algo === 'SHA256-CTR') {{
+    const pwdKeyMaterial = await crypto.subtle.importKey(
+      'raw', enc.encode(password), 'PBKDF2', false, ['deriveBits']
+    );
+    const dkBuffer = await crypto.subtle.deriveBits(
+      {{ name: 'PBKDF2', salt: salt, iterations: 10000, hash: 'SHA-256' }},
+      pwdKeyMaterial,
+      256
+    );
+    const dk = new Uint8Array(dkBuffer);
+
+    let masterKey = null;
+    for (const slot of pkg.slots) {{
+      const sNonce = b64ToUint8(slot.nonce);
+      const sCt = b64ToUint8(slot.ct);
+      const expectedTag = b64ToUint8(slot.tag);
+
+      const hmacKey = await crypto.subtle.importKey(
+        'raw', dk, {{ name: 'HMAC', hash: 'SHA-256' }}, false, ['verify']
+      );
+      const toSign = new Uint8Array(sNonce.length + sCt.length);
+      toSign.set(sNonce, 0);
+      toSign.set(sCt, sNonce.length);
+      const valid = await crypto.subtle.verify('HMAC', hmacKey, expectedTag, toSign);
+      if (valid) {{
+        const maskInput = new Uint8Array(dk.length + sNonce.length);
+        maskInput.set(dk, 0);
+        maskInput.set(sNonce, dk.length);
+        const maskBuf = await crypto.subtle.digest('SHA-256', maskInput);
+        const mask = new Uint8Array(maskBuf);
+        masterKey = new Uint8Array(32);
+        for (let i = 0; i < 32; i++) masterKey[i] = sCt[i] ^ mask[i];
+        break;
+      }}
+    }}
+    if (!masterKey) throw new Error('Incorrect password');
+
+    const pNonce = b64ToUint8(pkg.nonce);
+    const pCt = b64ToUint8(pkg.ct);
+    const expectedTag = b64ToUint8(pkg.tag);
+
+    const masterHmacKey = await crypto.subtle.importKey(
+      'raw', masterKey, {{ name: 'HMAC', hash: 'SHA-256' }}, false, ['verify']
+    );
+    const payloadToSign = new Uint8Array(pNonce.length + pCt.length);
+    payloadToSign.set(pNonce, 0);
+    payloadToSign.set(pCt, pNonce.length);
+    const tagValid = await crypto.subtle.verify('HMAC', masterHmacKey, expectedTag, payloadToSign);
+    if (!tagValid) throw new Error('Corrupt vault data');
+
+    const numBlocks = Math.ceil(pCt.length / 32);
+    const decryptedBytes = new Uint8Array(pCt.length);
+    for (let i = 0; i < numBlocks; i++) {{
+      const counterBytes = new Uint8Array(4);
+      new DataView(counterBytes.buffer).setUint32(0, i, false);
+      const blockInput = new Uint8Array(masterKey.length + pNonce.length + 4);
+      blockInput.set(masterKey, 0);
+      blockInput.set(pNonce, masterKey.length);
+      blockInput.set(counterBytes, masterKey.length + pNonce.length);
+
+      const blockHash = new Uint8Array(await crypto.subtle.digest('SHA-256', blockInput));
+      const start = i * 32;
+      const end = Math.min(start + 32, pCt.length);
+      for (let j = start; j < end; j++) {{
+        decryptedBytes[j] = pCt[j] ^ blockHash[j - start];
+      }}
+    }}
+    return JSON.parse(new TextDecoder().decode(decryptedBytes));
+  }}
+  return [];
+}}
+
 // SAFE DATA-URI / URL TO ARRAYBUFFER HELPER
 async function dataUriOrUrlToArrayBuffer(src) {{
   if (typeof src === 'string' && src.startsWith('data:')) {{
@@ -2500,16 +2699,21 @@ const ctx = canvas.getContext('2d');
 canvas.width = 800;
 canvas.height = 800;
 
-// Preload face images
+// Preload face images (only executed when vault is unlocked)
 let loadedFaces = {{}};
-faces.forEach((f, idx) => {{
-  const img = new Image();
-  img.src = f.src;
-  img.onload = () => {{
-    render();
-  }};
-  loadedFaces[idx] = img;
-}});
+function preloadFaces() {{
+  if (!isVaultUnlocked) return;
+  faces.forEach((f, idx) => {{
+    if (!loadedFaces[idx]) {{
+      const img = new Image();
+      img.src = f.src;
+      img.onload = () => {{
+        render();
+      }};
+      loadedFaces[idx] = img;
+    }}
+  }});
+}}
 
 // Preload template images
 let loadedTemplates = {{}};
@@ -3227,6 +3431,10 @@ function renderFacesGrid() {{
   const facesGrid = document.getElementById('facesGrid');
   if (!facesGrid) return;
   facesGrid.innerHTML = '';
+  // ABSOLUTE SECURITY: NEVER render private faces into DOM if vault is locked!
+  if (!isVaultUnlocked) {{
+    return;
+  }}
   if (faces.length === 0) {{
     const emptyNotice = document.createElement('div');
     emptyNotice.id = 'emptyFacesNotice';
@@ -3418,6 +3626,15 @@ function initUIEvents() {{
 
   // Add Face Button
   document.getElementById('addFaceBtn').onclick = () => {{
+    if (!isVaultUnlocked) {{
+      const vInput = document.getElementById('vaultPwdInput');
+      if (vInput) {{
+        vInput.focus();
+        vInput.classList.add('ps-input-glow');
+        setTimeout(() => vInput.classList.remove('ps-input-glow'), 1200);
+      }}
+      return;
+    }}
     if (faces.length === 0) {{
       document.getElementById('faceFileInput').click();
       return;
@@ -3969,11 +4186,14 @@ function initUIEvents() {{
 
   adminModalClose.onclick = () => {{ adminModal.style.display = 'none'; }};
 
-  function attemptAdminUnlock() {{
+  async function attemptAdminUnlock() {{
     if (adminPwdInput.value === EXPECTED_ADMIN_PWD) {{
       adminAuthBody.style.display = 'none';
       adminManageBody.style.display = 'flex';
       try {{ localStorage.setItem('frutisator_admin_unlocked', 'true'); }} catch(e) {{}}
+      if (!isVaultUnlocked) {{
+        await unlockVaultUI(adminPwdInput.value, false);
+      }}
       renderAdminCatalog();
       renderAdminTemplatesCatalog();
     }} else {{
@@ -4240,40 +4460,70 @@ function initUIEvents() {{
   const btnUnlockVault = document.getElementById('btnUnlockVault');
   const vaultErrorNotice = document.getElementById('vaultErrorNotice');
 
-  function unlockVaultUI(persist = true) {{
-    if (vaultOverlay) vaultOverlay.style.display = 'none';
-    if (facesGridEl) {{
-      facesGridEl.style.filter = 'none';
-      facesGridEl.style.opacity = '1.0';
-      facesGridEl.style.pointerEvents = 'auto';
+  async function unlockVaultUI(pwd, persist = true) {{
+    try {{
+      const decrypted = await decryptVault(pwd);
+      faces = decrypted;
+      isVaultUnlocked = true;
+      preloadFaces();
+      if (vaultOverlay) vaultOverlay.style.display = 'none';
+      if (facesGridEl) {{
+        facesGridEl.style.filter = 'none';
+        facesGridEl.style.opacity = '1.0';
+        facesGridEl.style.pointerEvents = 'auto';
+      }}
+      if (lockVaultBtn) lockVaultBtn.style.display = 'inline-block';
+      if (vaultErrorNotice) vaultErrorNotice.style.display = 'none';
+      if (persist) {{
+        try {{
+          localStorage.setItem('frutisator_vault_pwd', pwd);
+          localStorage.setItem('frutisator_vault_unlocked', 'true');
+        }} catch(e) {{}}
+      }}
+      renderFacesGrid();
+      syncCloudCatalog(false);
+      return true;
+    }} catch(err) {{
+      if (vaultErrorNotice) vaultErrorNotice.style.display = 'block';
+      return false;
     }}
-    if (lockVaultBtn) lockVaultBtn.style.display = 'inline-block';
-    if (persist) {{
-      try {{ localStorage.setItem('frutisator_vault_unlocked', 'true'); }} catch(e) {{}}
-    }}
-    syncCloudCatalog(false);
   }}
 
   function lockVaultUI() {{
-    if (vaultOverlay) vaultOverlay.style.display = 'flex';
+    isVaultUnlocked = false;
+    faces = [];
+    for (const k of Object.keys(loadedFaces)) {{
+      delete loadedFaces[k];
+    }}
     if (facesGridEl) {{
+      facesGridEl.innerHTML = '';
       facesGridEl.style.filter = 'blur(7px)';
       facesGridEl.style.opacity = '0.25';
       facesGridEl.style.pointerEvents = 'none';
     }}
+    if (vaultOverlay) vaultOverlay.style.display = 'flex';
     if (lockVaultBtn) lockVaultBtn.style.display = 'none';
     if (vaultPwdInput) vaultPwdInput.value = '';
     if (vaultErrorNotice) vaultErrorNotice.style.display = 'none';
-    try {{ localStorage.removeItem('frutisator_vault_unlocked'); }} catch(e) {{}}
+    try {{
+      localStorage.removeItem('frutisator_vault_pwd');
+      localStorage.removeItem('frutisator_vault_unlocked');
+    }} catch(e) {{}}
+    render();
   }}
 
-  function attemptUnlockVault() {{
+  async function attemptUnlockVault() {{
     const val = (vaultPwdInput.value || '').trim();
-    if (val === EXPECTED_VAULT_PWD || val === EXPECTED_ADMIN_PWD || val.toLowerCase() === 'fruit' || val.toLowerCase() === 'fruits') {{
-      unlockVaultUI(true);
-    }} else {{
+    if (!val) {{
       if (vaultErrorNotice) vaultErrorNotice.style.display = 'block';
+      return;
     }}
+    const origHtml = btnUnlockVault.innerHTML;
+    btnUnlockVault.disabled = true;
+    btnUnlockVault.innerHTML = '<span class="ps-spinner"></span>';
+    const ok = await unlockVaultUI(val, true);
+    btnUnlockVault.disabled = false;
+    btnUnlockVault.innerHTML = origHtml;
   }}
 
   btnUnlockVault.onclick = attemptUnlockVault;
@@ -4284,14 +4534,20 @@ function initUIEvents() {{
 
   // Restore saved states from localStorage
   try {{
-    if (localStorage.getItem('frutisator_vault_unlocked') === 'true') {{
-      unlockVaultUI(false);
+    const savedVaultPwd = localStorage.getItem('frutisator_vault_pwd');
+    const isUnlocked = localStorage.getItem('frutisator_vault_unlocked') === 'true';
+    if (isUnlocked && savedVaultPwd) {{
+      unlockVaultUI(savedVaultPwd, false);
+    }} else {{
+      lockVaultUI();
     }}
     const savedLang = localStorage.getItem('frutisator_lang');
     if (savedLang === 'ar') {{
       applyLanguage('ar');
     }}
-  }} catch(e) {{}}
+  }} catch(e) {{
+    lockVaultUI();
+  }}
 
   fitCanvasToScreen();
   syncLayersUI();
@@ -4861,11 +5117,12 @@ async function syncCloudCatalog(showNotice = false) {{
   if (syncSpinner) syncSpinner.style.display = 'inline-block';
   if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? 'جاري المزامنة...' : 'Syncing...';
 
-  // 1. Sync Faces from Cloud
-  try {{
-    const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/manifest.json?_t=${{Date.now()}}`, {{
-      headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-    }});
+  // 1. Sync Faces from Cloud (ONLY IF VAULT IS UNLOCKED)
+  if (isVaultUnlocked) {{
+    try {{
+      const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/manifest.json?_t=${{Date.now()}}`, {{
+        headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+      }});
     if (mRes.ok) {{
       const mData = await mRes.json();
       const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
@@ -4915,6 +5172,7 @@ async function syncCloudCatalog(showNotice = false) {{
     }}
   }} catch (err) {{
     console.warn('Faces cloud sync notice:', err);
+  }}
   }}
 
   // 2. Sync Templates from Cloud
