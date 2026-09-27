@@ -2695,7 +2695,7 @@ function applyLanguage(lang) {{
   if (document.getElementById('txtBugReportLabel')) {{
     const vCount = (typeof getVictimCount === 'function') ? getVictimCount() : 0;
     if (vCount > 0) {{
-      document.getElementById('txtBugReportLabel').innerText = (lang === 'ar' ? `إبلاغ عن خطأ (${vCount})` : `Bug Report (${vCount})`);
+      document.getElementById('txtBugReportLabel').innerText = (lang === 'ar' ? ('إبلاغ عن خطأ (' + vCount + ')') : ('Bug Report (' + vCount + ')'));
     }} else {{
       document.getElementById('txtBugReportLabel').innerText = t.txtBugReportLabel || 'Bug Report';
     }}
@@ -5020,7 +5020,7 @@ function initUIEvents() {{
     }}
     const label = document.getElementById('txtBugReportLabel');
     if (label && count > 0) {{
-      label.innerText = currentLang === 'ar' ? `إبلاغ عن خطأ (${count})` : `Bug Report (${count})`;
+      label.innerText = currentLang === 'ar' ? ('إبلاغ عن خطأ (' + count + ')') : ('Bug Report (' + count + ')');
     }}
   }};
 
@@ -5053,8 +5053,8 @@ function initUIEvents() {{
       if (rickToast && toastBody) {{
         rickToast.style.display = 'block';
         toastBody.innerHTML = currentLang === 'ar'
-          ? `لا تحزن... فقط <b style="color:#fbbf24; font-size:13px;">${count}</b> شخص انخدعوا قبلك! 😂🕺`
-          : `Don't be sad... only <b style="color:#fbbf24; font-size:13px;">${count}</b> people fell for it! 😂🕺`;
+          ? ('لا تحزن... فقط <b style="color:#fbbf24; font-size:13px;">' + count + '</b> شخص انخدعوا قبلك! 😂🕺')
+          : ("Don't be sad... only <b style=\"color:#fbbf24; font-size:13px;\">" + count + "</b> people fell for it! 😂🕺");
 
         clearTimeout(rickrollToastTimer);
         rickrollToastTimer = setTimeout(() => {{
