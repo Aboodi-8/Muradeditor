@@ -904,7 +904,24 @@ html_app = f"""
     border-color: #fff;
     box-shadow: 0 0 14px rgba(0, 132, 255, 0.35);
   }}
+  .ps-dropzone.drag-active {{
+    background: rgba(0, 210, 255, 0.25) !important;
+    border-color: #00d2ff !important;
+    border-style: solid !important;
+    box-shadow: 0 0 25px rgba(0, 210, 255, 0.7), inset 0 0 15px rgba(0, 210, 255, 0.25) !important;
+    transform: scale(1.02);
+  }}
+  .ps-dropzone.drag-active .upload-icon {{
+    transform: translateY(-2px) scale(1.15);
+    stroke: #00d2ff;
+  }}
   .ps-dropzone input {{ display: none; }}
+
+  #canvasViewport.drag-active {{
+    outline: 3px dashed #00d2ff !important;
+    outline-offset: -6px;
+    box-shadow: inset 0 0 40px rgba(0, 210, 255, 0.35) !important;
+  }}
 
   .upload-icon {{
     display: inline-block;
@@ -1587,7 +1604,7 @@ html_app = f"""
         </div>
 
         <!-- UPLOAD BACKDROP DROPZONE WITH SVG UPLOAD ICON -->
-        <label class="ps-dropzone">
+        <label class="ps-dropzone" id="bgDropzone">
           <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
             <svg class="upload-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -1629,7 +1646,7 @@ html_app = f"""
         </div>
 
         <!-- UPLOAD FRUIT DROPZONE WITH SVG UPLOAD ICON -->
-        <label class="ps-dropzone">
+        <label class="ps-dropzone" id="faceDropzone">
           <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
             <svg class="upload-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -1815,7 +1832,7 @@ html_app = f"""
         </div>
 
         <!-- UPLOAD STICKER DROPZONE WITH SVG UPLOAD ICON -->
-        <label class="ps-dropzone">
+        <label class="ps-dropzone" id="accDropzone">
           <div style="display:flex; align-items:center; justify-content:center; gap:8px;">
             <svg class="upload-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -1940,7 +1957,17 @@ html_app = f"""
             <span style="font-size:12px; font-weight:800; color:#fff;">➕ ADD NEW FRUIT FACE TO CATALOG:</span>
             <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
               <input type="text" id="adminNewFaceName" class="ps-input" placeholder="Fruit Name & Emoji (e.g. Watermelon 🍉)">
-              <input type="file" id="adminNewFaceFile" accept="image/*,.gif" class="ps-input" style="padding:6px;">
+              <label class="ps-dropzone" id="adminFaceDropzone" style="padding:10px; font-size:11.5px; border-width:1.5px; margin-top:2px;">
+                <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <svg class="upload-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  <span id="txtAdminFaceFileLabel">Choose or Drag Face Image / GIF</span>
+                </div>
+                <input type="file" id="adminNewFaceFile" accept="image/*,.gif">
+              </label>
               <button id="adminUploadBtn" class="ps-btn ps-btn-primary" style="justify-content:center; gap:8px;">
                 <svg class="upload-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -1966,7 +1993,17 @@ html_app = f"""
             <span style="font-size:12px; font-weight:800; color:#fff;">➕ ADD NEW TEMPLATE TO CATALOG:</span>
             <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
               <input type="text" id="adminNewTplName" class="ps-input" placeholder="Template Name & Emoji (e.g. 🏖️ Summer Beach)">
-              <input type="file" id="adminNewTplFile" accept="image/*,.gif" class="ps-input" style="padding:6px;">
+              <label class="ps-dropzone" id="adminTplDropzone" style="padding:10px; font-size:11.5px; border-width:1.5px; margin-top:2px;">
+                <div style="display:flex; align-items:center; justify-content:center; gap:6px;">
+                  <svg class="upload-icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                  </svg>
+                  <span id="txtAdminTplFileLabel">Choose or Drag Template Image / GIF</span>
+                </div>
+                <input type="file" id="adminNewTplFile" accept="image/*,.gif">
+              </label>
               <button id="adminUploadTplBtn" class="ps-btn ps-btn-primary" style="justify-content:center; gap:8px;">
                 <svg class="upload-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -3706,8 +3743,64 @@ function initUIEvents() {{
   renderTemplatesGrid();
 
   // Backdrop Custom File Upload
-  document.getElementById('bgFileInput').onchange = (e) => {{
-    const file = e.target.files[0];
+  // --- DRAG & DROP ENGINE ---
+  // Prevent default window drag/drop behavior to stop browser from navigating away
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(evtName => {{
+    window.addEventListener(evtName, (e) => {{
+      e.preventDefault();
+    }}, false);
+  }});
+
+  function setupDropzone(dropzoneEl, inputEl, onFileReceived) {{
+    if (!dropzoneEl) return;
+    let dragCounter = 0;
+
+    dropzoneEl.addEventListener('dragenter', (e) => {{
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter++;
+      dropzoneEl.classList.add('drag-active');
+    }});
+
+    dropzoneEl.addEventListener('dragover', (e) => {{
+      e.preventDefault();
+      e.stopPropagation();
+      e.dataTransfer.dropEffect = 'copy';
+      dropzoneEl.classList.add('drag-active');
+    }});
+
+    dropzoneEl.addEventListener('dragleave', (e) => {{
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter--;
+      if (dragCounter <= 0) {{
+        dragCounter = 0;
+        dropzoneEl.classList.remove('drag-active');
+      }}
+    }});
+
+    dropzoneEl.addEventListener('drop', (e) => {{
+      e.preventDefault();
+      e.stopPropagation();
+      dragCounter = 0;
+      dropzoneEl.classList.remove('drag-active');
+
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {{
+        try {{
+          if (inputEl) inputEl.files = files;
+        }} catch(err) {{}}
+        if (onFileReceived) {{
+          onFileReceived(files[0]);
+        }} else if (inputEl) {{
+          inputEl.dispatchEvent(new Event('change', {{ bubbles: true }}));
+        }}
+      }}
+    }});
+  }}
+
+  // 1. BACKDROP & TEMPLATES UPLOAD HANDLER
+  function handleBgFile(file) {{
     if (!file) return;
     state.bgCustomName = file.name;
 
@@ -3763,7 +3856,13 @@ function initUIEvents() {{
       }};
       reader.readAsDataURL(file);
     }}
-  }};
+  }}
+
+  const bgFileInput = document.getElementById('bgFileInput');
+  if (bgFileInput) {{
+    bgFileInput.onchange = (e) => handleBgFile(e.target.files && e.target.files[0]);
+  }}
+  setupDropzone(document.getElementById('bgDropzone'), bgFileInput, handleBgFile);
 
   // Canvas Size Mode Toggles
   document.querySelectorAll('#canvasSizeGroup .btn-toggle').forEach(btn => {{
@@ -3834,15 +3933,15 @@ function initUIEvents() {{
   }};
 
   // Custom Face Upload
-  document.getElementById('faceFileInput').onchange = (e) => {{
-    const file = e.target.files[0];
+  // 2. FRUIT FACES UPLOAD HANDLER
+  function handleFaceFile(file) {{
     if (!file) return;
 
     if (file.name.toLowerCase().endsWith('.gif')) {{
       const reader = new FileReader();
       reader.onload = async (ev) => {{
         const newLayer = makeFaceLayer(0, 0, 0, 1.0);
-        newLayer.customName = file.name.replace(/\\.[^/.]+$/, '');
+        newLayer.customName = file.name.replace(/\.[^/.]+$/, '');
         try {{
           const frames = await parseGifFrames(ev.target.result);
           if (frames && frames.length > 0) {{
@@ -3874,7 +3973,7 @@ function initUIEvents() {{
         img.src = ev.target.result;
         img.onload = () => {{
           const newLayer = makeFaceLayer(0, 0, 0, 1.0);
-          newLayer.customName = file.name.replace(/\\.[^/.]+$/, '');
+          newLayer.customName = file.name.replace(/\.[^/.]+$/, '');
           newLayer.customImg = img;
           state.facesOnCanvas.push(newLayer);
           state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
@@ -3885,7 +3984,13 @@ function initUIEvents() {{
       }};
       reader.readAsDataURL(file);
     }}
-  }};
+  }}
+
+  const faceFileInput = document.getElementById('faceFileInput');
+  if (faceFileInput) {{
+    faceFileInput.onchange = (e) => handleFaceFile(e.target.files && e.target.files[0]);
+  }}
+  setupDropzone(document.getElementById('faceDropzone'), faceFileInput, handleFaceFile);
 
   // Mask Shape Toggles (Sticker circle removed)
   document.querySelectorAll('#maskGroup .btn-toggle').forEach(btn => {{
@@ -4217,8 +4322,8 @@ function initUIEvents() {{
   }};
 
   // 4. Custom Sticker Upload
-  document.getElementById('accFileInput').onchange = (e) => {{
-    const file = e.target.files[0];
+  // 3. STICKERS & ACCESSORIES UPLOAD HANDLER
+  function handleAccFile(file) {{
     if (!file) return;
     const reader = new FileReader();
     reader.onload = (ev) => {{
@@ -4245,7 +4350,25 @@ function initUIEvents() {{
       }};
     }};
     reader.readAsDataURL(file);
-  }};
+  }}
+
+  const accFileInput = document.getElementById('accFileInput');
+  if (accFileInput) {{
+    accFileInput.onchange = (e) => handleAccFile(e.target.files && e.target.files[0]);
+  }}
+  setupDropzone(document.getElementById('accDropzone'), accFileInput, handleAccFile);
+
+  // 4. CANVAS VIEWPORT DRAG & DROP
+  const cvViewport = document.getElementById('canvasViewport');
+  if (cvViewport) {{
+    setupDropzone(cvViewport, null, (file) => {{
+      if (state.bgType === 'color' && state.facesOnCanvas.length === 0) {{
+        handleBgFile(file);
+      }} else {{
+        handleFaceFile(file);
+      }}
+    }});
+  }}
 
   // 5. Discord Animation Dropdown
   const animSelect = document.getElementById('animEffectSelect');
@@ -4411,6 +4534,52 @@ function initUIEvents() {{
     if (e.key === 'Delete' || e.key === 'Backspace') {{
       deleteActiveLayer();
     }}
+  }});
+
+    const adminFaceInput = document.getElementById('adminNewFaceFile');
+  if (adminFaceInput) {{
+    adminFaceInput.onchange = (e) => {{
+      const file = e.target.files && e.target.files[0];
+      if (file) {{
+        const nameInput = document.getElementById('adminNewFaceName');
+        if (nameInput && !nameInput.value.trim()) {{
+          nameInput.value = file.name.replace(/\.[^/.]+$/, '').replace(/_/g, ' ');
+        }}
+        const lbl = document.getElementById('txtAdminFaceFileLabel');
+        if (lbl) lbl.innerText = '📁 ' + file.name;
+      }}
+    }};
+  }}
+  setupDropzone(document.getElementById('adminFaceDropzone'), adminFaceInput, (file) => {{
+    const nameInput = document.getElementById('adminNewFaceName');
+    if (nameInput && !nameInput.value.trim()) {{
+      nameInput.value = file.name.replace(/\.[^/.]+$/, '').replace(/_/g, ' ');
+    }}
+    const lbl = document.getElementById('txtAdminFaceFileLabel');
+    if (lbl) lbl.innerText = '📁 ' + file.name;
+  }});
+
+  const adminTplInput = document.getElementById('adminNewTplFile');
+  if (adminTplInput) {{
+    adminTplInput.onchange = (e) => {{
+      const file = e.target.files && e.target.files[0];
+      if (file) {{
+        const nameInput = document.getElementById('adminNewTplName');
+        if (nameInput && !nameInput.value.trim()) {{
+          nameInput.value = file.name.replace(/\.[^/.]+$/, '').replace(/_/g, ' ');
+        }}
+        const lbl = document.getElementById('txtAdminTplFileLabel');
+        if (lbl) lbl.innerText = '📁 ' + file.name;
+      }}
+    }};
+  }}
+  setupDropzone(document.getElementById('adminTplDropzone'), adminTplInput, (file) => {{
+    const nameInput = document.getElementById('adminNewTplName');
+    if (nameInput && !nameInput.value.trim()) {{
+      nameInput.value = file.name.replace(/\.[^/.]+$/, '').replace(/_/g, ' ');
+    }}
+    const lbl = document.getElementById('txtAdminTplFileLabel');
+    if (lbl) lbl.innerText = '📁 ' + file.name;
   }});
 
   // Admin upload to GitHub
