@@ -1922,6 +1922,12 @@ html_app = f"""
           <span class="anim-badge" id="animActiveBadge">Still</span>
         </div>
 
+        <!-- CURRENT SELECTED LAYER TARGET BADGE -->
+        <div id="animActiveTargetBadge" style="display:flex; align-items:center; justify-content:space-between; background:var(--ps-card); border:1px solid var(--ps-border); border-radius:6px; padding:6px 10px; font-size:11.5px; font-weight:700; color:#fff; margin-bottom:8px;">
+          <span id="lblAnimTargetText">Selected Layer:</span>
+          <span id="valAnimTargetName" style="color:#ff6b8b; font-weight:800;">🍉 Face</span>
+        </div>
+
         <div class="anim-select-container">
           <select id="animEffectSelect" class="ps-select anim-dropdown">
             <option value="none">🖼️ Still (No Animation)</option>
@@ -2161,6 +2167,7 @@ const i18n = {{
     lblStickerOpacity: 'Opacity:',
 
     secTitleAnim: '✨ Discord GIF Effects',
+    lblAnimTargetText: 'Selected Layer:',
     animBadgeStill: 'Still',
     animNone: '🖼️ Still (No Animation)',
     animBob: '🕺 Bob Up & Down',
@@ -2285,6 +2292,7 @@ const i18n = {{
     lblStickerOpacity: 'الشفافية:',
 
     secTitleAnim: '✨ تأثيرات ديسكورد المتحركة',
+    lblAnimTargetText: 'الطبقة المحددة:',
     animBadgeStill: 'ثابت',
     animNone: '🖼️ ثابت (بدون حركة)',
     animBob: '🕺 تمايل للأعلى والأسفل',
@@ -2508,8 +2516,12 @@ function applyLanguage(lang) {{
     if (document.getElementById('lbl3DHintXCenter')) document.getElementById('lbl3DHintXCenter').innerText = t.lbl3DHintXCenter;
     if (document.getElementById('lbl3DHintXDown')) document.getElementById('lbl3DHintXDown').innerText = t.lbl3DHintXDown;
   }}
+  if (document.getElementById('lblAnimTargetText')) {{
+    document.getElementById('lblAnimTargetText').innerText = t.lblAnimTargetText || 'Selected Layer:';
+  }}
   syncFilterUI();
   if (typeof sync3dUI === 'function') sync3dUI();
+  if (typeof syncAnimUI === 'function') syncAnimUI();
   updateTopbarToolOptions();
   syncLayersUI();
   if (typeof renderAdminCatalog === 'function') renderAdminCatalog();
@@ -2657,6 +2669,7 @@ function makeFaceLayer(faceIndexOrId, x, y, scale, z) {{
     filters: makeDefaultFilters(),
     tiltX: 0,
     tiltY: 0,
+    animation: 'none',
     z: z !== undefined ? z : ++layerZCounter
   }};
 }}
@@ -3301,8 +3314,11 @@ function apply3DTransform(ctx, tiltX, tiltY) {{
   ctx.transform(cosY, shearY, shearX, cosX, 0, 0);
 }}
 
-function render(offsetObj) {{
-  const animOff = offsetObj || {{ x: 0, y: 0, rot: 0, scale: 1.0 }};
+function render(progressOrOffset) {{
+  let p = animProgress;
+  if (typeof progressOrOffset === 'number') {{
+    p = progressOrOffset;
+  }}
 
   let bgImg = null;
   if (state.bgIsGif && state.bgGifFrames && state.bgGifFrames.length > 0) {{
@@ -3359,6 +3375,8 @@ function render(offsetObj) {{
   const drawList = getAllLayers().reverse();
   drawList.forEach(item => {{
     const {{ layerType, obj }} = item;
+    const layerAnim = (obj && obj.animation && obj.animation !== 'none') ? obj.animation : 'none';
+    const layerAnimOff = (layerAnim !== 'none') ? getAnimOffset(layerAnim, p) : {{ x: 0, y: 0, rot: 0, scale: 1.0, scaleX: 1.0, scaleY: 1.0 }};
 
     if (layerType === 'face') {{
       let img = getFaceLayerImg(obj);
@@ -3366,10 +3384,10 @@ function render(offsetObj) {{
 
       ctx.save();
       ctx.filter = getFilterString(obj.filters);
-      const cx = canvas.width / 2 + obj.x + animOff.x;
-      const cy = canvas.height / 2 + obj.y + animOff.y;
+      const cx = canvas.width / 2 + obj.x + layerAnimOff.x;
+      const cy = canvas.height / 2 + obj.y + layerAnimOff.y;
       ctx.translate(cx, cy);
-      ctx.rotate(((obj.rotation + animOff.rot) * Math.PI) / 180);
+      ctx.rotate(((obj.rotation + layerAnimOff.rot) * Math.PI) / 180);
       ctx.scale(obj.flipH || 1, 1);
       apply3DTransform(ctx, obj.tiltX, obj.tiltY);
       ctx.globalAlpha = obj.opacity !== undefined ? obj.opacity : 1.0;
@@ -3379,8 +3397,8 @@ function render(offsetObj) {{
       const sy = obj.scaleY !== undefined ? obj.scaleY : (obj.scale || 1.0);
       const baseW = 200;
       const baseH = 200 * aspect;
-      const scaleXMult = animOff.scaleX !== undefined ? animOff.scaleX : (animOff.scale !== undefined ? animOff.scale : 1.0);
-      const scaleYMult = animOff.scaleY !== undefined ? animOff.scaleY : (animOff.scale !== undefined ? animOff.scale : 1.0);
+      const scaleXMult = layerAnimOff.scaleX !== undefined ? layerAnimOff.scaleX : (layerAnimOff.scale !== undefined ? layerAnimOff.scale : 1.0);
+      const scaleYMult = layerAnimOff.scaleY !== undefined ? layerAnimOff.scaleY : (layerAnimOff.scale !== undefined ? layerAnimOff.scale : 1.0);
       const w = baseW * sx * scaleXMult;
       const h = baseH * sy * scaleYMult;
 
@@ -3397,10 +3415,10 @@ function render(offsetObj) {{
       if (!obj.img) return;
       ctx.save();
       ctx.filter = getFilterString(obj.filters);
-      const cx = canvas.width / 2 + obj.x;
-      const cy = canvas.height / 2 + obj.y;
+      const cx = canvas.width / 2 + obj.x + layerAnimOff.x;
+      const cy = canvas.height / 2 + obj.y + layerAnimOff.y;
       ctx.translate(cx, cy);
-      ctx.rotate((obj.rotation * Math.PI) / 180);
+      ctx.rotate(((obj.rotation + layerAnimOff.rot) * Math.PI) / 180);
       ctx.scale(obj.flipH || 1, 1);
       apply3DTransform(ctx, obj.tiltX, obj.tiltY);
       ctx.globalAlpha = obj.opacity !== undefined ? obj.opacity : 1.0;
@@ -3410,21 +3428,25 @@ function render(offsetObj) {{
       const sy = obj.scaleY !== undefined ? obj.scaleY : (obj.scale || 1.0);
       const baseW = 180;
       const baseH = 180 * aspect;
-      const w = baseW * sx;
-      const h = baseH * sy;
+      const scaleXMult = layerAnimOff.scaleX !== undefined ? layerAnimOff.scaleX : (layerAnimOff.scale !== undefined ? layerAnimOff.scale : 1.0);
+      const scaleYMult = layerAnimOff.scaleY !== undefined ? layerAnimOff.scaleY : (layerAnimOff.scale !== undefined ? layerAnimOff.scale : 1.0);
+      const w = baseW * sx * scaleXMult;
+      const h = baseH * sy * scaleYMult;
 
       ctx.drawImage(obj.img, -w / 2, -h / 2, w, h);
       ctx.restore();
     }} else if (layerType === 'text') {{
       ctx.save();
-      const cx = canvas.width / 2 + obj.x;
-      const cy = canvas.height / 2 + obj.y;
+      const cx = canvas.width / 2 + obj.x + layerAnimOff.x;
+      const cy = canvas.height / 2 + obj.y + layerAnimOff.y;
       ctx.translate(cx, cy);
-      ctx.rotate((obj.rotation * Math.PI) / 180);
+      ctx.rotate(((obj.rotation + layerAnimOff.rot) * Math.PI) / 180);
       apply3DTransform(ctx, obj.tiltX, obj.tiltY);
       const sx = obj.scaleX !== undefined ? obj.scaleX : 1.0;
       const sy = obj.scaleY !== undefined ? obj.scaleY : 1.0;
-      ctx.scale(sx, sy);
+      const scaleXMult = layerAnimOff.scaleX !== undefined ? layerAnimOff.scaleX : (layerAnimOff.scale !== undefined ? layerAnimOff.scale : 1.0);
+      const scaleYMult = layerAnimOff.scaleY !== undefined ? layerAnimOff.scaleY : (layerAnimOff.scale !== undefined ? layerAnimOff.scale : 1.0);
+      ctx.scale(sx * scaleXMult, sy * scaleYMult);
 
       const fontFam = obj.font || 'Impact, sans-serif';
       ctx.font = '900 ' + obj.size + 'px ' + fontFam;
@@ -3443,22 +3465,27 @@ function render(offsetObj) {{
   // 3. Draw Refined Compact Free Transform Bounding Box & Handles
   const active = getActiveLayerData();
   if (active && active.type !== 'bg') {{
-    const {{ cx, cy, hw, hh, rotation }} = active;
+    const {{ cx, cy, hw, hh, rotation, obj }} = active;
+    const actAnim = (obj && obj.animation && obj.animation !== 'none') ? obj.animation : 'none';
+    const actAnimOff = (actAnim !== 'none') ? getAnimOffset(actAnim, p) : {{ x: 0, y: 0, rot: 0, scale: 1.0, scaleX: 1.0, scaleY: 1.0 }};
+    const sxMult = actAnimOff.scaleX !== undefined ? actAnimOff.scaleX : (actAnimOff.scale !== undefined ? actAnimOff.scale : 1.0);
+    const syMult = actAnimOff.scaleY !== undefined ? actAnimOff.scaleY : (actAnimOff.scale !== undefined ? actAnimOff.scale : 1.0);
+
     ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate((rotation * Math.PI) / 180);
+    ctx.translate(cx + actAnimOff.x, cy + actAnimOff.y);
+    ctx.rotate(((rotation + actAnimOff.rot) * Math.PI) / 180);
 
     // Slim dashed bounding rectangle
     ctx.strokeStyle = '#0084ff';
     ctx.lineWidth = 1.5;
     ctx.setLineDash([4, 4]);
-    ctx.strokeRect(-hw, -hh, hw * 2, hh * 2);
+    ctx.strokeRect(-hw * sxMult, -hh * syMult, hw * 2 * sxMult, hh * 2 * syMult);
 
     // Short stem line to rotation handle
     ctx.setLineDash([]);
     ctx.beginPath();
-    ctx.moveTo(0, -hh);
-    ctx.lineTo(0, -hh - 18);
+    ctx.moveTo(0, -hh * syMult);
+    ctx.lineTo(0, -hh * syMult - 18);
     ctx.stroke();
 
     // Small circular rotation handle
@@ -3466,16 +3493,16 @@ function render(offsetObj) {{
     ctx.strokeStyle = '#0084ff';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(0, -hh - 18, 5, 0, Math.PI * 2);
+    ctx.arc(0, -hh * syMult - 18, 5, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
 
     // 4 Small corner square handles (8x8)
     const corners = [
-      [-hw, -hh],
-      [hw, -hh],
-      [-hw, hh],
-      [hw, hh]
+      [-hw * sxMult, -hh * syMult],
+      [hw * sxMult, -hh * syMult],
+      [-hw * sxMult, hh * syMult],
+      [hw * sxMult, hh * syMult]
     ];
     corners.forEach(([kx, ky]) => {{
       ctx.fillStyle = '#ffffff';
@@ -3580,11 +3607,13 @@ function initCanvasEvents() {{
       render();
       syncLayersUI();
       syncFilterUI();
+      if (typeof syncAnimUI === 'function') syncAnimUI();
     }} else {{
       state.activeTransformTarget = null;
       render();
       syncLayersUI();
       syncFilterUI();
+      if (typeof syncAnimUI === 'function') syncAnimUI();
     }}
   }}
 
@@ -4166,7 +4195,7 @@ function initUIEvents() {{
 
   // 3. Text Controls (Top, Bottom, Custom)
   document.getElementById('addTopTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'TOP TEXT', x: 0, y: -Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, tiltX: 0, tiltY: 0, z: ++layerZCounter }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'TOP TEXT', x: 0, y: -Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, tiltX: 0, tiltY: 0, animation: 'none', z: ++layerZCounter }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
     state.selectedTextIdx = state.texts.length - 1;
     document.getElementById('activeTextInput').value = 'TOP TEXT';
@@ -4175,7 +4204,7 @@ function initUIEvents() {{
     updateDynamicFileName();
   }};
   document.getElementById('addBottomTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, tiltX: 0, tiltY: 0, z: ++layerZCounter }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'BOTTOM TEXT', x: 0, y: Math.round(canvas.height * 0.35), size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, tiltX: 0, tiltY: 0, animation: 'none', z: ++layerZCounter }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
     state.selectedTextIdx = state.texts.length - 1;
     document.getElementById('activeTextInput').value = 'BOTTOM TEXT';
@@ -4184,7 +4213,7 @@ function initUIEvents() {{
     updateDynamicFileName();
   }};
   document.getElementById('addCustomTextBtn').onclick = () => {{
-    state.texts.push({{ id: 't_' + Date.now(), text: 'YOUR TEXT', x: 0, y: 0, size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, tiltX: 0, tiltY: 0, z: ++layerZCounter }});
+    state.texts.push({{ id: 't_' + Date.now(), text: 'YOUR TEXT', x: 0, y: 0, size: 52, color: '#ffffff', font: document.getElementById('fontFamilySelect').value, rotation: 0, tiltX: 0, tiltY: 0, animation: 'none', z: ++layerZCounter }});
     state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
     state.selectedTextIdx = state.texts.length - 1;
     document.getElementById('activeTextInput').value = 'YOUR TEXT';
@@ -4206,7 +4235,7 @@ function initUIEvents() {{
           size: 52,
           color: '#ffffff',
           font: document.getElementById('fontFamilySelect').value,
-          rotation: 0, tiltX: 0, tiltY: 0, z: ++layerZCounter
+          rotation: 0, tiltX: 0, tiltY: 0, animation: 'none', z: ++layerZCounter
         }});
         state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
         state.selectedTextIdx = state.texts.length - 1;
@@ -4683,6 +4712,7 @@ function initUIEvents() {{
           filters: makeDefaultFilters(),
           tiltX: 0,
           tiltY: 0,
+          animation: 'none',
           z: ++layerZCounter
         }});
         state.activeTransformTarget = {{ type: 'acc', idx: state.accessoriesOnCanvas.length - 1 }};
@@ -4711,16 +4741,81 @@ function initUIEvents() {{
     }});
   }}
 
-  // 5. Discord Animation Dropdown
+
+  // --- SYNC DISCORD ANIMATION DROPDOWN TO ACTIVE LAYER ---
+  window.syncAnimUI = function() {{
+    const active = getActiveLayerData();
+    const badgeName = document.getElementById('valAnimTargetName');
+    const animSelect = document.getElementById('animEffectSelect');
+    const activeBadge = document.getElementById('animActiveBadge');
+
+    if (!active || active.type === 'bg') {{
+      if (badgeName) {{
+        badgeName.innerText = currentLang === 'ar' ? 'الخلفية (اختر وجهاً أو ملصقاً)' : 'Backdrop (Select a face or sticker)';
+        badgeName.style.color = 'var(--ps-text-muted)';
+      }}
+      if (animSelect) {{
+        animSelect.value = state.animation || 'none';
+        animSelect.disabled = false;
+      }}
+      if (activeBadge) {{
+        activeBadge.innerText = (state.animation && state.animation !== 'none') ? state.animation : (i18n[currentLang].animBadgeStill || 'Still');
+      }}
+      return;
+    }}
+
+    if (badgeName) {{
+      if (active.type === 'face') {{
+        const fObj = faces.find(f => (active.obj && active.obj.faceId && f.id === active.obj.faceId) || (active.obj && active.obj.faceFile && f.file && f.file.toLowerCase() === active.obj.faceFile.toLowerCase())) || (active.obj ? faces[active.obj.faceIndex] : null);
+        badgeName.innerText = '🍉 ' + ((active.obj && active.obj.customName) || (fObj ? fObj.name : (currentLang === 'ar' ? 'وجه فاكهة' : 'Fruit Face')));
+        badgeName.style.color = '#ff6b8b';
+      }} else if (active.type === 'acc') {{
+        badgeName.innerText = '🎀 ' + (currentLang === 'ar' ? 'ملصق #' + (active.idx + 1) : 'Sticker #' + (active.idx + 1));
+        badgeName.style.color = '#a78bfa';
+      }} else if (active.type === 'text') {{
+        badgeName.innerText = '✍️ "' + (((active.obj && active.obj.text) || 'Text').substring(0, 10)) + '"';
+        badgeName.style.color = '#38bdf8';
+      }}
+    }}
+
+    const currentEffect = (active.obj && active.obj.animation) ? active.obj.animation : 'none';
+    if (animSelect) {{
+      animSelect.disabled = false;
+      animSelect.value = currentEffect;
+    }}
+    if (activeBadge) {{
+      const opt = animSelect ? animSelect.options[animSelect.selectedIndex] : null;
+      activeBadge.innerText = currentEffect === 'none' ? (i18n[currentLang].animBadgeStill || 'Still') : (opt ? (opt.text.split(' ')[1] || opt.text) : currentEffect);
+    }}
+  }};
+
+  // 5. Discord Animation Dropdown (Per-Layer)
   const animSelect = document.getElementById('animEffectSelect');
   if (animSelect) {{
     animSelect.onchange = () => {{
-      state.animation = animSelect.value;
-      const badge = document.getElementById('animActiveBadge');
-      if (badge) {{
-        const opt = animSelect.options[animSelect.selectedIndex];
-        badge.innerText = opt ? (opt.value === 'none' ? (i18n[currentLang].animBadgeStill || 'Still') : (opt.text.split(' ')[1] || opt.text)) : state.animation;
+      let active = getActiveLayerData();
+      if (!active || active.type === 'bg') {{
+        if (state.facesOnCanvas.length > 0) {{
+          state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
+          active = getActiveLayerData();
+        }} else if (state.accessoriesOnCanvas.length > 0) {{
+          state.activeTransformTarget = {{ type: 'acc', idx: state.accessoriesOnCanvas.length - 1 }};
+          active = getActiveLayerData();
+        }} else if (state.texts.length > 0) {{
+          state.activeTransformTarget = {{ type: 'text', idx: state.texts.length - 1 }};
+          active = getActiveLayerData();
+        }}
+        if (typeof syncLayersUI === 'function') syncLayersUI();
       }}
+
+      const val = animSelect.value;
+      if (active && active.obj) {{
+        active.obj.animation = val;
+      }}
+      state.animation = val;
+
+      syncAnimUI();
+      if (typeof syncLayersUI === 'function') syncLayersUI();
       render();
     }};
   }}
@@ -6429,6 +6524,7 @@ function syncLayersUI() {{
       syncLayersUI();
       syncFilterUI();
       if (typeof sync3dUI === 'function') sync3dUI();
+      if (typeof syncAnimUI === 'function') syncAnimUI();
     }};
 
     list.appendChild(row);
@@ -6463,10 +6559,12 @@ function syncLayersUI() {{
     syncLayersUI();
     syncFilterUI();
     if (typeof sync3dUI === 'function') sync3dUI();
+    if (typeof syncAnimUI === 'function') syncAnimUI();
   }};
 
   list.appendChild(bgRow);
   if (typeof sync3dUI === 'function') sync3dUI();
+  if (typeof syncAnimUI === 'function') syncAnimUI();
 }}
 
 window.deleteSpecificLayer = function(layerType, idx) {{
@@ -6565,6 +6663,11 @@ function exportGif() {{
   let exportInterval = 0.10; // Default 100ms (10 fps)
   let numExportFrames = 18;
 
+  const hasAnyAnim = state.facesOnCanvas.some(f => f.animation && f.animation !== 'none') ||
+                     state.accessoriesOnCanvas.some(a => a.animation && a.animation !== 'none') ||
+                     state.texts.some(t => t.animation && t.animation !== 'none') ||
+                     (state.animation && state.animation !== 'none');
+
   if (state.bgIsGif && state.bgGifFrames && state.bgGifFrames.length > 0) {{
     const rawFrames = state.bgGifFrames;
     const rawCount = rawFrames.length;
@@ -6593,7 +6696,7 @@ function exportGif() {{
         numExportFrames = 26;
         exportInterval = (totalMs / numExportFrames) / 1000;
       }}
-    }} else if (state.animation !== 'none') {{
+    }} else if (hasAnyAnim) {{
       numExportFrames = 20;
       exportInterval = 0.08;
     }}
@@ -6609,6 +6712,7 @@ function exportGif() {{
     const p = i / numExportFrames;
 
     // 1. Sync Background GIF Frame to exact timeline timestamp
+
     if (state.bgIsGif && state.bgGifFrames && state.bgGifFrames.length > 0) {{
       const delays = state.bgGifDelays || state.bgGifFrames.delays || [];
       const totalDur = state.bgGifTotalDuration || state.bgGifFrames.totalDuration || (state.bgGifFrames.length * 100);
@@ -6646,8 +6750,7 @@ function exportGif() {{
       }}
     }});
 
-    const off = getAnimOffset(state.animation, p);
-    render(off);
+    render(p);
     frameImages.push(canvas.toDataURL('image/png'));
   }}
 
@@ -6847,8 +6950,12 @@ function animLoop(timestamp) {{
   const dt = dtMs / 1000;
   lastFrameTime = timestamp;
 
+  const hasAnyAnim = state.facesOnCanvas.some(f => f.animation && f.animation !== 'none') ||
+                     state.accessoriesOnCanvas.some(a => a.animation && a.animation !== 'none') ||
+                     state.texts.some(t => t.animation && t.animation !== 'none') ||
+                     (state.animation && state.animation !== 'none');
   const hasGifFace = state.facesOnCanvas.some(f => f.isGif && f.gifFrames && f.gifFrames.length > 0);
-  if (state.animation !== 'none' || state.bgIsGif || hasGifFace) {{
+  if (hasAnyAnim || state.bgIsGif || hasGifFace) {{
     // Steady 1.0s loop for CSS transform effects (Bob, Spin, Bounce, etc.)
     animProgress = (animProgress + dt * 1.0) % 1.0;
 
@@ -6894,8 +7001,7 @@ function animLoop(timestamp) {{
       }}
     }});
 
-    const off = getAnimOffset(state.animation, animProgress);
-    render(off);
+    render(animProgress);
   }}
 
   requestAnimationFrame(animLoop);
