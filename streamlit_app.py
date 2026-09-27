@@ -3443,13 +3443,10 @@ function render(offsetObj) {{
   // 3. Draw Refined Compact Free Transform Bounding Box & Handles
   const active = getActiveLayerData();
   if (active && active.type !== 'bg') {{
-    const {{ cx, cy, hw, hh, rotation, obj }} = active;
+    const {{ cx, cy, hw, hh, rotation }} = active;
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate((rotation * Math.PI) / 180);
-    if (obj) {{
-      apply3DTransform(ctx, obj.tiltX, obj.tiltY);
-    }}
 
     // Slim dashed bounding rectangle
     ctx.strokeStyle = '#0084ff';
