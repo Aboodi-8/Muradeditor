@@ -2376,8 +2376,15 @@ async function parseGifFrames(arrayBuffer) {{
     const tmpCtx = tmpCanv.getContext('2d');
 
     const loadedFrames = [];
+    const frameDelays = [];
     for (let i = 0; i < rawFrames.length; i++) {{
       const f = rawFrames[i];
+      let d = f.delay;
+      // In GIF format, delay is in ms (or 10ms units converted by parser).
+      // Standard browser playback treats 0 or < 20ms as 100ms (10 fps).
+      if (!d || d < 20) d = 100;
+      frameDelays.push(d);
+
       if (f.disposalType === 2) {{
         tmpCtx.clearRect(0, 0, fullW, fullH);
       }}
@@ -2397,6 +2404,8 @@ async function parseGifFrames(arrayBuffer) {{
       await new Promise(r => {{ img.onload = r; img.onerror = r; }});
       loadedFrames.push(img);
     }}
+    loadedFrames.delays = frameDelays;
+    loadedFrames.totalDuration = frameDelays.reduce((a, b) => a + b, 0);
     return loadedFrames;
   }} catch (err) {{
     console.warn('parseGifFrames error:', err);
@@ -3161,8 +3170,11 @@ function renderTemplatesGrid() {{
               t.gifFrames = frames;
               state.bgIsGif = true;
               state.bgGifFrames = frames;
+              state.bgGifDelays = frames.delays || [];
+              state.bgGifTotalDuration = frames.totalDuration || (frames.length * 100);
               state.bgGifIndex = 0;
               state.bgCustomImg = frames[0];
+              bgElapsedMs = 0;
             }}
           }} catch(e) {{
             console.warn('Template GIF parse error:', e);
@@ -3289,8 +3301,11 @@ function initUIEvents() {{
             state.bgType = 'custom';
             state.bgIsGif = true;
             state.bgGifFrames = frames;
+            state.bgGifDelays = frames.delays || [];
+            state.bgGifTotalDuration = frames.totalDuration || (frames.length * 100);
             state.bgGifIndex = 0;
             state.bgCustomImg = frames[0];
+            bgElapsedMs = 0;
             render();
             syncLayersUI();
             updateDynamicFileName();
@@ -4259,8 +4274,8 @@ function renderAdminCatalog() {{
         <img src="${{f.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
         <span style="font-size:12.5px; font-weight:700; color:#fff;">${{f.name}}</span>
       </div>
-      <button class="ps-opt-btn danger" id="adminFaceDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" ${{isDeleting ? 'disabled' : ''}} onclick="deleteAdminFace(${{idx}})">
-        ${{isDeleting ? '<span class="ps-spinner ps-spinner-danger"></span> <span>Deleting...</span>' : 'Remove'}}
+      <button class="ps-opt-btn danger" id="adminFaceDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" onclick="deleteAdminFace(${{idx}})">
+        ${{currentLang === 'ar' ? 'حذف' : 'Remove'}}
       </button>
     `;
     list.appendChild(row);
@@ -4270,9 +4285,9 @@ function renderAdminCatalog() {{
 window.deleteAdminFace = async function(idx) {{
   const f = faces[idx];
   if (!f) return;
-  const targetFile = f.file || f.filename;
-  const targetFileLower = targetFile ? targetFile.toLowerCase() : '';
-  if (deletingItemIds.has(f.id) || (targetFileLower && deletingItemIds.has(targetFileLower))) return;
+  const targetFile = f.file || f.filename || '';
+  const targetFileLower = targetFile.toLowerCase();
+  const faceId = f.id || ('face_' + idx);
 
   let ok = false;
   try {{
@@ -4282,71 +4297,10 @@ window.deleteAdminFace = async function(idx) {{
   }}
   if (!ok) return;
 
-  // Mark actively deleting to prevent auto-sync resurrection and render spinners
-  deletingItemIds.add(f.id);
-  if (targetFileLower) {{
-    deletingItemIds.add(targetFileLower);
-    deletedItemFiles.add(targetFileLower);
-  }}
+  // 1. Instant Optimistic Local Removal (Zero lag, zero endless spinning loop!)
+  faces.splice(idx, 1);
+  delete loadedFaces[idx];
 
-  renderAdminCatalog();
-  renderFacesGrid();
-
-  if (GITHUB_TOKEN) {{
-    const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
-    const folder = GITHUB_FOLDER || 'Faces';
-    const manifestPath = `${{folder}}/manifest.json`;
-
-    try {{
-      // 1. Delete image file from GitHub
-      if (targetFile) {{
-        try {{
-          const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}?ref=main&_t=${{Date.now()}}`, {{
-            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-          }});
-          if (fRes.ok) {{
-            const fData = await fRes.json();
-            await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}`, {{
-              method: 'DELETE',
-              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-              body: JSON.stringify({{ message: 'Remove face ' + f.name, sha: fData.sha, branch: 'main' }})
-            }});
-          }}
-        }} catch(err) {{
-          console.warn('Error deleting face file from storage:', err);
-        }}
-      }}
-
-      // 2. Update manifest.json
-      try {{
-        const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
-          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-        }});
-        if (mRes.ok) {{
-          const mData = await mRes.json();
-          const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
-          let manifestList = JSON.parse(decoded);
-          manifestList = manifestList.filter(item => item.id !== f.id && (item.file || item.filename) !== targetFile);
-          const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
-          await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
-            method: 'PUT',
-            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-            body: JSON.stringify({{ message: 'Remove face ' + f.name, content: updatedB64, sha: mData.sha, branch: 'main' }})
-          }});
-        }}
-      }} catch (e) {{
-        console.warn('Face deletion sync warning:', e);
-      }}
-    }} catch (err) {{
-      console.error('Face delete error:', err);
-    }}
-  }}
-
-  // Remove locally and update UI cleanly
-  const removeIndex = faces.findIndex(item => item.id === f.id || (item.file && item.file.toLowerCase() === targetFileLower));
-  if (removeIndex !== -1) {{
-    faces.splice(removeIndex, 1);
-  }}
   const newLoaded = {{}};
   faces.forEach((item, i) => {{
     if (item.src) {{
@@ -4357,19 +4311,93 @@ window.deleteAdminFace = async function(idx) {{
   }});
   loadedFaces = newLoaded;
 
-  // Remove face layer from canvas if it was active
+  // Remove matching layers from canvas and adjust remaining face indices
   state.facesOnCanvas = state.facesOnCanvas.filter(fc => {{
-    return fc.faceIndex !== removeIndex && (!fc.id || fc.id !== f.id);
+    if (fc.faceIndex === idx || (faceId && fc.id === faceId)) return false;
+    return true;
   }});
+  state.facesOnCanvas.forEach(fc => {{
+    if (fc.faceIndex > idx) fc.faceIndex -= 1;
+  }});
+  if (state.activeTransformTarget && !state.facesOnCanvas.includes(state.activeTransformTarget)) {{
+    state.activeTransformTarget = null;
+  }}
 
-  deletingItemIds.delete(f.id);
-  if (targetFileLower) deletingItemIds.delete(targetFileLower);
+  // Anti-resurrection protection
+  if (targetFileLower) deletedItemFiles.add(targetFileLower);
+  if (faceId) deletedItemFiles.add(faceId.toLowerCase());
 
+  // Immediate UI refresh
   renderFacesGrid();
   renderAdminCatalog();
   syncLayersUI();
   updateDynamicFileName();
   render();
+
+  // 2. Non-blocking background deletion on GitHub
+  const syncSpinner = document.getElementById('cloudSyncSpinner');
+  const syncLabel = document.getElementById('cloudSyncLabel');
+  if (syncSpinner) syncSpinner.style.display = 'inline-block';
+  if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? '☁️ حذف من السحابة...' : '☁️ Deleting from Cloud...';
+
+  if (GITHUB_TOKEN) {{
+    const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+    const folder = GITHUB_FOLDER || 'Faces';
+    const manifestPath = `${{folder}}/manifest.json`;
+
+    (async () => {{
+      try {{
+        if (targetFile) {{
+          try {{
+            const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}?ref=main&_t=${{Date.now()}}`, {{
+              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+            }});
+            if (fRes.ok) {{
+              const fData = await fRes.json();
+              if (fData && fData.sha) {{
+                await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}`, {{
+                  method: 'DELETE',
+                  headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+                  body: JSON.stringify({{ message: 'Delete face ' + (f.name || targetFile), sha: fData.sha, branch: 'main' }})
+                }});
+              }}
+            }}
+          }} catch(e) {{}}
+        }}
+
+        try {{
+          const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
+            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+          }});
+          if (mRes.ok) {{
+            const mData = await mRes.json();
+            const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\s/g, ''))));
+            let manifestList = JSON.parse(decoded);
+            manifestList = manifestList.filter(item => {{
+              const ifile = item.file || item.filename || '';
+              return item.id !== faceId && ifile.toLowerCase() !== targetFileLower;
+            }});
+            const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
+            await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+              method: 'PUT',
+              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+              body: JSON.stringify({{ message: 'Remove face: ' + (f.name || targetFile), content: updatedB64, sha: mData.sha, branch: 'main' }})
+            }});
+          }}
+        }} catch(e) {{}}
+      }} catch(err) {{
+        console.warn('Background delete warning:', err);
+      }} finally {{
+        if (syncSpinner) syncSpinner.style.display = 'none';
+        if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? '☁️ متزامن' : '☁️ Synced';
+      }}
+    }})();
+  }} else {{
+    setTimeout(() => {{
+      if (syncSpinner) syncSpinner.style.display = 'none';
+      if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? '☁️ متزامن' : '☁️ Synced';
+    }}, 400);
+  }}
 }};
 
 // --- ROBUST REMOTE MANIFEST SYNC WITH CONFLICT RETRY & SELF-HEALING ---
@@ -4543,8 +4571,8 @@ function renderAdminTemplatesCatalog() {{
         <img src="${{t.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
         <span style="font-size:12.5px; font-weight:700; color:#fff;">${{t.name}}</span>
       </div>
-      <button class="ps-opt-btn danger" id="adminTplDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" ${{isDeleting ? 'disabled' : ''}} onclick="deleteAdminTemplate(${{idx}})">
-        ${{isDeleting ? '<span class="ps-spinner ps-spinner-danger"></span> <span>Deleting...</span>' : 'Remove'}}
+      <button class="ps-opt-btn danger" id="adminTplDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" onclick="deleteAdminTemplate(${{idx}})">
+        ${{currentLang === 'ar' ? 'حذف' : 'Remove'}}
       </button>
     `;
     list.appendChild(row);
@@ -4554,9 +4582,9 @@ function renderAdminTemplatesCatalog() {{
 window.deleteAdminTemplate = async function(idx) {{
   const t = templates[idx];
   if (!t) return;
-  const targetFile = t.file || t.filename;
-  const targetFileLower = targetFile ? targetFile.toLowerCase() : '';
-  if (deletingItemIds.has(t.id) || (targetFileLower && deletingItemIds.has(targetFileLower))) return;
+  const targetFile = t.file || t.filename || '';
+  const targetFileLower = targetFile.toLowerCase();
+  const tplId = t.id || ('tpl_' + idx);
 
   let ok = false;
   try {{
@@ -4566,73 +4594,11 @@ window.deleteAdminTemplate = async function(idx) {{
   }}
   if (!ok) return;
 
-  deletingItemIds.add(t.id);
-  if (targetFileLower) {{
-    deletingItemIds.add(targetFileLower);
-    deletedItemFiles.add(targetFileLower);
-  }}
+  // 1. Instant Optimistic Local Removal (Zero lag, zero endless spinning loop!)
+  templates.splice(idx, 1);
+  delete loadedTemplates[tplId];
 
-  renderAdminTemplatesCatalog();
-  renderTemplatesGrid();
-
-  if (GITHUB_TOKEN) {{
-    const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
-    const folder = 'Templates';
-    const manifestPath = `${{folder}}/manifest.json`;
-
-    try {{
-      // 1. Delete template image file from GitHub
-      if (targetFile) {{
-        try {{
-          const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}?ref=main&_t=${{Date.now()}}`, {{
-            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-          }});
-          if (fRes.ok) {{
-            const fData = await fRes.json();
-            await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}`, {{
-              method: 'DELETE',
-              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-              body: JSON.stringify({{ message: 'Remove template ' + t.name, sha: fData.sha, branch: 'main' }})
-            }});
-          }}
-        }} catch(err) {{
-          console.warn('Error deleting template file from GitHub:', err);
-        }}
-      }}
-
-      // 2. Update manifest.json
-      try {{
-        const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
-          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-        }});
-        if (mRes.ok) {{
-          const mData = await mRes.json();
-          const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
-          let manifestList = JSON.parse(decoded);
-          manifestList = manifestList.filter(item => item.id !== t.id && (item.file || item.filename) !== targetFile);
-          const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
-          await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
-            method: 'PUT',
-            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-            body: JSON.stringify({{ message: 'Remove template ' + t.name, content: updatedB64, sha: mData.sha, branch: 'main' }})
-          }});
-        }}
-      }} catch (e) {{
-        console.warn('Template deletion sync warning:', e);
-      }}
-    }} catch (err) {{
-      console.error('Template delete error:', err);
-    }}
-  }}
-
-  const removeIndex = templates.findIndex(item => item.id === t.id || (item.file && item.file.toLowerCase() === targetFileLower));
-  if (removeIndex !== -1) {{
-    templates.splice(removeIndex, 1);
-  }}
-  delete loadedTemplates[t.id];
-
-  // If the deleted template was active on canvas, reset backdrop
-  if (state.bgType === 'template' && state.bgTemplateId === t.id) {{
+  if (state.bgType === 'template' && state.bgTemplateId === tplId) {{
     state.bgType = 'color';
     state.bgTemplateId = null;
     state.bgCustomImg = null;
@@ -4640,14 +4606,79 @@ window.deleteAdminTemplate = async function(idx) {{
     state.bgGifFrames = [];
   }}
 
-  deletingItemIds.delete(t.id);
-  if (targetFileLower) deletingItemIds.delete(targetFileLower);
+  if (targetFileLower) deletedItemFiles.add(targetFileLower);
+  if (tplId) deletedItemFiles.add(tplId.toLowerCase());
 
   renderTemplatesGrid();
   renderAdminTemplatesCatalog();
   syncLayersUI();
   updateDynamicFileName();
   render();
+
+  // 2. Non-blocking background deletion on GitHub
+  const syncSpinner = document.getElementById('cloudSyncSpinner');
+  const syncLabel = document.getElementById('cloudSyncLabel');
+  if (syncSpinner) syncSpinner.style.display = 'inline-block';
+  if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? '☁️ حذف من السحابة...' : '☁️ Deleting from Cloud...';
+
+  if (GITHUB_TOKEN) {{
+    const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+    const folder = 'Templates';
+    const manifestPath = `${{folder}}/manifest.json`;
+
+    (async () => {{
+      try {{
+        if (targetFile) {{
+          try {{
+            const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}?ref=main&_t=${{Date.now()}}`, {{
+              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+            }});
+            if (fRes.ok) {{
+              const fData = await fRes.json();
+              if (fData && fData.sha) {{
+                await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}`, {{
+                  method: 'DELETE',
+                  headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+                  body: JSON.stringify({{ message: 'Delete template ' + (t.name || targetFile), sha: fData.sha, branch: 'main' }})
+                }});
+              }}
+            }}
+          }} catch(e) {{}}
+        }}
+
+        try {{
+          const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
+            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+          }});
+          if (mRes.ok) {{
+            const mData = await mRes.json();
+            const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\s/g, ''))));
+            let manifestList = JSON.parse(decoded);
+            manifestList = manifestList.filter(item => {{
+              const ifile = item.file || item.filename || '';
+              return item.id !== tplId && ifile.toLowerCase() !== targetFileLower;
+            }});
+            const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
+            await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+              method: 'PUT',
+              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+              body: JSON.stringify({{ message: 'Remove template: ' + (t.name || targetFile), content: updatedB64, sha: mData.sha, branch: 'main' }})
+            }});
+          }}
+        }} catch(e) {{}}
+      }} catch(err) {{
+        console.warn('Background delete warning:', err);
+      }} finally {{
+        if (syncSpinner) syncSpinner.style.display = 'none';
+        if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? '☁️ متزامن' : '☁️ Synced';
+      }}
+    }})();
+  }} else {{
+    setTimeout(() => {{
+      if (syncSpinner) syncSpinner.style.display = 'none';
+      if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? '☁️ متزامن' : '☁️ Synced';
+    }}, 400);
+  }}
 }};
 
 // GitHub API face sync helper
@@ -5071,22 +5102,91 @@ function exportGif() {{
   gifW = Math.round(gifW / 2) * 2;
   gifH = Math.round(gifH / 2) * 2;
 
-  const bgFrameCount = (state.bgIsGif && state.bgGifFrames && state.bgGifFrames.length > 0) ? state.bgGifFrames.length : 0;
-  const maxFaceFrames = Math.max(0, ...state.facesOnCanvas.filter(f => f.isGif && f.gifFrames && f.gifFrames.length > 0).map(f => f.gifFrames.length));
-  const maxGifFrames = Math.max(bgFrameCount, maxFaceFrames);
-  const totalFrames = maxGifFrames > 0 ? Math.min(36, Math.max(18, maxGifFrames)) : 18;
+  // Calculate native GIF playback speed so saved GIF is NEVER too fast
+  let exportInterval = 0.10; // Default 100ms (10 fps)
+  let numExportFrames = 18;
+
+  if (state.bgIsGif && state.bgGifFrames && state.bgGifFrames.length > 0) {{
+    const rawFrames = state.bgGifFrames;
+    const rawCount = rawFrames.length;
+    const delays = state.bgGifDelays || rawFrames.delays || [];
+    const totalMs = state.bgGifTotalDuration || rawFrames.totalDuration || (rawCount * 100);
+    const avgDelayMs = totalMs / rawCount;
+
+    if (rawCount <= 36) {{
+      numExportFrames = rawCount;
+      exportInterval = avgDelayMs / 1000;
+    }} else {{
+      numExportFrames = 30;
+      exportInterval = (totalMs / numExportFrames) / 1000;
+    }}
+  }} else {{
+    const gifFace = state.facesOnCanvas.find(f => f.isGif && f.gifFrames && f.gifFrames.length > 0);
+    if (gifFace) {{
+      const rawCount = gifFace.gifFrames.length;
+      const delays = gifFace.gifDelays || gifFace.gifFrames.delays || [];
+      const totalMs = gifFace.gifTotalDuration || gifFace.gifFrames.totalDuration || (rawCount * 100);
+      const avgDelayMs = totalMs / rawCount;
+      if (rawCount <= 36) {{
+        numExportFrames = rawCount;
+        exportInterval = avgDelayMs / 1000;
+      }} else {{
+        numExportFrames = 26;
+        exportInterval = (totalMs / numExportFrames) / 1000;
+      }}
+    }} else if (state.animation !== 'none') {{
+      numExportFrames = 20;
+      exportInterval = 0.08;
+    }}
+  }}
+
+  // Guarantee interval is within standard GIF browser range [0.04s .. 0.25s]
+  exportInterval = Math.max(0.04, Math.min(0.25, Number(exportInterval.toFixed(3))));
+
   const frameImages = [];
 
-  for (let i = 0; i < totalFrames; i++) {{
-    const p = i / totalFrames;
+  for (let i = 0; i < numExportFrames; i++) {{
+    const timeMs = i * (exportInterval * 1000);
+    const p = i / numExportFrames;
+
+    // 1. Sync Background GIF Frame to exact timeline timestamp
     if (state.bgIsGif && state.bgGifFrames && state.bgGifFrames.length > 0) {{
-      state.bgGifIndex = Math.floor(p * state.bgGifFrames.length) % state.bgGifFrames.length;
+      const delays = state.bgGifDelays || state.bgGifFrames.delays || [];
+      const totalDur = state.bgGifTotalDuration || state.bgGifFrames.totalDuration || (state.bgGifFrames.length * 100);
+      const curTime = timeMs % Math.max(1, totalDur);
+      let acc = 0;
+      let targetIdx = 0;
+      for (let f = 0; f < state.bgGifFrames.length; f++) {{
+        const d = delays[f] || 100;
+        if (curTime >= acc && curTime < acc + d) {{
+          targetIdx = f;
+          break;
+        }}
+        acc += d;
+      }}
+      state.bgGifIndex = targetIdx;
     }}
+
+    // 2. Sync Face GIF Frames to exact timeline timestamp
     state.facesOnCanvas.forEach(f => {{
       if (f.isGif && f.gifFrames && f.gifFrames.length > 0) {{
-        f.gifIndex = Math.floor(p * f.gifFrames.length) % f.gifFrames.length;
+        const delays = f.gifDelays || f.gifFrames.delays || [];
+        const totalDur = f.gifTotalDuration || f.gifFrames.totalDuration || (f.gifFrames.length * 100);
+        const curTime = timeMs % Math.max(1, totalDur);
+        let acc = 0;
+        let targetIdx = 0;
+        for (let fi = 0; fi < f.gifFrames.length; fi++) {{
+          const d = delays[fi] || 100;
+          if (curTime >= acc && curTime < acc + d) {{
+            targetIdx = fi;
+            break;
+          }}
+          acc += d;
+        }}
+        f.gifIndex = targetIdx;
       }}
     }});
+
     const off = getAnimOffset(state.animation, p);
     render(off);
     frameImages.push(canvas.toDataURL('image/png'));
@@ -5095,12 +5195,12 @@ function exportGif() {{
   state.activeTransformTarget = prevTarget;
   render();
 
-  progText.innerText = 'Encoding Discord GIF (High Quality)...';
+  progText.innerText = 'Encoding Discord GIF (matching native speed)...';
   window.gifshot.createGIF({{
     images: frameImages,
     gifWidth: gifW,
     gifHeight: gifH,
-    interval: 0.06,
+    interval: exportInterval,
     numWorkers: 4,
     sampleInterval: 2,
     progressCallback: (captureProgress) => {{
@@ -5278,25 +5378,63 @@ function getAnimOffset(anim, progress) {{
   return {{ x: 0, y: 0, rot: 0, scale: 1.0 }};
 }}
 
-// Live preview loop
+// Live preview loop with accurate millisecond timing synced to native GIF speed
 let lastFrameTime = 0;
 let animProgress = 0;
+let bgElapsedMs = 0;
 function animLoop(timestamp) {{
   if (!lastFrameTime) lastFrameTime = timestamp;
-  const dt = (timestamp - lastFrameTime) / 1000;
+  const dtMs = Math.min(100, timestamp - lastFrameTime);
+  const dt = dtMs / 1000;
   lastFrameTime = timestamp;
 
   const hasGifFace = state.facesOnCanvas.some(f => f.isGif && f.gifFrames && f.gifFrames.length > 0);
   if (state.animation !== 'none' || state.bgIsGif || hasGifFace) {{
-    animProgress = (animProgress + dt * 1.5) % 1.0;
-    if (state.bgIsGif && state.bgGifFrames.length > 0) {{
-      state.bgGifIndex = Math.floor(animProgress * state.bgGifFrames.length) % state.bgGifFrames.length;
+    // Steady 1.0s loop for CSS transform effects (Bob, Spin, Bounce, etc.)
+    animProgress = (animProgress + dt * 1.0) % 1.0;
+
+    // Background GIF: advance frames based on exact native frame delays
+    if (state.bgIsGif && state.bgGifFrames && state.bgGifFrames.length > 0) {{
+      bgElapsedMs += dtMs;
+      const delays = state.bgGifDelays || state.bgGifFrames.delays || [];
+      const totalDur = state.bgGifTotalDuration || state.bgGifFrames.totalDuration || (state.bgGifFrames.length * 100);
+      const curTime = bgElapsedMs % Math.max(1, totalDur);
+
+      let acc = 0;
+      let targetIdx = 0;
+      for (let i = 0; i < state.bgGifFrames.length; i++) {{
+        const d = delays[i] || 100;
+        if (curTime >= acc && curTime < acc + d) {{
+          targetIdx = i;
+          break;
+        }}
+        acc += d;
+      }}
+      state.bgGifIndex = targetIdx;
     }}
+
+    // Face GIFs: advance frames based on exact native frame delays
     state.facesOnCanvas.forEach(f => {{
       if (f.isGif && f.gifFrames && f.gifFrames.length > 0) {{
-        f.gifIndex = Math.floor(animProgress * f.gifFrames.length) % f.gifFrames.length;
+        f.elapsedMs = (f.elapsedMs || 0) + dtMs;
+        const delays = f.gifDelays || f.gifFrames.delays || [];
+        const totalDur = f.gifTotalDuration || f.gifFrames.totalDuration || (f.gifFrames.length * 100);
+        const curTime = f.elapsedMs % Math.max(1, totalDur);
+
+        let acc = 0;
+        let targetIdx = 0;
+        for (let fi = 0; fi < f.gifFrames.length; fi++) {{
+          const d = delays[fi] || 100;
+          if (curTime >= acc && curTime < acc + d) {{
+            targetIdx = fi;
+            break;
+          }}
+          acc += d;
+        }}
+        f.gifIndex = targetIdx;
       }}
     }});
+
     const off = getAnimOffset(state.animation, animProgress);
     render(off);
   }}
