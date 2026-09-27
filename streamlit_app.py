@@ -1613,29 +1613,29 @@ html_app = f"""
     color: #f8fafc;
     letter-spacing: 0.2px;
   }}
-  .floating-bug-btn:hover {{
+  .floating-bug-btn:hover:not(.is-revealed) {{
     width: 112px;
     background: rgba(220, 38, 38, 0.92);
     border-color: rgba(248, 113, 113, 0.5);
     box-shadow: 0 4px 18px rgba(220, 38, 38, 0.45);
     transform: translateY(-2px);
   }}
-  .floating-bug-btn:hover .bug-icon {{
+  .floating-bug-btn:hover:not(.is-revealed) .bug-icon {{
     transform: scale(1.15) rotate(-12deg);
   }}
-  .floating-bug-btn:hover .bug-label {{
+  .floating-bug-btn:hover:not(.is-revealed) .bug-label {{
     opacity: 1;
     max-width: 80px;
     margin-left: 5px;
   }}
   .floating-bug-btn:active {{
-    transform: scale(0.95);
+    transform: scale(0.96);
   }}
   .ps-app.lang-ar .floating-bug-btn {{
     right: auto;
     left: 16px;
   }}
-  .ps-app.lang-ar .floating-bug-btn:hover .bug-label {{
+  .ps-app.lang-ar .floating-bug-btn:hover:not(.is-revealed) .bug-label {{
     margin-left: 0;
     margin-right: 5px;
   }}
@@ -1643,6 +1643,58 @@ html_app = f"""
     right: auto;
     left: 16px;
     align-items: flex-start;
+  }}
+
+  /* REVEALED GREEN EXPANDED STATE (KEPT EXPANDED, COLOR FROM RED TO GREEN) */
+  .floating-bug-btn.is-revealed {{
+    width: auto !important;
+    min-width: 220px !important;
+    max-width: 380px !important;
+    height: 36px !important;
+    border-radius: 18px !important;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    border: 1.5px solid rgba(167, 243, 208, 0.7) !important;
+    box-shadow: 0 4px 20px rgba(16, 185, 129, 0.45), 0 0 10px rgba(52, 211, 153, 0.3) !important;
+    padding: 0 14px !important;
+    animation: greenPopIn 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }}
+  @keyframes greenPopIn {{
+    0% {{ transform: scale(0.85); background: rgba(220, 38, 38, 0.95); }}
+    50% {{ transform: scale(1.05); }}
+    100% {{ transform: scale(1.0); }}
+  }}
+  .floating-bug-btn.is-revealed:hover {{
+    background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+    border-color: rgba(209, 250, 229, 0.95) !important;
+    box-shadow: 0 6px 24px rgba(16, 185, 129, 0.6), 0 0 16px rgba(52, 211, 153, 0.5) !important;
+    transform: translateY(-2px);
+  }}
+  .floating-bug-btn.is-revealed .bug-icon {{
+    font-size: 16px;
+    animation: danceWobble 1.8s ease-in-out infinite;
+  }}
+  @keyframes danceWobble {{
+    0%, 100% {{ transform: rotate(0deg) scale(1); }}
+    25% {{ transform: rotate(-10deg) scale(1.15); }}
+    75% {{ transform: rotate(10deg) scale(1.15); }}
+  }}
+  .floating-bug-btn.is-revealed .bug-label {{
+    opacity: 1 !important;
+    max-width: 330px !important;
+    margin-left: 8px !important;
+    font-size: 11.5px !important;
+    font-weight: 800 !important;
+    color: #ffffff !important;
+    letter-spacing: 0.1px !important;
+    white-space: nowrap !important;
+  }}
+  .ps-app.lang-ar .floating-bug-btn.is-revealed .bug-label {{
+    margin-left: 0 !important;
+    margin-right: 8px !important;
+    font-family: 'Cairo', 'Tajawal', sans-serif !important;
+  }}
+  .floating-bug-btn.is-revealed .bug-count-badge {{
+    display: none !important;
   }}
 
   /* RICKROLL TOAST & BADGE (EASTER EGG) */
@@ -2025,7 +2077,7 @@ html_app = f"""
         </div>
 
         <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" id="floatingBugReportBtn" class="floating-bug-btn" style="position:relative; bottom:auto; right:auto;" title="Bug Report" aria-label="Bug Report">
-          <span class="bug-icon">🐛</span>
+          <span class="bug-icon" id="bugReportIcon">🐛</span>
           <span class="bug-label" id="txtBugReportLabel">Bug Report</span>
           <span id="bugReportCountBadge" class="bug-count-badge" style="display:inline-block;">{global_rickroll_count}</span>
         </a>
@@ -2722,7 +2774,13 @@ function applyLanguage(lang) {{
     if (document.getElementById('lbl3DHintXDown')) document.getElementById('lbl3DHintXDown').innerText = t.lbl3DHintXDown;
   }}
   if (document.getElementById('txtBugReportLabel')) {{
-    document.getElementById('txtBugReportLabel').innerText = t.txtBugReportLabel || 'Bug Report';
+    if (typeof isRickrollRevealed !== 'undefined' && isRickrollRevealed) {{
+      document.getElementById('txtBugReportLabel').innerText = lang === 'ar'
+        ? ('لا تحزن، فقط ' + globalVictimCount + ' انخدعوا قبلك! 😂')
+        : ("Don't be sad, only " + globalVictimCount + " fell for it! 😂");
+    }} else {{
+      document.getElementById('txtBugReportLabel').innerText = t.txtBugReportLabel || 'Bug Report';
+    }}
   }}
   if (document.getElementById('rickrollToastTitle')) {{
     document.getElementById('rickrollToastTitle').innerText = t.rickrollToastTitle || '🕺 Never Gonna Give You Up!';
@@ -5032,19 +5090,48 @@ function initUIEvents() {{
   }}
 
   // Floating Bug Report button (Rickroll Easter Egg + Global Counter in Storage Repo)
+  let isRickrollRevealed = false;
+  try {{
+    isRickrollRevealed = localStorage.getItem('frutisator_rickroll_revealed') === 'true';
+  }} catch (e) {{}}
+
   window.getVictimCount = function() {{
     return globalVictimCount;
+  }};
+
+  window.applyRevealedGreenState = function() {{
+    const bugBtn = document.getElementById('floatingBugReportBtn');
+    const label = document.getElementById('txtBugReportLabel');
+    const icon = document.getElementById('bugReportIcon');
+    const badge = document.getElementById('bugReportCountBadge');
+    if (bugBtn) {{
+      bugBtn.classList.add('is-revealed');
+    }}
+    if (icon) {{
+      icon.innerText = '🕺';
+    }}
+    if (badge) {{
+      badge.style.display = 'none';
+    }}
+    if (label) {{
+      label.innerText = currentLang === 'ar'
+        ? ('لا تحزن، فقط ' + globalVictimCount + ' انخدعوا قبلك! 😂')
+        : ("Don't be sad, only " + globalVictimCount + " fell for it! 😂");
+    }}
   }};
 
   window.updateVictimUI = function(count) {{
     const countBadge = document.getElementById('bugReportCountBadge');
     if (countBadge) {{
-      countBadge.style.display = 'inline-block';
+      countBadge.style.display = isRickrollRevealed ? 'none' : 'inline-block';
       countBadge.innerText = count > 999 ? (count / 1000).toFixed(1) + 'k' : count;
     }}
     const toastVal = document.getElementById('rickrollCountVal');
     if (toastVal) {{
       toastVal.innerText = count;
+    }}
+    if (isRickrollRevealed) {{
+      applyRevealedGreenState();
     }}
   }};
 
@@ -5055,7 +5142,12 @@ function initUIEvents() {{
       globalVictimCount = localCached;
     }}
   }} catch(e) {{}}
-  updateVictimUI(globalVictimCount);
+
+  if (isRickrollRevealed) {{
+    applyRevealedGreenState();
+  }} else {{
+    updateVictimUI(globalVictimCount);
+  }}
 
   // Background live fetch of global victim count
   async function fetchLiveRickrollCount() {{
@@ -5143,15 +5235,23 @@ function initUIEvents() {{
     bugBtn.onclick = (e) => {{
       e.preventDefault();
 
-      // 1. Optimistically increment victim count
+      // 1. Mark as revealed
+      isRickrollRevealed = true;
+      try {{
+        localStorage.setItem('frutisator_rickroll_revealed', 'true');
+      }} catch (err) {{}}
+
+      // 2. Optimistically increment victim count
       globalVictimCount += 1;
       try {{
         localStorage.setItem('frutisator_rickroll_victims', globalVictimCount);
       }} catch (err) {{}}
 
+      // 3. Immediately switch the button color from red to green and keep expanded
+      applyRevealedGreenState();
       updateVictimUI(globalVictimCount);
 
-      // 2. Show funny Rickroll counter toast notification
+      // 4. Show funny Rickroll counter toast notification
       const rickToast = document.getElementById('rickrollToast');
       const toastBody = document.getElementById('rickrollToastBody');
       if (rickToast && toastBody) {{
@@ -5166,13 +5266,25 @@ function initUIEvents() {{
         }}, 7000);
       }}
 
-      // 3. Asynchronously persist increment to storage repository
+      // 5. Asynchronously persist increment to storage repository
       syncRickrollIncrementToStorage();
 
-      // 4. Redirect to the classic Rickroll video in a new tab
+      // 6. Redirect to the classic Rickroll video in a new tab
       window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank', 'noopener,noreferrer');
     }};
   }}
+
+  // When user returns / switches back to the website tab, ensure the green expanded button state is displayed
+  window.addEventListener('focus', () => {{
+    if (isRickrollRevealed) {{
+      applyRevealedGreenState();
+    }}
+  }});
+  document.addEventListener('visibilitychange', () => {{
+    if (!document.hidden && isRickrollRevealed) {{
+      applyRevealedGreenState();
+    }}
+  }});
 
   // 6. Topbar Context Tool Actions (Flip, Center, Delete)
   document.getElementById('optFlipBtn').onclick = () => {{
