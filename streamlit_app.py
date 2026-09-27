@@ -1611,6 +1611,84 @@ html_app = f"""
     margin-left: 0;
     margin-right: 5px;
   }}
+  .ps-app.lang-ar #bugReportWrap {{
+    right: auto;
+    left: 16px;
+    align-items: flex-start;
+  }}
+
+  /* RICKROLL TOAST & BADGE (EASTER EGG) */
+  .rickroll-toast {{
+    background: rgba(18, 20, 28, 0.96);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(239, 68, 68, 0.5);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7), 0 0 18px rgba(239, 68, 68, 0.25);
+    border-radius: 10px;
+    padding: 10px 14px;
+    width: 250px;
+    color: #fff;
+    font-size: 12px;
+    animation: toastPopIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    user-select: none;
+    pointer-events: auto;
+  }}
+  @keyframes toastPopIn {{
+    0% {{ opacity: 0; transform: translateY(12px) scale(0.92); }}
+    100% {{ opacity: 1; transform: translateY(0) scale(1.0); }}
+  }}
+  .rickroll-toast-header {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 5px;
+  }}
+  .rickroll-toast-title {{
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #f87171;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }}
+  .rickroll-toast-close {{
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 12px;
+    cursor: pointer;
+    padding: 0 4px;
+    line-height: 1;
+    border-radius: 3px;
+  }}
+  .rickroll-toast-close:hover {{
+    color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+  }}
+  .rickroll-toast-body {{
+    font-size: 11.5px;
+    line-height: 1.4;
+    color: #e2e8f0;
+  }}
+  .bug-count-badge {{
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 9px;
+    font-weight: 900;
+    padding: 1px 5px;
+    border-radius: 8px;
+    border: 1.5px solid #0f1117;
+    box-shadow: 0 2px 6px rgba(239, 68, 68, 0.5);
+    line-height: 1.2;
+    pointer-events: none;
+  }}
+  .ps-app.lang-ar .bug-count-badge {{
+    right: auto;
+    left: -5px;
+  }}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/gifshot@0.4.5/build/gifshot.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/gifuct-js@2.1.2/dist/gifuct-js.min.js"></script>
@@ -1906,10 +1984,24 @@ html_app = f"""
       </div>
 
       <!-- FLOATING CIRCLE BUG REPORT BUTTON (RICKROLL EASTER EGG) -->
-      <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" id="floatingBugReportBtn" class="floating-bug-btn" title="Bug Report" aria-label="Bug Report">
-        <span class="bug-icon">🐛</span>
-        <span class="bug-label" id="txtBugReportLabel">Bug Report</span>
-      </a>
+      <div id="bugReportWrap" style="position:absolute; bottom:16px; right:16px; z-index:100; display:flex; flex-direction:column; align-items:flex-end; gap:8px;">
+        <!-- RICKROLL TOAST NOTIFICATION -->
+        <div id="rickrollToast" class="rickroll-toast" style="display:none;">
+          <div class="rickroll-toast-header">
+            <span class="rickroll-toast-title" id="rickrollToastTitle">🕺 Never Gonna Give You Up!</span>
+            <button class="rickroll-toast-close" onclick="document.getElementById('rickrollToast').style.display='none'">✕</button>
+          </div>
+          <div class="rickroll-toast-body" id="rickrollToastBody">
+            Don't be sad... only <b style="color:#fbbf24; font-size:13px;" id="rickrollCountVal">143</b> people fell for it! 😂🎶
+          </div>
+        </div>
+
+        <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" id="floatingBugReportBtn" class="floating-bug-btn" style="position:relative; bottom:auto; right:auto;" title="Bug Report" aria-label="Bug Report">
+          <span class="bug-icon">🐛</span>
+          <span class="bug-label" id="txtBugReportLabel">Bug Report</span>
+          <span id="bugReportCountBadge" class="bug-count-badge" style="display:none;">143</span>
+        </a>
+      </div>
     </main>
 
     <!-- RIGHT SIDEBAR: TEXT, STICKERS, FX & ACTIVE LAYERS -->
@@ -2214,6 +2306,7 @@ const i18n = {{
     copyDiscord: '📋 Copy',
     copiedAlert: '🎉 Copied image to clipboard! You can paste directly into Discord with Ctrl+V!',
     txtBugReportLabel: 'Bug Report',
+    rickrollToastTitle: '🕺 Never Gonna Give You Up!',
     
     secTitleBackdrop: '🖼️ Backdrop & Templates',
     txtUploadBg: 'Upload Image, Meme or Animated GIF',
@@ -2340,6 +2433,7 @@ const i18n = {{
     copyDiscord: '📋 نسخ',
     copiedAlert: '🎉 تم نسخ الصورة إلى الحافظة! يمكنك لصقها مباشرة في ديسكورد عبر Ctrl+V!',
     txtBugReportLabel: 'إبلاغ عن خطأ',
+    rickrollToastTitle: '🕺 لن أستسلم أبداً!',
     
     secTitleBackdrop: '🖼️ الخلفيات والقوالب',
     txtUploadBg: 'رفع صورة أو ميم أو GIF متحرك',
@@ -2599,7 +2693,15 @@ function applyLanguage(lang) {{
     if (document.getElementById('lbl3DHintXDown')) document.getElementById('lbl3DHintXDown').innerText = t.lbl3DHintXDown;
   }}
   if (document.getElementById('txtBugReportLabel')) {{
-    document.getElementById('txtBugReportLabel').innerText = t.txtBugReportLabel || 'Bug Report';
+    const vCount = (typeof getVictimCount === 'function') ? getVictimCount() : 0;
+    if (vCount > 0) {{
+      document.getElementById('txtBugReportLabel').innerText = (lang === 'ar' ? `إبلاغ عن خطأ (${vCount})` : `Bug Report (${vCount})`);
+    }} else {{
+      document.getElementById('txtBugReportLabel').innerText = t.txtBugReportLabel || 'Bug Report';
+    }}
+  }}
+  if (document.getElementById('rickrollToastTitle')) {{
+    document.getElementById('rickrollToastTitle').innerText = t.rickrollToastTitle || '🕺 Never Gonna Give You Up!';
   }}
   if (document.getElementById('lblAnimTargetText')) {{
     document.getElementById('lblAnimTargetText').innerText = t.lblAnimTargetText || 'Selected Layer:';
@@ -4905,11 +5007,62 @@ function initUIEvents() {{
     }};
   }}
 
-  // Floating Bug Report button (Rickroll Easter Egg)
+  // Floating Bug Report button (Rickroll Easter Egg + Persistent Counter)
+  window.getVictimCount = function() {{
+    return parseInt(localStorage.getItem('frutisator_rickroll_victims') || '0');
+  }};
+
+  window.updateVictimUI = function(count) {{
+    const countBadge = document.getElementById('bugReportCountBadge');
+    if (count > 0 && countBadge) {{
+      countBadge.style.display = 'inline-block';
+      countBadge.innerText = count > 999 ? (count / 1000).toFixed(1) + 'k' : count;
+    }}
+    const label = document.getElementById('txtBugReportLabel');
+    if (label && count > 0) {{
+      label.innerText = currentLang === 'ar' ? `إبلاغ عن خطأ (${count})` : `Bug Report (${count})`;
+    }}
+  }};
+
+  const initialVictimCount = getVictimCount();
+  if (initialVictimCount > 0) {{
+    updateVictimUI(initialVictimCount);
+  }}
+
+  let rickrollToastTimer = null;
   const bugBtn = document.getElementById('floatingBugReportBtn');
   if (bugBtn) {{
     bugBtn.onclick = (e) => {{
       e.preventDefault();
+
+      // Retrieve and increment victim count in localStorage
+      let count = getVictimCount();
+      if (!count || count < 142) {{
+        count = 142; // Fun realistic base count
+      }}
+      count += 1;
+      try {{
+        localStorage.setItem('frutisator_rickroll_victims', count);
+      }} catch (err) {{}}
+
+      updateVictimUI(count);
+
+      // Show funny Rickroll counter toast notification
+      const rickToast = document.getElementById('rickrollToast');
+      const toastBody = document.getElementById('rickrollToastBody');
+      if (rickToast && toastBody) {{
+        rickToast.style.display = 'block';
+        toastBody.innerHTML = currentLang === 'ar'
+          ? `لا تحزن... فقط <b style="color:#fbbf24; font-size:13px;">${count}</b> شخص انخدعوا قبلك! 😂🕺`
+          : `Don't be sad... only <b style="color:#fbbf24; font-size:13px;">${count}</b> people fell for it! 😂🕺`;
+
+        clearTimeout(rickrollToastTimer);
+        rickrollToastTimer = setTimeout(() => {{
+          rickToast.style.display = 'none';
+        }}, 7000);
+      }}
+
+      // Redirect to the classic Rickroll video in a new tab
       window.open('https://www.youtube.com/watch?v=dQw4w9WgXcQ', '_blank', 'noopener,noreferrer');
     }};
   }}
