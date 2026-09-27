@@ -414,6 +414,83 @@ html_app = f"""
     background: #000000;
   }}
 
+  
+  /* 1x1 TEXT COLOR SWATCH BOXES */
+  .color-swatch-box {{
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    aspect-ratio: 1 / 1;
+    border-radius: 6px;
+    border: 2px solid #282c3c;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+    transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    display: inline-block;
+    box-sizing: border-box;
+  }}
+  .color-swatch-box:hover {{
+    transform: scale(1.18);
+    border-color: #ffffff;
+    z-index: 2;
+  }}
+  .color-swatch-box.active {{
+    border-color: #ffffff !important;
+    box-shadow: 0 0 0 2px var(--ps-blue), 0 2px 8px rgba(0, 132, 255, 0.5) !important;
+    transform: scale(1.1);
+  }}
+
+  
+  /* BOTTOM TIPS & STATUS BAR */
+  .ps-statusbar {{
+    height: 24px;
+    min-height: 24px;
+    background: #090a0e;
+    border-top: 1px solid #1a1c26;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 14px;
+    font-size: 11px;
+    color: #7b8092;
+    z-index: 50;
+    flex-shrink: 0;
+    user-select: none;
+    box-sizing: border-box;
+  }}
+  .statusbar-tips {{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }}
+  .statusbar-tips #txtShiftTip {{
+    color: #60c5ff;
+    font-weight: 600;
+    letter-spacing: 0.2px;
+  }}
+  .statusbar-shortcuts {{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #5d6275;
+    font-size: 10.5px;
+  }}
+  .statusbar-shortcuts kbd {{
+    background: #151722;
+    border: 1px solid #282c3c;
+    border-radius: 3px;
+    padding: 1px 4px;
+    font-family: inherit;
+    font-size: 10px;
+    color: #9da3ba;
+  }}
+  .statusbar-sep {{
+    opacity: 0.35;
+  }}
+
   /* TOP OPTIONS BAR */
   .ps-topbar {{
     height: 48px;
@@ -689,23 +766,25 @@ html_app = f"""
 
   /* DISCRETE CORNER ADMIN LOCK BUTTON */
   .admin-lock-btn {{
-    background: transparent;
-    border: 1px solid #262938;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid #2b2f42;
     border-radius: 5px;
-    color: var(--ps-text-muted);
+    color: #a0a6be;
     cursor: pointer;
     padding: 3px 8px;
-    font-size: 13px;
+    font-size: 11px;
+    font-weight: 700;
+    gap: 5px;
     transition: all 0.15s ease;
     display: inline-flex;
     align-items: center;
     justify-content: center;
   }}
   .admin-lock-btn:hover {{
-    background: rgba(255, 255, 255, 0.14);
+    background: rgba(0, 132, 255, 0.16);
     border-color: var(--ps-blue);
     color: #fff;
-    transform: scale(1.08);
+    transform: translateY(-1px);
   }}
 
   /* DROP ZONES WITH UPLOAD SVG ICON */
@@ -833,7 +912,26 @@ html_app = f"""
     border: 1px solid var(--ps-border);
     gap: 3px;
   }}
-  .btn-group-4 {{
+  
+  #filterPresetsGrid {{
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 3px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }}
+  #filterPresetsGrid .ps-opt-btn {{
+    min-width: 0 !important;
+    max-width: 100% !important;
+    padding: 5px 1px !important;
+    font-size: 10px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    justify-content: center !important;
+    text-align: center !important;
+  }}
+.btn-group-4 {{
     grid-template-columns: repeat(4, 1fr);
   }}
   .btn-group-6 {{
@@ -1360,7 +1458,7 @@ html_app = f"""
         <button id="optCenterBtn" class="ps-opt-btn" title="Center on Canvas">🎯 Center</button>
         <button id="optDeleteBtn" class="ps-opt-btn danger" title="Delete Layer">🗑️ Delete</button>
       </div>
-      <span style="font-size:11px; color:#60c5ff; margin-left:6px; font-weight:600;" id="txtShiftTip">💡 Hold Shift while dragging corners to Stretch!</span>
+      
     </div>
 
     <!-- EXPORT ACTIONS + ARABIC LANGUAGE SWITCHER -->
@@ -1387,7 +1485,7 @@ html_app = f"""
       <div class="ps-panel-section" id="section-bg">
         <div class="panel-section-header">
           <span class="panel-section-title" id="secTitleBackdrop">🖼️ Backdrop & Templates</span>
-          <button id="adminTplLockBtn" class="admin-lock-btn" title="Admin Templates Settings">🔒</button>
+          <button id="adminTplLockBtn" class="admin-lock-btn" title="Admin Templates Settings">⚙️ <span class="txtAdminLabel">Admin</span></button>
         </div>
 
         <!-- UPLOAD BACKDROP DROPZONE WITH SVG UPLOAD ICON -->
@@ -1429,7 +1527,7 @@ html_app = f"""
         <div class="panel-section-header">
           <span class="panel-section-title" id="secTitleFaces">🍉 Fruits Faces</span>
           <!-- DISCRETE CORNER ADMIN LOCK BUTTON -->
-          <button id="adminLockBtn" class="admin-lock-btn" title="Admin Fruits Catalog Settings">🔒</button>
+          <button id="adminLockBtn" class="admin-lock-btn" title="Admin Fruits Catalog Settings">⚙️ <span class="txtAdminLabel">Admin</span></button>
         </div>
 
         <!-- UPLOAD FRUIT DROPZONE WITH SVG UPLOAD ICON -->
@@ -1448,7 +1546,7 @@ html_app = f"""
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span class="section-label" id="lblDefaultFaces">Default Fruits Faces:</span>
           <div style="display:flex; gap:6px; align-items:center;">
-            <button id="lockVaultBtn" class="ps-opt-btn" style="padding:3px 7px; font-size:11px; display:none;" title="Lock Private Vault">🔒 Lock</button>
+            <button id="lockVaultBtn" class="ps-opt-btn" style="padding:3px 7px; font-size:12px; display:none;" title="Exit Vault">🚪</button>
             <button id="btnSyncFacesQuick" class="ps-opt-btn" style="padding:3px 7px; font-size:11px;" title="Sync Faces from Cloud">🔄</button>
             <button id="addFaceBtn" class="ps-opt-btn" style="background:var(--ps-blue); border-color:var(--ps-blue); color:#fff; padding:4px 10px;">➕ Add Face</button>
           </div>
@@ -1593,18 +1691,21 @@ html_app = f"""
             <input type="range" id="textSizeSlider" min="16" max="130" step="2" value="48">
           </div>
 
-          <!-- 6 COLOR OPTIONS INCLUDING COLOR WHEEL -->
-          <div style="display:flex; flex-direction:column; gap:4px;">
+          <!-- 1x1 COLOR SWATCH BOXES WITH EMBEDDED COLOR PICKER -->
+          <div style="display:flex; flex-direction:column; gap:5px;">
             <span class="section-label" id="lblTextColor">Text Color:</span>
-            <div class="btn-group-grid btn-group-6" id="textColorGroup">
-              <button class="btn-toggle active" data-color="#ffffff">White</button>
-              <button class="btn-toggle" data-color="#facc15" style="color:#facc15;">Yellow</button>
-              <button class="btn-toggle" data-color="#ef4444" style="color:#ef4444;">Red</button>
-              <button class="btn-toggle" data-color="#22d3ee" style="color:#22d3ee;">Cyan</button>
-              <button class="btn-toggle" data-color="#4ade80" style="color:#4ade80;">Green</button>
-              <button class="btn-toggle" id="colorWheelBtn" data-color="wheel" title="Choose any custom color">🎨 Wheel</button>
+            <div class="color-swatches-row" id="textColorGroup" style="display:flex; gap:6px; align-items:center; flex-wrap:wrap; margin-top:2px;">
+              <button class="color-swatch-box active" data-color="#ffffff" title="White" style="background:#ffffff; border:2px solid #555;"></button>
+              <button class="color-swatch-box" data-color="#facc15" title="Yellow" style="background:#facc15;"></button>
+              <button class="color-swatch-box" data-color="#ef4444" title="Red" style="background:#ef4444;"></button>
+              <button class="color-swatch-box" data-color="#22d3ee" title="Cyan" style="background:#22d3ee;"></button>
+              <button class="color-swatch-box" data-color="#4ade80" title="Green" style="background:#4ade80;"></button>
+              <button class="color-swatch-box" data-color="#a855f7" title="Purple" style="background:#a855f7;"></button>
+              <button class="color-swatch-box" data-color="#000000" title="Black" style="background:#000000; border:2px solid #444;"></button>
+              <div class="color-swatch-box color-wheel-wrapper" id="colorWheelBtn" data-color="wheel" title="Choose Custom Color" style="position:relative; background:conic-gradient(from 0deg, red, yellow, lime, aqua, blue, magenta, red); display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer;">
+                <input type="color" id="nativeColorPicker" value="#ffffff" style="position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; cursor:pointer; padding:0; border:none; margin:0; z-index:5;">
+              </div>
             </div>
-            <input type="color" id="nativeColorPicker" value="#ffffff" style="display:none;">
           </div>
         </div>
       </div>
@@ -1684,6 +1785,18 @@ html_app = f"""
 
   </div>
 
+    <!-- BOTTOM TIPS & STATUS BAR -->
+  <footer class="ps-statusbar" id="psStatusBar">
+    <div class="statusbar-tips">
+      <span id="txtShiftTip">💡 Hold Shift while dragging corners to Stretch!</span>
+    </div>
+    <div class="statusbar-shortcuts">
+      <span>⌨️ <kbd>Del</kbd> / <kbd>Backspace</kbd>: Remove Layer</span>
+      <span class="statusbar-sep">•</span>
+      <span>⌨️ <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd>: Admin</span>
+    </div>
+  </footer>
+
   <!-- FLOATING PROGRESS BAR OVERLAY -->
   <div class="progress-wrap" id="progressWrap" style="display:none;">
     <div class="progress-track"><div class="progress-bar" id="progressBar"></div></div>
@@ -1714,7 +1827,7 @@ html_app = f"""
       <div class="admin-modal-body" id="adminManageBody" style="display:none;">
         <div style="display:flex; justify-content:space-between; align-items:center;">
           <span style="color:var(--ps-green); font-weight:800; font-size:12px;">✅ Admin Access Granted</span>
-          <button id="adminLockOutBtn" class="ps-opt-btn" style="font-size:11px;">Lock</button>
+          <button id="adminLockOutBtn" class="ps-opt-btn" style="font-size:11px;">🚪 Exit Admin</button>
         </div>
 
         <!-- TABS: FACES vs TEMPLATES -->
@@ -1803,7 +1916,7 @@ const i18n = {{
     lblVaultTitle: 'Private Faces Vault',
     vaultPlaceholder: 'Password / كلمة المرور...',
     btnUnlockVault: '🔓 Unlock',
-    lockVaultBtn: '🔒 Lock',
+    lockVaultBtn: '🚪',
     vaultError: 'Incorrect word / كلمة مرور غير صحيحة',
     lblTransform: 'Transform:',
     noLayer: 'No layer selected',
@@ -1841,6 +1954,8 @@ const i18n = {{
     lblFontSize: 'Font Size:',
     lblTextColor: 'Text Color:',
     wheelColor: '🎨 Wheel',
+    txtAdminLabel: 'Admin',
+    adminLockOutBtn: '🚪 Exit Admin',
 
     secTitleStickers: '🎀 Custom Stickers',
     txtUploadSticker: 'Upload Custom PNG / Sticker',
@@ -1906,7 +2021,7 @@ const i18n = {{
     lblVaultTitle: 'خزنة الوجوه الخاصة',
     vaultPlaceholder: 'أدخل كلمة المرور...',
     btnUnlockVault: '🔓 فتح',
-    lockVaultBtn: '🔒 قفل',
+    lockVaultBtn: '🚪',
     vaultError: 'كلمة المرور غير صحيحة',
     lblTransform: 'تحويل:',
     noLayer: 'لم يتم تحديد طبقة',
@@ -1944,6 +2059,8 @@ const i18n = {{
     lblFontSize: 'حجم الخط:',
     lblTextColor: 'لون النص:',
     wheelColor: '🎨 عجلة',
+    txtAdminLabel: 'المشرف',
+    adminLockOutBtn: '🚪 خروج',
 
     secTitleStickers: '🎀 ملصقات مخصصة',
     txtUploadSticker: 'رفع ملصق PNG مخصص',
@@ -1987,12 +2104,12 @@ const i18n = {{
     btnFilterAcc: '🎀 الملصق',
     lblFilterPresets: 'فلاتر سريعة جاهزة:',
     presetNormal: 'عادي',
-    presetBw: '🖤 أبيض وأسود',
-    presetSepia: '📜 كلاسيكي',
-    presetInvert: '🔮 عكس الألوان',
-    presetShift: '🌈 تدوير الألوان',
-    presetVivid: '⚡ ألوان مشبعة',
-    presetCyber: '🌆 سايبر نيون',
+    presetBw: '🖤 أحادي',
+    presetSepia: '📜 بني',
+    presetInvert: '🔮 عكس',
+    presetShift: '🌈 تدوير',
+    presetVivid: '⚡ مشبع',
+    presetCyber: '🌆 نيون',
     presetWarm: '🔥 دافئ',
     lblFilterHue: 'تدوير / إزاحة اللون:',
     lblFilterBw: 'أبيض وأسود (رمادي):',
@@ -2032,6 +2149,8 @@ function applyLanguage(lang) {{
   document.getElementById('optCenterBtn').innerText = t.center;
   document.getElementById('optDeleteBtn').innerText = t.delete;
 
+  document.querySelectorAll('.txtAdminLabel').forEach(el => el.innerText = t.txtAdminLabel || 'Admin');
+  if (document.getElementById('adminLockOutBtn')) document.getElementById('adminLockOutBtn').innerText = t.adminLockOutBtn || '🚪 Exit Admin';
   document.getElementById('secTitleBackdrop').innerText = t.secTitleBackdrop;
   document.getElementById('txtUploadBg').innerText = t.txtUploadBg;
   document.getElementById('lblCanvasFormat').innerText = t.lblCanvasFormat;
@@ -2055,7 +2174,7 @@ function applyLanguage(lang) {{
   document.getElementById('lblFont').innerText = t.lblFont;
   document.getElementById('lblFontSize').innerText = t.lblFontSize;
   document.getElementById('lblTextColor').innerText = t.lblTextColor;
-  document.getElementById('colorWheelBtn').innerText = t.wheelColor;
+  // colorWheelBtn is a 1x1 graphic swatch with embedded native picker
 
   document.getElementById('secTitleStickers').innerText = t.secTitleStickers;
   document.getElementById('txtUploadSticker').innerText = t.txtUploadSticker;
@@ -3466,14 +3585,11 @@ function initUIEvents() {{
     }}
   }};
 
-  // Text Colors (including Color Wheel)
-  document.querySelectorAll('#textColorGroup .btn-toggle').forEach(btn => {{
+  // Text Color Swatches (1x1 Boxes & Under-Button Native Color Picker)
+  document.querySelectorAll('#textColorGroup .color-swatch-box').forEach(btn => {{
     btn.onclick = () => {{
-      if (btn.id === 'colorWheelBtn') {{
-        document.getElementById('nativeColorPicker').click();
-        return;
-      }}
-      document.querySelectorAll('#textColorGroup .btn-toggle').forEach(b => b.classList.remove('active'));
+      if (btn.id === 'colorWheelBtn') return; // Handled directly by native color picker input overlay
+      document.querySelectorAll('#textColorGroup .color-swatch-box').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       const active = getActiveLayerData();
       if (active && active.type === 'text') {{
@@ -3483,14 +3599,14 @@ function initUIEvents() {{
     }};
   }});
 
-  // Native Color Picker Wheel Input
+  // Native Color Picker Input (Opens directly under the color wheel box)
   document.getElementById('nativeColorPicker').oninput = (e) => {{
     const color = e.target.value;
     const wheelBtn = document.getElementById('colorWheelBtn');
-    document.querySelectorAll('#textColorGroup .btn-toggle').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('#textColorGroup .color-swatch-box').forEach(b => b.classList.remove('active'));
     wheelBtn.classList.add('active');
-    wheelBtn.style.color = color;
-    wheelBtn.style.borderColor = color;
+    wheelBtn.style.borderColor = '#ffffff';
+    wheelBtn.style.boxShadow = '0 0 0 2px ' + color + ', 0 2px 8px rgba(0, 0, 0, 0.6)';
 
     const active = getActiveLayerData();
     if (active && active.type === 'text') {{
@@ -3811,7 +3927,18 @@ function initUIEvents() {{
     adminModal.style.display = 'flex';
     adminAuthError.style.display = 'none';
     adminPwdInput.value = '';
-    adminPwdInput.focus();
+    let isUnlocked = false;
+    try {{ isUnlocked = localStorage.getItem('frutisator_admin_unlocked') === 'true'; }} catch(e) {{}}
+    if (isUnlocked) {{
+      adminAuthBody.style.display = 'none';
+      adminManageBody.style.display = 'flex';
+      renderAdminCatalog();
+      renderAdminTemplatesCatalog();
+    }} else {{
+      adminAuthBody.style.display = 'block';
+      adminManageBody.style.display = 'none';
+      adminPwdInput.focus();
+    }}
   }}
 
   function switchAdminTab(tabName) {{
@@ -3842,17 +3969,25 @@ function initUIEvents() {{
 
   adminModalClose.onclick = () => {{ adminModal.style.display = 'none'; }};
 
-  adminUnlockBtn.onclick = () => {{
+  function attemptAdminUnlock() {{
     if (adminPwdInput.value === EXPECTED_ADMIN_PWD) {{
       adminAuthBody.style.display = 'none';
       adminManageBody.style.display = 'flex';
+      try {{ localStorage.setItem('frutisator_admin_unlocked', 'true'); }} catch(e) {{}}
       renderAdminCatalog();
+      renderAdminTemplatesCatalog();
     }} else {{
       adminAuthError.style.display = 'block';
     }}
+  }}
+
+  adminUnlockBtn.onclick = attemptAdminUnlock;
+  adminPwdInput.onkeydown = (e) => {{
+    if (e.key === 'Enter') attemptAdminUnlock();
   }};
 
   adminLockOutBtn.onclick = () => {{
+    try {{ localStorage.removeItem('frutisator_admin_unlocked'); }} catch(e) {{}}
     adminManageBody.style.display = 'none';
     adminAuthBody.style.display = 'block';
     adminModal.style.display = 'none';
