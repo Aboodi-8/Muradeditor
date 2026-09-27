@@ -87,7 +87,9 @@ def get_base64_data_uri(file_path: Path) -> str:
     with open(file_path, "rb") as f:
         encoded = base64.b64encode(f.read()).decode("utf-8")
         ext = file_path.suffix.lstrip(".").lower()
-        if ext == "png":
+        if ext == "gif":
+            mime = "image/gif"
+        elif ext == "png":
             mime = "image/png"
         elif ext == "webp":
             mime = "image/webp"
@@ -150,7 +152,7 @@ def load_faces_catalog():
                 manifest_updated = False
                 for f_item in folder_files:
                     fn = f_item.get("name", "")
-                    if f_item.get("type") == "file" and fn.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+                    if f_item.get("type") == "file" and fn.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif")):
                         if fn.lower() not in known_files:
                             stem = Path(fn).stem
                             clean_name = stem.replace("_", " ").title()
@@ -201,7 +203,7 @@ def load_faces_catalog():
                         )
                         with urllib.request.urlopen(f_req, timeout=5) as f_resp:
                             b64 = base64.b64encode(f_resp.read()).decode("utf-8")
-                            mime = "image/png" if fname.lower().endswith(".png") else "image/jpeg"
+                            mime = "image/gif" if fname.lower().endswith(".gif") else ("image/webp" if fname.lower().endswith(".webp") else ("image/png" if fname.lower().endswith(".png") else "image/jpeg"))
                             item_name = item.get("name") or item.get("label") or (Path(fname).stem.replace("_", " ").title() + " 🍉")
                             faces_list.append({
                                 "id": item.get("id", Path(fname).stem),
@@ -300,7 +302,7 @@ def load_templates_catalog():
                 manifest_updated = False
                 for f_item in folder_files:
                     fn = f_item.get("name", "")
-                    if f_item.get("type") == "file" and fn.lower().endswith((".png", ".jpg", ".jpeg", ".webp")):
+                    if f_item.get("type") == "file" and fn.lower().endswith((".png", ".jpg", ".jpeg", ".webp", ".gif")):
                         if fn.lower() not in known_files:
                             stem = Path(fn).stem
                             clean_name = stem.replace("_", " ").title()
@@ -345,7 +347,7 @@ def load_templates_catalog():
                         )
                         with urllib.request.urlopen(f_req, timeout=5) as f_resp:
                             b64 = base64.b64encode(f_resp.read()).decode("utf-8")
-                            mime = "image/webp" if fname.endswith(".webp") else ("image/png" if fname.endswith(".png") else "image/jpeg")
+                            mime = "image/gif" if fname.lower().endswith(".gif") else ("image/webp" if fname.lower().endswith(".webp") else ("image/png" if fname.lower().endswith(".png") else "image/jpeg"))
                             item_name = item.get("name") or item.get("label") or Path(fname).stem.replace("_", " ").title()
                             tpl_list.append({
                                 "id": item.get("id") or ("tpl_" + Path(fname).stem),
@@ -1258,6 +1260,85 @@ html_app = f"""
     cursor: pointer;
   }}
   .admin-modal-close:hover {{ color: #fff; }}
+
+  /* SPINNER & LIVE SYNCING INDICATORS */
+  @keyframes ps-spin {{
+    0% {{ transform: rotate(0deg); }}
+    100% {{ transform: rotate(360deg); }}
+  }}
+  .ps-spinner {{
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: ps-spin 0.75s linear infinite;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }}
+  .ps-spinner.danger, .ps-spinner-danger {{
+    border-top-color: #ef4444 !important;
+  }}
+  .ps-spinner.success, .ps-spinner-success {{
+    border-top-color: #10b981 !important;
+  }}
+  .ps-spinner-lg {{
+    width: 22px;
+    height: 22px;
+    border-width: 2.5px;
+  }}
+  .card-syncing-overlay {{
+    position: absolute;
+    inset: 0;
+    background: rgba(11, 12, 16, 0.88);
+    backdrop-filter: blur(5px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border-radius: inherit;
+    z-index: 25;
+    pointer-events: none;
+    animation: fadeIn 0.15s ease-out;
+  }}
+  .card-syncing-text {{
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #93c5fd;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    text-align: center;
+    padding: 0 4px;
+  }}
+  .item-syncing-row {{
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(59, 130, 246, 0.08);
+    border: 1px dashed rgba(59, 130, 246, 0.4);
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: #93c5fd;
+  }}
+  .cloud-sync-pill {{
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: #111217;
+    border: 1px solid #1f2028;
+    color: var(--ps-text-muted);
+  }}
+  .cloud-sync-pill.syncing {{
+    color: #93c5fd;
+    border-color: rgba(59, 130, 246, 0.4);
+    background: rgba(59, 130, 246, 0.08);
+  }}
   .admin-modal-body {{
     padding: 16px;
     display: flex;
@@ -1358,7 +1439,7 @@ html_app = f"""
     <div class="ps-tool-options" id="toolOptions">
       <button id="fitScreenBtn" class="ps-opt-btn" title="Auto Fit Canvas to Viewport">🔍 Fit Screen</button>
       <button id="btnResetCanvas" class="ps-opt-btn" title="Reset Canvas (Clear all layers and refresh canvas)">🔄 Reset Canvas</button>
-      <button id="btnSyncCloud" class="ps-opt-btn" title="Live Sync with Cloud Storage (Instantly fetch new faces &amp; templates)">☁️ Sync</button>
+      <button id="btnSyncCloud" class="ps-opt-btn" title="Live Sync with Cloud Storage (Instantly fetch new faces &amp; templates)"><span class="ps-spinner" id="cloudSyncSpinner" style="display:none; width:12px; height:12px; margin-right:4px;"></span><span id="cloudSyncLabel">☁️ Sync</span></button>
       <span class="ps-opt-label" id="lblTransform">Transform:</span>
       <span class="ps-opt-badge" id="optLayerName">No layer selected</span>
       <div class="ps-opt-group" id="optActionGroup" style="display:none;">
@@ -1737,7 +1818,7 @@ html_app = f"""
             <span style="font-size:12px; font-weight:800; color:#fff;">➕ ADD NEW FRUIT FACE TO CATALOG:</span>
             <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
               <input type="text" id="adminNewFaceName" class="ps-input" placeholder="Fruit Name & Emoji (e.g. Watermelon 🍉)">
-              <input type="file" id="adminNewFaceFile" accept="image/*" class="ps-input" style="padding:6px;">
+              <input type="file" id="adminNewFaceFile" accept="image/*,.gif" class="ps-input" style="padding:6px;">
               <button id="adminUploadBtn" class="ps-btn ps-btn-primary" style="justify-content:center; gap:8px;">
                 <svg class="upload-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -1762,7 +1843,7 @@ html_app = f"""
             <span style="font-size:12px; font-weight:800; color:#fff;">➕ ADD NEW TEMPLATE TO CATALOG:</span>
             <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
               <input type="text" id="adminNewTplName" class="ps-input" placeholder="Template Name & Emoji (e.g. 🏖️ Summer Beach)">
-              <input type="file" id="adminNewTplFile" accept="image/*" class="ps-input" style="padding:6px;">
+              <input type="file" id="adminNewTplFile" accept="image/*,.gif" class="ps-input" style="padding:6px;">
               <button id="adminUploadTplBtn" class="ps-btn ps-btn-primary" style="justify-content:center; gap:8px;">
                 <svg class="upload-icon" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -2217,41 +2298,99 @@ const state = {{
   dragTarget: null
 }};
 
-// UNIVERSAL GIF FRAME DECODER
+// SAFE DATA-URI / URL TO ARRAYBUFFER HELPER
+async function dataUriOrUrlToArrayBuffer(src) {{
+  if (typeof src === 'string' && src.startsWith('data:')) {{
+    const commaIdx = src.indexOf(',');
+    if (commaIdx !== -1) {{
+      const b64 = src.slice(commaIdx + 1);
+      const binary = atob(b64);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {{
+        bytes[i] = binary.charCodeAt(i);
+      }}
+      return bytes.buffer;
+    }}
+  }}
+  const res = await fetch(src);
+  return await res.arrayBuffer();
+}}
+
+// Active operation trackers to show live spinners and prevent resurrection
+const deletingItemIds = new Set();
+const deletedItemFiles = new Set();
+const uploadingItemIds = new Set();
+
+// UNIVERSAL GIF FRAME DECODER (Multi-frame & disposal support)
 async function parseGifFrames(arrayBuffer) {{
   try {{
     let rawFrames = null;
-    if (window.gifuct && typeof window.gifuct.parseGIF === 'function') {{
-      const parsed = window.gifuct.parseGIF(arrayBuffer);
-      rawFrames = window.gifuct.decompressFrames(parsed, true);
-    }} else if (window.gifuct && typeof window.gifuct.decompressFrames === 'function') {{
-      rawFrames = window.gifuct.decompressFrames(arrayBuffer, true);
-    }} else if (window.GIF) {{
-      const g = new window.GIF(arrayBuffer);
-      rawFrames = g.decompressFrames(true);
+    let fullW = 0, fullH = 0;
+    if (window.GIF) {{
+      try {{
+        const g = new window.GIF(arrayBuffer);
+        rawFrames = g.decompressFrames(true);
+        if (g.raw && g.raw.lsd) {{
+          fullW = g.raw.lsd.width || 0;
+          fullH = g.raw.lsd.height || 0;
+        }}
+      }} catch (e1) {{
+        if (typeof window.GIF.decompressFrames === 'function') {{
+          rawFrames = window.GIF.decompressFrames(arrayBuffer, true);
+        }}
+      }}
+    }}
+    if (!rawFrames && window.gifuct) {{
+      try {{
+        if (typeof window.gifuct.parseGIF === 'function') {{
+          const parsed = window.gifuct.parseGIF(arrayBuffer);
+          rawFrames = window.gifuct.decompressFrames(parsed, true);
+          if (parsed && parsed.lsd) {{
+            fullW = parsed.lsd.width || 0;
+            fullH = parsed.lsd.height || 0;
+          }}
+        }} else if (typeof window.gifuct.decompressFrames === 'function') {{
+          rawFrames = window.gifuct.decompressFrames(arrayBuffer, true);
+        }}
+      }} catch (e2) {{}}
     }}
 
     if (!rawFrames || rawFrames.length === 0) return null;
 
-    const firstF = rawFrames[0];
-    const w = (firstF.dims && firstF.dims.width) ? firstF.dims.width : 300;
-    const h = (firstF.dims && firstF.dims.height) ? firstF.dims.height : 300;
+    if (!fullW || !fullH) {{
+      rawFrames.forEach(f => {{
+        if (f.dims) {{
+          const r = (f.dims.left || 0) + (f.dims.width || 0);
+          const b = (f.dims.top || 0) + (f.dims.height || 0);
+          if (r > fullW) fullW = r;
+          if (b > fullH) fullH = b;
+        }}
+      }});
+      if (!fullW) fullW = 400;
+      if (!fullH) fullH = 400;
+    }}
 
     const tmpCanv = document.createElement('canvas');
-    tmpCanv.width = w;
-    tmpCanv.height = h;
+    tmpCanv.width = fullW;
+    tmpCanv.height = fullH;
     const tmpCtx = tmpCanv.getContext('2d');
 
     const loadedFrames = [];
     for (let i = 0; i < rawFrames.length; i++) {{
       const f = rawFrames[i];
       if (f.disposalType === 2) {{
-        tmpCtx.clearRect(0, 0, w, h);
+        tmpCtx.clearRect(0, 0, fullW, fullH);
       }}
-      if (f.patch && f.dims) {{
-        const patchData = tmpCtx.createImageData(f.dims.width, f.dims.height);
+      if (f.patch && f.dims && f.dims.width > 0 && f.dims.height > 0) {{
+        const patchCanv = document.createElement('canvas');
+        patchCanv.width = f.dims.width;
+        patchCanv.height = f.dims.height;
+        const patchCtx = patchCanv.getContext('2d');
+        const patchData = patchCtx.createImageData(f.dims.width, f.dims.height);
         patchData.data.set(f.patch);
-        tmpCtx.putImageData(patchData, f.dims.left || 0, f.dims.top || 0);
+        patchCtx.putImageData(patchData, 0, 0);
+
+        tmpCtx.drawImage(patchCanv, f.dims.left || 0, f.dims.top || 0);
       }}
       const img = new Image();
       img.src = tmpCanv.toDataURL('image/png');
@@ -2260,7 +2399,7 @@ async function parseGifFrames(arrayBuffer) {{
     }}
     return loadedFrames;
   }} catch (err) {{
-    console.warn('parseGifFrames notice:', err);
+    console.warn('parseGifFrames error:', err);
     return null;
   }}
 }}
@@ -2571,10 +2710,11 @@ function render(offsetObj) {{
   const animOff = offsetObj || {{ x: 0, y: 0, rot: 0, scale: 1.0 }};
 
   let bgImg = null;
-  if (state.bgType === 'custom' && state.bgCustomImg) {{
+  if (state.bgIsGif && state.bgGifFrames && state.bgGifFrames.length > 0) {{
+    const fIdx = (state.bgGifIndex !== undefined ? state.bgGifIndex : 0) % state.bgGifFrames.length;
+    bgImg = state.bgGifFrames[fIdx];
+  }} else if (state.bgType === 'custom' && state.bgCustomImg) {{
     bgImg = state.bgCustomImg;
-  }} else if (state.bgIsGif && state.bgGifFrames.length > 0) {{
-    bgImg = state.bgGifFrames[state.bgGifIndex];
   }} else if (state.bgType === 'template' && loadedTemplates[state.bgTemplateId]) {{
     bgImg = loadedTemplates[state.bgTemplateId];
   }}
@@ -2971,8 +3111,27 @@ function renderTemplatesGrid() {{
   templates.forEach(t => {{
     const card = document.createElement('div');
     card.className = 'grid-card-template' + (state.bgTemplateId === t.id ? ' active' : '');
+    card.setAttribute('data-tpl-id', t.id || '');
+    card.setAttribute('data-tpl-file', t.file || '');
     card.innerHTML = `<img src="${{t.src}}" alt="${{t.name}}"><span>${{t.name}}</span>`;
+
+    // Live sync and deletion indicator on cards
+    const tFile = (t.file || '').toLowerCase();
+    if (deletingItemIds.has(t.id) || (tFile && deletingItemIds.has(tFile))) {{
+      const overlay = document.createElement('div');
+      overlay.className = 'card-syncing-overlay';
+      overlay.innerHTML = '<div class="ps-spinner ps-spinner-danger"></div><span class="card-syncing-text">Deleting...</span>';
+      card.appendChild(overlay);
+    }} else if (uploadingItemIds.has(t.id)) {{
+      const overlay = document.createElement('div');
+      overlay.className = 'card-syncing-overlay';
+      overlay.innerHTML = '<div class="ps-spinner"></div><span class="card-syncing-text">Syncing...</span>';
+      card.appendChild(overlay);
+    }}
+
     card.onclick = async () => {{
+      const targetFile = (t.file || '').toLowerCase();
+      if (deletingItemIds.has(t.id) || (targetFile && deletingItemIds.has(targetFile))) return;
       document.querySelectorAll('#bgPresetsRow .grid-card-template').forEach(c => c.classList.remove('active'));
       card.classList.add('active');
       state.bgType = 'template';
@@ -2981,17 +3140,36 @@ function renderTemplatesGrid() {{
       state.bgCustomName = '';
       state.bgIsGif = false;
       state.bgGifFrames = [];
-      if (t.file && t.file.toLowerCase().endsWith('.gif') && t.src) {{
-        try {{
-          const res = await fetch(t.src);
-          const buf = await res.arrayBuffer();
-          const frames = await parseGifFrames(buf);
-          if (frames && frames.length > 0) {{
-            state.bgIsGif = true;
-            state.bgGifFrames = frames;
-            state.bgGifIndex = 0;
+
+      const isGif = (t.file && t.file.toLowerCase().endsWith('.gif')) || (t.src && t.src.startsWith('data:image/gif'));
+      if (isGif && t.src) {{
+        if (t.gifFrames && t.gifFrames.length > 0) {{
+          state.bgIsGif = true;
+          state.bgGifFrames = t.gifFrames;
+          state.bgGifIndex = 0;
+          state.bgCustomImg = t.gifFrames[0];
+          render();
+        }} else {{
+          const tempSpin = document.createElement('div');
+          tempSpin.className = 'card-syncing-overlay';
+          tempSpin.innerHTML = '<div class="ps-spinner"></div><span class="card-syncing-text">Loading GIF...</span>';
+          card.appendChild(tempSpin);
+          try {{
+            const buf = await dataUriOrUrlToArrayBuffer(t.src);
+            const frames = await parseGifFrames(buf);
+            if (frames && frames.length > 0) {{
+              t.gifFrames = frames;
+              state.bgIsGif = true;
+              state.bgGifFrames = frames;
+              state.bgGifIndex = 0;
+              state.bgCustomImg = frames[0];
+            }}
+          }} catch(e) {{
+            console.warn('Template GIF parse error:', e);
+          }} finally {{
+            if (card.contains(tempSpin)) card.removeChild(tempSpin);
           }}
-        }} catch(e) {{}}
+        }}
       }}
       render();
       syncLayersUI();
@@ -3015,8 +3193,27 @@ function renderFacesGrid() {{
     faces.forEach((f, idx) => {{
       const card = document.createElement('div');
       card.className = 'grid-card' + (idx === 0 ? ' active' : '');
+      card.setAttribute('data-face-id', f.id || ('face_' + idx));
+      card.setAttribute('data-face-file', f.file || '');
       card.innerHTML = `<img src="${{f.src}}" alt="${{f.name}}"><span>${{f.name}}</span>`;
+
+      // Live sync and deletion indicator on cards
+      const fFile = (f.file || '').toLowerCase();
+      if (deletingItemIds.has(f.id) || (fFile && deletingItemIds.has(fFile))) {{
+        const overlay = document.createElement('div');
+        overlay.className = 'card-syncing-overlay';
+        overlay.innerHTML = '<div class="ps-spinner ps-spinner-danger"></div><span class="card-syncing-text">Deleting...</span>';
+        card.appendChild(overlay);
+      }} else if (uploadingItemIds.has(f.id)) {{
+        const overlay = document.createElement('div');
+        overlay.className = 'card-syncing-overlay';
+        overlay.innerHTML = '<div class="ps-spinner"></div><span class="card-syncing-text">Syncing...</span>';
+        card.appendChild(overlay);
+      }}
+
       card.onclick = async () => {{
+        const targetFile = (f.file || '').toLowerCase();
+        if (deletingItemIds.has(f.id) || (targetFile && deletingItemIds.has(targetFile))) return;
         document.querySelectorAll('#facesGrid .grid-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
         let targetLayer = null;
@@ -3034,17 +3231,33 @@ function renderFacesGrid() {{
           state.facesOnCanvas.push(targetLayer);
           state.activeTransformTarget = {{ type: 'face', idx: state.facesOnCanvas.length - 1 }};
         }}
-        if (f.file && f.file.toLowerCase().endsWith('.gif') && f.src) {{
-          try {{
-            const res = await fetch(f.src);
-            const buf = await res.arrayBuffer();
-            const frames = await parseGifFrames(buf);
-            if (frames && frames.length > 0) {{
-              targetLayer.isGif = true;
-              targetLayer.gifFrames = frames;
-              targetLayer.gifIndex = 0;
+        const isGif = (f.file && f.file.toLowerCase().endsWith('.gif')) || (f.src && f.src.startsWith('data:image/gif'));
+        if (isGif && f.src) {{
+          if (f.gifFrames && f.gifFrames.length > 0) {{
+            targetLayer.isGif = true;
+            targetLayer.gifFrames = f.gifFrames;
+            targetLayer.gifIndex = 0;
+            render();
+          }} else {{
+            const tempSpin = document.createElement('div');
+            tempSpin.className = 'card-syncing-overlay';
+            tempSpin.innerHTML = '<div class="ps-spinner"></div><span class="card-syncing-text">Loading GIF...</span>';
+            card.appendChild(tempSpin);
+            try {{
+              const buf = await dataUriOrUrlToArrayBuffer(f.src);
+              const frames = await parseGifFrames(buf);
+              if (frames && frames.length > 0) {{
+                f.gifFrames = frames;
+                targetLayer.isGif = true;
+                targetLayer.gifFrames = frames;
+                targetLayer.gifIndex = 0;
+              }}
+            }} catch(e) {{
+              console.warn('Face GIF parse warning:', e);
+            }} finally {{
+              if (card.contains(tempSpin)) card.removeChild(tempSpin);
             }}
-          }} catch(e) {{}}
+          }}
         }}
         render();
         syncLayersUI();
@@ -3066,16 +3279,17 @@ function initUIEvents() {{
     if (!file) return;
     state.bgCustomName = file.name;
 
-    if (file.name.toLowerCase().endsWith('.gif')) {{
+    const isGif = file.name.toLowerCase().endsWith('.gif') || file.type === 'image/gif';
+    if (isGif) {{
       const reader = new FileReader();
       reader.onload = async (ev) => {{
         try {{
           const frames = await parseGifFrames(ev.target.result);
           if (frames && frames.length > 0) {{
+            state.bgType = 'custom';
             state.bgIsGif = true;
             state.bgGifFrames = frames;
             state.bgGifIndex = 0;
-            state.bgType = 'custom';
             state.bgCustomImg = frames[0];
             render();
             syncLayersUI();
@@ -3083,7 +3297,7 @@ function initUIEvents() {{
             return;
           }}
         }} catch (err) {{
-          console.error(err);
+          console.error('Backdrop GIF decode notice:', err);
         }}
         const img = new Image();
         img.src = URL.createObjectURL(file);
@@ -3091,6 +3305,7 @@ function initUIEvents() {{
           state.bgType = 'custom';
           state.bgCustomImg = img;
           state.bgIsGif = false;
+          state.bgGifFrames = [];
           render();
           syncLayersUI();
           updateDynamicFileName();
@@ -3729,7 +3944,7 @@ function initUIEvents() {{
   }});
 
   // Admin upload to GitHub
-  // Template upload handler
+  // Template upload handler with live loading circle & syncing indicator
   const adminUploadTplBtn = document.getElementById('adminUploadTplBtn');
   if (adminUploadTplBtn) {{
     adminUploadTplBtn.onclick = () => {{
@@ -3743,52 +3958,93 @@ function initUIEvents() {{
         return;
       }}
 
-      status.style.color = 'var(--ps-blue)';
-      status.innerText = 'Processing template image...';
+      adminUploadTplBtn.disabled = true;
+      const origBtnHtml = adminUploadTplBtn.innerHTML;
+      adminUploadTplBtn.innerHTML = '<span class="ps-spinner"></span> <span>Syncing to Cloud...</span>';
 
+      status.style.color = 'var(--ps-blue)';
+      status.innerHTML = '<span class="ps-spinner"></span> <span>Processing & syncing template to storage repo...</span>';
+
+      const isGif = file.name.toLowerCase().endsWith('.gif') || file.type === 'image/gif';
       const reader = new FileReader();
-      reader.onload = (e) => {{
+      reader.onload = async (e) => {{
         const b64 = e.target.result;
         const filename = file.name.replace(/[^a-zA-Z0-9._-]/g, '_');
         const imgId = 'tpl_' + Date.now();
 
-        templates.push({{
-          id: imgId,
-          name: name,
-          file: filename,
-          src: b64
-        }});
+        // Show live loading placeholder card in templates grid
+        uploadingItemIds.add(imgId);
+        renderTemplatesGrid();
 
-        const newImg = new Image();
-        newImg.src = b64;
-        loadedTemplates[imgId] = newImg;
+        // Show live uploading row in admin list
+        const tplList = document.getElementById('adminTemplatesCatalogList');
+        if (tplList) {{
+          const syncRow = document.createElement('div');
+          syncRow.id = `tempSyncRow_${{imgId}}`;
+          syncRow.className = 'item-syncing-row';
+          syncRow.innerHTML = `<div class="ps-spinner"></div> <span>Syncing "${{name}}" to Templates storage...</span>`;
+          tplList.prepend(syncRow);
+        }}
 
-        initUIEvents();
-        renderAdminTemplatesCatalog();
+        try {{
+          let uploadedFilename = filename;
+          if (GITHUB_TOKEN) {{
+            const res = await syncTemplateToGitHub(name, filename, b64);
+            if (res && res.file) uploadedFilename = res.file;
+          }}
 
-        status.style.color = 'var(--ps-green)';
-        status.innerText = '✅ Template added locally!';
+          let parsedFrames = null;
+          if (isGif) {{
+            try {{
+              const buf = await dataUriOrUrlToArrayBuffer(b64);
+              parsedFrames = await parseGifFrames(buf);
+            }} catch(err) {{}}
+          }}
 
-        if (GITHUB_TOKEN) {{
-          status.innerText = '🚀 Syncing template to storage repo...';
-          syncTemplateToGitHub(name, filename, b64)
-            .then(() => {{
-              status.innerText = '🎉 Successfully pushed to Templates in storage repo!';
-            }})
-            .catch(err => {{
-              status.style.color = 'var(--ps-yellow)';
-              status.innerText = '⚠️ Local added. GitHub sync error: ' + err.message;
-            }});
+          templates.push({{
+            id: imgId,
+            name: name,
+            file: uploadedFilename,
+            src: b64,
+            isGif: isGif,
+            gifFrames: parsedFrames
+          }});
+
+          const newImg = new Image();
+          newImg.src = b64;
+          loadedTemplates[imgId] = newImg;
+
+          uploadingItemIds.delete(imgId);
+          initUIEvents();
+          renderTemplatesGrid();
+          renderAdminTemplatesCatalog();
+
+          status.style.color = 'var(--ps-green)';
+          status.innerText = '✅ Template successfully added & synced!';
+          document.getElementById('adminNewTplName').value = '';
+          document.getElementById('adminNewTplFile').value = '';
+        }} catch (err) {{
+          uploadingItemIds.delete(imgId);
+          const tempRow = document.getElementById(`tempSyncRow_${{imgId}}`);
+          if (tempRow) tempRow.remove();
+          renderTemplatesGrid();
+          status.style.color = 'var(--ps-yellow)';
+          status.innerText = '⚠️ Template sync error: ' + err.message;
+        }} finally {{
+          adminUploadTplBtn.disabled = false;
+          adminUploadTplBtn.innerHTML = origBtnHtml;
         }}
       }};
       reader.readAsDataURL(file);
     }};
   }}
 
+  // Fruit face upload handler with live loading circle & syncing indicator
   document.getElementById('adminUploadBtn').onclick = () => {{
     const name = document.getElementById('adminNewFaceName').value.trim();
     const file = document.getElementById('adminNewFaceFile').files[0];
     const status = document.getElementById('adminUploadStatus');
+    const uploadBtn = document.getElementById('adminUploadBtn');
 
     if (!name || !file) {{
       status.style.color = 'var(--ps-danger)';
@@ -3796,43 +4052,82 @@ function initUIEvents() {{
       return;
     }}
 
+    uploadBtn.disabled = true;
+    const origBtnHtml = uploadBtn.innerHTML;
+    uploadBtn.innerHTML = '<span class="ps-spinner"></span> <span>Syncing to Cloud...</span>';
+
     status.style.color = 'var(--ps-blue)';
-    status.innerText = '⏳ Encoding image...';
+    status.innerHTML = '<span class="ps-spinner"></span> <span>Encoding and syncing to GitHub repo...</span>';
 
+    const isGif = file.name.toLowerCase().endsWith('.gif') || file.type === 'image/gif';
     const reader = new FileReader();
-    reader.onload = (ev) => {{
+    reader.onload = async (ev) => {{
       const b64 = ev.target.result;
-      const imgId = name.toLowerCase().replace(/[^a-z0-9]/g, '_');
-      const filename = imgId + '.png';
+      const ext = isGif ? '.gif' : (file.name.toLowerCase().endsWith('.webp') ? '.webp' : (file.name.toLowerCase().endsWith('.jpg') ? '.jpg' : '.png'));
+      const imgId = name.toLowerCase().replace(/[^a-z0-9]/g, '_') + '_' + Date.now();
+      const filename = name.toLowerCase().replace(/[^a-z0-9]/g, '_') + ext;
 
-      faces.push({{
-        id: imgId,
-        name: name,
-        file: filename,
-        src: b64
-      }});
+      // Show live loading placeholder card in faces grid
+      uploadingItemIds.add(imgId);
+      renderFacesGrid();
 
-      const idx = faces.length - 1;
-      const newImg = new Image();
-      newImg.src = b64;
-      loadedFaces[idx] = newImg;
+      // Show live uploading row in admin list
+      const adminList = document.getElementById('adminFacesCatalogList');
+      if (adminList) {{
+        const syncRow = document.createElement('div');
+        syncRow.id = `tempSyncRow_${{imgId}}`;
+        syncRow.className = 'item-syncing-row';
+        syncRow.innerHTML = `<div class="ps-spinner"></div> <span>Syncing "${{name}}" to Faces storage...</span>`;
+        adminList.prepend(syncRow);
+      }}
 
-      initUIEvents();
-      renderAdminCatalog();
+      try {{
+        let uploadedFilename = filename;
+        if (GITHUB_TOKEN) {{
+          uploadedFilename = await syncFaceToGitHub(name, filename, b64);
+        }}
 
-      status.style.color = 'var(--ps-green)';
-      status.innerText = '✅ Fruit face added locally!';
+        let parsedFrames = null;
+        if (isGif) {{
+          try {{
+            const buf = await dataUriOrUrlToArrayBuffer(b64);
+            parsedFrames = await parseGifFrames(buf);
+          }} catch(err) {{}}
+        }}
 
-      if (GITHUB_TOKEN) {{
-        status.innerText = '🚀 Syncing to GitHub repo...';
-        syncFaceToGitHub(name, filename, b64)
-          .then(() => {{
-            status.innerText = '🎉 Successfully pushed to GitHub repo!';
-          }})
-          .catch(err => {{
-            status.style.color = 'var(--ps-yellow)';
-            status.innerText = '⚠️ Local added. GitHub sync error: ' + err.message;
-          }});
+        faces.push({{
+          id: imgId,
+          name: name,
+          file: uploadedFilename || filename,
+          src: b64,
+          isGif: isGif,
+          gifFrames: parsedFrames
+        }});
+
+        const idx = faces.length - 1;
+        const newImg = new Image();
+        newImg.src = b64;
+        loadedFaces[idx] = newImg;
+
+        uploadingItemIds.delete(imgId);
+        initUIEvents();
+        renderFacesGrid();
+        renderAdminCatalog();
+
+        status.style.color = 'var(--ps-green)';
+        status.innerText = '✅ Fruit face successfully added & synced!';
+        document.getElementById('adminNewFaceName').value = '';
+        document.getElementById('adminNewFaceFile').value = '';
+      }} catch (err) {{
+        uploadingItemIds.delete(imgId);
+        const tempRow = document.getElementById(`tempSyncRow_${{imgId}}`);
+        if (tempRow) tempRow.remove();
+        renderFacesGrid();
+        status.style.color = 'var(--ps-yellow)';
+        status.innerText = '⚠️ GitHub sync error: ' + err.message;
+      }} finally {{
+        uploadBtn.disabled = false;
+        uploadBtn.innerHTML = origBtnHtml;
       }}
     }};
     reader.readAsDataURL(file);
@@ -3940,7 +4235,7 @@ function initUIEvents() {{
   syncFilterUI();
 }}
 
-// Sync Admin Catalog List
+// Sync Admin Catalog List with Live Deletion Indicators
 function renderAdminCatalog() {{
   const list = document.getElementById('adminFacesCatalogList');
   if (!list) return;
@@ -3952,14 +4247,21 @@ function renderAdminCatalog() {{
     list.appendChild(emptyRow);
   }}
   faces.forEach((f, idx) => {{
+    const isDeleting = deletingItemIds.has(f.id) || (f.file && deletingItemIds.has(f.file.toLowerCase()));
     const row = document.createElement('div');
-    row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:7px 10px; border-radius:6px; border:1px solid #1f2028;';
+    row.id = `adminFaceRow_${{idx}}`;
+    row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:7px 10px; border-radius:6px; border:1px solid #1f2028; transition:all 0.2s ease;';
+    if (isDeleting) {{
+      row.style.opacity = '0.65';
+    }}
     row.innerHTML = `
       <div style="display:flex; align-items:center; gap:8px;">
         <img src="${{f.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
         <span style="font-size:12.5px; font-weight:700; color:#fff;">${{f.name}}</span>
       </div>
-      <button class="ps-opt-btn danger" style="padding:4px 8px; font-size:11px;" onclick="deleteAdminFace(${{idx}})">Remove</button>
+      <button class="ps-opt-btn danger" id="adminFaceDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" ${{isDeleting ? 'disabled' : ''}} onclick="deleteAdminFace(${{idx}})">
+        ${{isDeleting ? '<span class="ps-spinner ps-spinner-danger"></span> <span>Deleting...</span>' : 'Remove'}}
+      </button>
     `;
     list.appendChild(row);
   }});
@@ -3968,15 +4270,83 @@ function renderAdminCatalog() {{
 window.deleteAdminFace = async function(idx) {{
   const f = faces[idx];
   if (!f) return;
+  const targetFile = f.file || f.filename;
+  const targetFileLower = targetFile ? targetFile.toLowerCase() : '';
+  if (deletingItemIds.has(f.id) || (targetFileLower && deletingItemIds.has(targetFileLower))) return;
+
   let ok = false;
   try {{
-    ok = window.confirm('Remove ' + f.name + ' from catalog?');
+    ok = window.confirm('Remove ' + f.name + ' from catalog and storage?');
   }} catch(e) {{
     ok = true;
   }}
   if (!ok) return;
 
-  const removed = faces.splice(idx, 1)[0];
+  // Mark actively deleting to prevent auto-sync resurrection and render spinners
+  deletingItemIds.add(f.id);
+  if (targetFileLower) {{
+    deletingItemIds.add(targetFileLower);
+    deletedItemFiles.add(targetFileLower);
+  }}
+
+  renderAdminCatalog();
+  renderFacesGrid();
+
+  if (GITHUB_TOKEN) {{
+    const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
+    const folder = GITHUB_FOLDER || 'Faces';
+    const manifestPath = `${{folder}}/manifest.json`;
+
+    try {{
+      // 1. Delete image file from GitHub
+      if (targetFile) {{
+        try {{
+          const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}?ref=main&_t=${{Date.now()}}`, {{
+            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+          }});
+          if (fRes.ok) {{
+            const fData = await fRes.json();
+            await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}`, {{
+              method: 'DELETE',
+              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+              body: JSON.stringify({{ message: 'Remove face ' + f.name, sha: fData.sha, branch: 'main' }})
+            }});
+          }}
+        }} catch(err) {{
+          console.warn('Error deleting face file from storage:', err);
+        }}
+      }}
+
+      // 2. Update manifest.json
+      try {{
+        const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
+          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+        }});
+        if (mRes.ok) {{
+          const mData = await mRes.json();
+          const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
+          let manifestList = JSON.parse(decoded);
+          manifestList = manifestList.filter(item => item.id !== f.id && (item.file || item.filename) !== targetFile);
+          const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
+          await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+            method: 'PUT',
+            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+            body: JSON.stringify({{ message: 'Remove face ' + f.name, content: updatedB64, sha: mData.sha, branch: 'main' }})
+          }});
+        }}
+      }} catch (e) {{
+        console.warn('Face deletion sync warning:', e);
+      }}
+    }} catch (err) {{
+      console.error('Face delete error:', err);
+    }}
+  }}
+
+  // Remove locally and update UI cleanly
+  const removeIndex = faces.findIndex(item => item.id === f.id || (item.file && item.file.toLowerCase() === targetFileLower));
+  if (removeIndex !== -1) {{
+    faces.splice(removeIndex, 1);
+  }}
   const newLoaded = {{}};
   faces.forEach((item, i) => {{
     if (item.src) {{
@@ -3987,56 +4357,19 @@ window.deleteAdminFace = async function(idx) {{
   }});
   loadedFaces = newLoaded;
 
+  // Remove face layer from canvas if it was active
+  state.facesOnCanvas = state.facesOnCanvas.filter(fc => {{
+    return fc.faceIndex !== removeIndex && (!fc.id || fc.id !== f.id);
+  }});
+
+  deletingItemIds.delete(f.id);
+  if (targetFileLower) deletingItemIds.delete(targetFileLower);
+
   renderFacesGrid();
   renderAdminCatalog();
+  syncLayersUI();
+  updateDynamicFileName();
   render();
-
-  if (GITHUB_TOKEN && removed) {{
-    const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
-    const folder = GITHUB_FOLDER || 'Faces';
-    const manifestPath = `${{folder}}/manifest.json`;
-    const targetFile = removed.file || removed.filename;
-
-    // 1. Delete image file from GitHub so self-healing does not restore it
-    if (targetFile) {{
-      try {{
-        const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}?ref=main&_t=${{Date.now()}}`, {{
-          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-        }});
-        if (fRes.ok) {{
-          const fData = await fRes.json();
-          await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}`, {{
-            method: 'DELETE',
-            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-            body: JSON.stringify({{ message: 'Remove face ' + removed.name, sha: fData.sha, branch: 'main' }})
-          }});
-        }}
-      }} catch(err) {{
-        console.warn('Error deleting face file from storage:', err);
-      }}
-    }}
-
-    // 2. Update manifest.json
-    try {{
-      const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
-        headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-      }});
-      if (mRes.ok) {{
-        const mData = await mRes.json();
-        const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
-        let manifestList = JSON.parse(decoded);
-        manifestList = manifestList.filter(item => item.id !== removed.id && (item.file || item.filename) !== targetFile);
-        const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
-        await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
-          method: 'PUT',
-          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-          body: JSON.stringify({{ message: 'Remove face ' + removed.name, content: updatedB64, sha: mData.sha, branch: 'main' }})
-        }});
-      }}
-    }} catch (e) {{
-      console.warn('Face deletion sync warning:', e);
-    }}
-  }}
 }};
 
 // --- ROBUST REMOTE MANIFEST SYNC WITH CONFLICT RETRY & SELF-HEALING ---
@@ -4198,14 +4531,21 @@ function renderAdminTemplatesCatalog() {{
     list.appendChild(emptyRow);
   }}
   templates.forEach((t, idx) => {{
+    const isDeleting = deletingItemIds.has(t.id) || (t.file && deletingItemIds.has(t.file.toLowerCase()));
     const row = document.createElement('div');
-    row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:7px 10px; border-radius:6px; border:1px solid #1f2028;';
+    row.id = `adminTplRow_${{idx}}`;
+    row.style = 'display:flex; justify-content:space-between; align-items:center; background:#111217; padding:7px 10px; border-radius:6px; border:1px solid #1f2028; transition:all 0.2s ease;';
+    if (isDeleting) {{
+      row.style.opacity = '0.65';
+    }}
     row.innerHTML = `
       <div style="display:flex; align-items:center; gap:8px;">
         <img src="${{t.src}}" style="width:30px; height:30px; border-radius:4px; object-fit:cover;">
         <span style="font-size:12.5px; font-weight:700; color:#fff;">${{t.name}}</span>
       </div>
-      <button class="ps-opt-btn danger" style="padding:4px 8px; font-size:11px;" onclick="deleteAdminTemplate(${{idx}})">Remove</button>
+      <button class="ps-opt-btn danger" id="adminTplDelBtn_${{idx}}" style="padding:4px 8px; font-size:11px; display:inline-flex; align-items:center; gap:5px;" ${{isDeleting ? 'disabled' : ''}} onclick="deleteAdminTemplate(${{idx}})">
+        ${{isDeleting ? '<span class="ps-spinner ps-spinner-danger"></span> <span>Deleting...</span>' : 'Remove'}}
+      </button>
     `;
     list.appendChild(row);
   }});
@@ -4214,6 +4554,10 @@ function renderAdminTemplatesCatalog() {{
 window.deleteAdminTemplate = async function(idx) {{
   const t = templates[idx];
   if (!t) return;
+  const targetFile = t.file || t.filename;
+  const targetFileLower = targetFile ? targetFile.toLowerCase() : '';
+  if (deletingItemIds.has(t.id) || (targetFileLower && deletingItemIds.has(targetFileLower))) return;
+
   let ok = false;
   try {{
     ok = window.confirm('Remove ' + t.name + ' from templates catalog?');
@@ -4222,58 +4566,88 @@ window.deleteAdminTemplate = async function(idx) {{
   }}
   if (!ok) return;
 
-  const removed = templates.splice(idx, 1)[0];
-  delete loadedTemplates[removed.id];
-  renderTemplatesGrid();
-  renderAdminTemplatesCatalog();
-  render();
+  deletingItemIds.add(t.id);
+  if (targetFileLower) {{
+    deletingItemIds.add(targetFileLower);
+    deletedItemFiles.add(targetFileLower);
+  }}
 
-  if (GITHUB_TOKEN && removed) {{
+  renderAdminTemplatesCatalog();
+  renderTemplatesGrid();
+
+  if (GITHUB_TOKEN) {{
     const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
     const folder = 'Templates';
     const manifestPath = `${{folder}}/manifest.json`;
-    const targetFile = removed.file || removed.filename;
 
-    // 1. Delete template image file from GitHub
-    if (targetFile) {{
+    try {{
+      // 1. Delete template image file from GitHub
+      if (targetFile) {{
+        try {{
+          const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}?ref=main&_t=${{Date.now()}}`, {{
+            headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
+          }});
+          if (fRes.ok) {{
+            const fData = await fRes.json();
+            await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}`, {{
+              method: 'DELETE',
+              headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
+              body: JSON.stringify({{ message: 'Remove template ' + t.name, sha: fData.sha, branch: 'main' }})
+            }});
+          }}
+        }} catch(err) {{
+          console.warn('Error deleting template file from GitHub:', err);
+        }}
+      }}
+
+      // 2. Update manifest.json
       try {{
-        const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}?ref=main&_t=${{Date.now()}}`, {{
+        const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
           headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
         }});
-        if (fRes.ok) {{
-          const fData = await fRes.json();
-          await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{targetFile}}`, {{
-            method: 'DELETE',
+        if (mRes.ok) {{
+          const mData = await mRes.json();
+          const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
+          let manifestList = JSON.parse(decoded);
+          manifestList = manifestList.filter(item => item.id !== t.id && (item.file || item.filename) !== targetFile);
+          const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
+          await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
+            method: 'PUT',
             headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-            body: JSON.stringify({{ message: 'Remove template ' + removed.name, sha: fData.sha, branch: 'main' }})
+            body: JSON.stringify({{ message: 'Remove template ' + t.name, content: updatedB64, sha: mData.sha, branch: 'main' }})
           }});
         }}
-      }} catch(err) {{
-        console.warn('Error deleting template file from GitHub:', err);
+      }} catch (e) {{
+        console.warn('Template deletion sync warning:', e);
       }}
-    }}
-
-    // 2. Update manifest.json
-    try {{
-      const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}?ref=main&_t=${{Date.now()}}`, {{
-        headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
-      }});
-      if (mRes.ok) {{
-        const mData = await mRes.json();
-        const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
-        let manifestList = JSON.parse(decoded);
-        manifestList = manifestList.filter(item => item.id !== removed.id && (item.file || item.filename) !== targetFile);
-        const updatedB64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestList, null, 2))));
-        await fetch(`https://api.github.com/repos/${{repo}}/contents/${{manifestPath}}`, {{
-          method: 'PUT',
-          headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN, 'Content-Type': 'application/json' }},
-          body: JSON.stringify({{ message: 'Remove template ' + removed.name, content: updatedB64, sha: mData.sha, branch: 'main' }})
-        }});
-      }}
-    }} catch (e) {{
-      console.warn('Template deletion sync warning:', e);
+    }} catch (err) {{
+      console.error('Template delete error:', err);
     }}
   }}
+
+  const removeIndex = templates.findIndex(item => item.id === t.id || (item.file && item.file.toLowerCase() === targetFileLower));
+  if (removeIndex !== -1) {{
+    templates.splice(removeIndex, 1);
+  }}
+  delete loadedTemplates[t.id];
+
+  // If the deleted template was active on canvas, reset backdrop
+  if (state.bgType === 'template' && state.bgTemplateId === t.id) {{
+    state.bgType = 'color';
+    state.bgTemplateId = null;
+    state.bgCustomImg = null;
+    state.bgIsGif = false;
+    state.bgGifFrames = [];
+  }}
+
+  deletingItemIds.delete(t.id);
+  if (targetFileLower) deletingItemIds.delete(targetFileLower);
+
+  renderTemplatesGrid();
+  renderAdminTemplatesCatalog();
+  syncLayersUI();
+  updateDynamicFileName();
+  render();
 }};
 
 // GitHub API face sync helper
@@ -4345,6 +4719,11 @@ async function syncCloudCatalog(showNotice = false) {{
   const repo = GITHUB_REPO || 'Aboodi-8/Muradeditorstorage';
   const folder = GITHUB_FOLDER || 'Faces';
 
+  const syncSpinner = document.getElementById('cloudSyncSpinner');
+  const syncLabel = document.getElementById('cloudSyncLabel');
+  if (syncSpinner) syncSpinner.style.display = 'inline-block';
+  if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? 'جاري المزامنة...' : 'Syncing...';
+
   // 1. Sync Faces from Cloud
   try {{
     const mRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/manifest.json?_t=${{Date.now()}}`, {{
@@ -4355,32 +4734,37 @@ async function syncCloudCatalog(showNotice = false) {{
       const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
       const cloudFaces = JSON.parse(decoded);
 
-      const existingFiles = new Set(faces.map(f => f.file));
+      const existingFiles = new Set(faces.map(f => (f.file || '').toLowerCase()));
       let newFacesAdded = false;
 
       for (const cf of cloudFaces) {{
         const cfile = cf.file || cf.filename;
         if (!cfile) continue;
-        if (!existingFiles.has(cfile)) {{
+        const cfileLower = cfile.toLowerCase();
+        // NEVER resurrect files that were deleted or are actively deleting in this session
+        if (deletedItemFiles.has(cfileLower) || deletingItemIds.has(cfileLower) || deletingItemIds.has(cf.id)) continue;
+        if (!existingFiles.has(cfileLower)) {{
           try {{
             const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/${{folder}}/${{cfile}}?_t=${{Date.now()}}`, {{
               headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
             }});
             if (fRes.ok) {{
               const fData = await fRes.json();
-              const mime = cfile.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg';
+              const isGif = cfileLower.endsWith('.gif');
+              const mime = isGif ? 'image/gif' : (cfileLower.endsWith('.webp') ? 'image/webp' : (cfileLower.endsWith('.png') ? 'image/png' : 'image/jpeg'));
               const src = `data:${{mime}};base64,${{fData.content.replace(/\\s/g, '')}}`;
               const newIdx = faces.length;
               faces.push({{
                 id: cf.id || ('face_' + Date.now()),
                 name: cf.name || cf.label || cfile,
                 file: cfile,
-                src: src
+                src: src,
+                isGif: isGif
               }});
               const img = new Image();
               img.src = src;
               loadedFaces[newIdx] = img;
-              existingFiles.add(cfile);
+              existingFiles.add(cfileLower);
               newFacesAdded = true;
             }}
           }} catch (e) {{}}
@@ -4403,36 +4787,43 @@ async function syncCloudCatalog(showNotice = false) {{
     }});
     if (tmRes.ok) {{
       const tmData = await tmRes.json();
-      const decoded = decodeURIComponent(escape(atob(tmData.content.replace(/\\s/g, ''))));
+      const decoded = decodeURIComponent(escape(atob(mData.content.replace(/\\s/g, ''))));
       const cloudTemplates = JSON.parse(decoded);
 
-      const existingTplIds = new Set(templates.map(t => t.id || t.file));
+      const existingTplIds = new Set(templates.map(t => (t.id || t.file || '').toLowerCase()));
+      const existingTplFiles = new Set(templates.map(t => (t.file || '').toLowerCase()));
       let newTplsAdded = false;
 
       for (const ct of cloudTemplates) {{
         const ctfile = ct.file || ct.filename;
         if (!ctfile) continue;
+        const ctfileLower = ctfile.toLowerCase();
         const tId = ct.id || ctfile;
-        if (!existingTplIds.has(tId) && !existingTplIds.has(ctfile)) {{
+        const tIdLower = tId.toLowerCase();
+        // NEVER resurrect templates that were deleted or are actively deleting
+        if (deletedItemFiles.has(ctfileLower) || deletingItemIds.has(ctfileLower) || deletingItemIds.has(tId)) continue;
+        if (!existingTplIds.has(tIdLower) && !existingTplFiles.has(ctfileLower)) {{
           try {{
             const fRes = await fetch(`https://api.github.com/repos/${{repo}}/contents/Templates/${{ctfile}}?_t=${{Date.now()}}`, {{
               headers: {{ 'Authorization': 'Bearer ' + GITHUB_TOKEN }}
             }});
             if (fRes.ok) {{
               const fData = await fRes.json();
-              const mime = ctfile.toLowerCase().endsWith('.webp') ? 'image/webp' : (ctfile.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg');
+              const isGif = ctfileLower.endsWith('.gif');
+              const mime = isGif ? 'image/gif' : (ctfileLower.endsWith('.webp') ? 'image/webp' : (ctfileLower.endsWith('.png') ? 'image/png' : 'image/jpeg'));
               const src = `data:${{mime}};base64,${{fData.content.replace(/\\s/g, '')}}`;
               templates.push({{
                 id: tId,
                 name: ct.name || ct.label || ctfile,
                 file: ctfile,
-                src: src
+                src: src,
+                isGif: isGif
               }});
               const img = new Image();
               img.src = src;
               loadedTemplates[tId] = img;
-              existingTplIds.add(tId);
-              existingTplIds.add(ctfile);
+              existingTplIds.add(tIdLower);
+              existingTplFiles.add(ctfileLower);
               newTplsAdded = true;
             }}
           }} catch (e) {{}}
@@ -4448,6 +4839,8 @@ async function syncCloudCatalog(showNotice = false) {{
     console.warn('Templates cloud sync notice:', err);
   }} finally {{
     isSyncingCatalog = false;
+    if (syncSpinner) syncSpinner.style.display = 'none';
+    if (syncLabel) syncLabel.innerText = currentLang === 'ar' ? '☁️ متزامن' : '☁️ Synced';
     if (showNotice) {{
       const syncBtn = document.getElementById('btnSyncCloud');
       if (syncBtn) {{
@@ -4678,12 +5071,15 @@ function exportGif() {{
   gifW = Math.round(gifW / 2) * 2;
   gifH = Math.round(gifH / 2) * 2;
 
-  const totalFrames = 18;
+  const bgFrameCount = (state.bgIsGif && state.bgGifFrames && state.bgGifFrames.length > 0) ? state.bgGifFrames.length : 0;
+  const maxFaceFrames = Math.max(0, ...state.facesOnCanvas.filter(f => f.isGif && f.gifFrames && f.gifFrames.length > 0).map(f => f.gifFrames.length));
+  const maxGifFrames = Math.max(bgFrameCount, maxFaceFrames);
+  const totalFrames = maxGifFrames > 0 ? Math.min(36, Math.max(18, maxGifFrames)) : 18;
   const frameImages = [];
 
   for (let i = 0; i < totalFrames; i++) {{
     const p = i / totalFrames;
-    if (state.bgIsGif && state.bgGifFrames.length > 0) {{
+    if (state.bgIsGif && state.bgGifFrames && state.bgGifFrames.length > 0) {{
       state.bgGifIndex = Math.floor(p * state.bgGifFrames.length) % state.bgGifFrames.length;
     }}
     state.facesOnCanvas.forEach(f => {{
@@ -4914,6 +5310,24 @@ window.onload = () => {{
   initUIEvents();
   fitCanvasToScreen();
   updateDynamicFileName();
+
+  // If default selected template is a GIF, decode and start animation immediately
+  if (state.bgType === 'template' && state.bgTemplateId) {{
+    const initialTpl = templates.find(t => t.id === state.bgTemplateId);
+    if (initialTpl && ((initialTpl.file && initialTpl.file.toLowerCase().endsWith('.gif')) || (initialTpl.src && initialTpl.src.startsWith('data:image/gif')))) {{
+      dataUriOrUrlToArrayBuffer(initialTpl.src).then(parseGifFrames).then(frames => {{
+        if (frames && frames.length > 0) {{
+          initialTpl.gifFrames = frames;
+          state.bgIsGif = true;
+          state.bgGifFrames = frames;
+          state.bgGifIndex = 0;
+          state.bgCustomImg = frames[0];
+          render();
+        }}
+      }}).catch(() => {{}});
+    }}
+  }}
+
   render();
   requestAnimationFrame(animLoop);
   setTimeout(() => syncCloudCatalog(false), 1500);
